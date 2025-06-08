@@ -1,3 +1,11 @@
+// run on all-inkl.com:
+// 	$ nohup node server.cjs &
+// kill 
+//	$ kill -9 $(cat server.pid) 
+// restart
+//	$ kill -9 $(cat server.pid) ; sleep 1 ; nohup node server.cjs &
+
+
 const fs = require('fs');
 
 
