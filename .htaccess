@@ -1,0 +1,4 @@
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^dev.olomek.com$ [OR]
+RewriteCond %{HTTP_HOST} ^www.dev.olomek.com$
+RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P]
