@@ -45,9 +45,9 @@ app.use((req, res, next) => {
 app.post("/api/chat", generateResponse);
 
 // Basic health check
-app.get("/", (req, res) => {
-  res.send("Gemini Assistant API is running");
-});
+//app.get("/", (req, res) => {
+//  res.send("Gemini Assistant API is running");
+//});
 
 // Serve static files from the public folder
 app.use(express.static(path.join(__dirname, 'public')));
