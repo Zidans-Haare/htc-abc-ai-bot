@@ -5,16 +5,14 @@
 // restart
 //	$ kill -9 $(cat server.pid) ; sleep 1 ; nohup node server.cjs &
 
-
 const fs = require('fs');
-
-
 const express = require("express");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const { generateResponse } = require("./controllers/geminiController.cjs");
-const pid = process.pid;
+const path = require('path');
 
+const pid = process.pid;
 
 dotenv.config();
 
@@ -32,6 +30,7 @@ app.use((req, res, next) => {
   next();
 });
 
+
 // Log all incoming requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
@@ -40,6 +39,7 @@ app.use((req, res, next) => {
   next();
 });
 
+
 // Routes
 app.post("/api/chat", generateResponse);
 
@@ -47,6 +47,9 @@ app.post("/api/chat", generateResponse);
 app.get("/", (req, res) => {
   res.send("Gemini Assistant API is running");
 });
+
+// Serve static files from the public folder
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Catch-all for debugging
 app.use((req, res) => {
@@ -57,9 +60,8 @@ app.use((req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-    // Save PID to file
+  // Save PID to file
   fs.writeFileSync('server.pid', pid.toString(), (err) => {
-    if (err) console.error('Error writing PID to app.pid:', err);
+    if (err) console.error('Error writing PID to server.pid:', err);
   });
-
 });
