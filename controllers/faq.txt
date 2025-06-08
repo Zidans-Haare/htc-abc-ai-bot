@@ -1,2 +1,4 @@
 F:Wer ist Vorsitzender im Studentenrat?
 A: Guybrush Threepwood.
+F:Ist Tommy der Beste?
+A: Ja!
