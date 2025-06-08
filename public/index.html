@@ -123,14 +123,13 @@
             chatInput.style.height = '';
 
             try {
-                const response = await fetch('http://dev.olomek.com/api/chat', {
+                const response = await fetch('https://dev.olomek.com/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        prompt,
-                        conversationId,
+                        prompt
                     }),
                 });
 
@@ -139,7 +138,7 @@
                 }
 
                 const data = await response.json();
-                conversationId = data.conversationId || conversationId; // Update conversation ID
+                conversationId = data.conversationId || conversationId; // Update conversation ID if provided
                 addMessage(data.response, false); // Add AI response
             } catch (error) {
                 addMessage('Error: Could not connect to the server.', false);
