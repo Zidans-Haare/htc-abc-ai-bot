@@ -8,7 +8,7 @@
   <title>HTW Dresden AI Chat Assistant</title>
   <script defer src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="PLACEHOLDER_HASH" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous">
   <style>
     /* Theme Variables */
 [data-theme="light"] { --bg: #f8fafc; --fg: #1f2937; --border: #e5e7eb; --accent: #3b82f6; }
@@ -115,24 +115,6 @@ button.send:hover { transform: translateY(-2px); }
     const saved = localStorage.getItem('theme');
     if (saved) root.setAttribute('data-theme', saved);
 
-    // New chat handler
-    document.getElementById('new-chat').addEventListener('click', () => {
-      messagesEl.innerHTML = '';
-      conversationId = null;
-      document.querySelectorAll('.thread').forEach(t => t.remove());
-      const t = document.createElement('div');
-      t.className = 'thread active';
-      t.textContent = 'Neues Gespräch';
-      threadsEl.appendChild(t);
-      addMsg('Neues Gespräch gestartet. Wie kann ich helfen?', false);
-    });
-
-    // Auto-resize input
-    chatInput.addEventListener('input', () => {
-      chatInput.style.height = 'auto';
-      chatInput.style.height = `${chatInput.scrollHeight}px`;
-    });
-
     // Scroll handling
     function scrollToBottom() {
       scrollBtnEl.style.display = 'none';
@@ -144,8 +126,14 @@ button.send:hover { transform: translateY(-2px); }
     });
     scrollBtnEl.addEventListener('click', scrollToBottom);
 
+    // Auto-resize input
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = 'auto';
+      chatInput.style.height = `${chatInput.scrollHeight}px`;
+    });
+
     // Add a message to the chat
-    function addMsg(text, isUser, copyable = false) {
+    function addMsg(text, isUser, timestamp, copyable = false) {
       const m = document.createElement('div');
       m.className = `message ${isUser ? 'user' : 'ai'}`;
       m.innerHTML = `<div>${text}</div>`;
@@ -158,17 +146,69 @@ button.send:hover { transform: translateY(-2px); }
       }
       const md = document.createElement('div');
       md.className = 'metadata';
-      md.textContent = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      md.textContent = new Date(timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
       m.appendChild(md);
       messagesEl.appendChild(m);
       scrollToBottom();
     }
 
+    // Load conversation threads
+    async function loadThreads() {
+      try {
+        const res = await fetch('https://dev.olomek.com/api/threads');
+        const threads = await res.json();
+        threadsEl.innerHTML = '<h2>Unterhaltungen</h2>';
+        threads.forEach(thread => {
+          const t = document.createElement('div');
+          t.className = `thread ${thread.conversationId === conversationId ? 'active' : ''}`;
+          t.textContent = thread.title || `Gespräch ${thread.conversationId.slice(0, 8)}`;
+          t.dataset.conversationId = thread.conversationId;
+          t.addEventListener('click', () => loadConversation(thread.conversationId));
+          threadsEl.appendChild(t);
+        });
+      } catch (e) {
+        console.error('Fehler beim Laden der Threads:', e);
+      }
+    }
+
+    // Load messages for a conversation
+    async function loadConversation(id) {
+      conversationId = id;
+      messagesEl.innerHTML = '';
+      document.querySelectorAll('.thread').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.thread[data-conversation-id="${id}"]`).classList.add('active');
+      try {
+        const res = await fetch(`https://dev.olomek.com/api/threads/${id}`);
+        const conversation = await res.json();
+        conversation.messages.forEach(msg => {
+          addMsg(msg.text, msg.isUser, msg.timestamp, !msg.isUser);
+        });
+      } catch (e) {
+        console.error('Fehler beim Laden der Konversation:', e);
+        addMsg('Fehler beim Laden der Konversation.', false);
+      }
+    }
+
+    // New chat handler
+    document.getElementById('new-chat').addEventListener('click', async () => {
+      messagesEl.innerHTML = '';
+      conversationId = null;
+      document.querySelectorAll('.thread').forEach(t => t.classList.remove('active'));
+      const t = document.createElement('div');
+      t.className = 'thread active';
+      t.textContent = 'Neues Gespräch';
+      t.dataset.conversationId = '';
+      t.addEventListener('click', () => loadConversation(null));
+      threadsEl.appendChild(t);
+      addMsg('Neues Gespräch gestartet. Wie kann ich helfen?', false);
+      await loadThreads(); // Refresh thread list
+    });
+
     // Send message logic
     async function sendMsg(prefilled) {
       const txt = prefilled || chatInput.value.trim();
       if (!txt) return;
-      addMsg(txt, true);
+      addMsg(txt, true, new Date());
       chatInput.value = '';
       chatInput.disabled = true;
       sendBtnEl.disabled = true;
@@ -180,8 +220,9 @@ button.send:hover { transform: translateY(-2px); }
           body: JSON.stringify({ prompt: txt, conversationId })
         });
         const data = await res.json();
-        conversationId = data.conversationId || conversationId;
-        addMsg(data.response, false, true);
+        conversationId = data.conversationId;
+        addMsg(data.response, false, new Date(), true);
+        await loadThreads(); // Refresh thread list
       } catch (e) {
         addMsg('Fehler beim Server.', false);
         console.error(e);
@@ -203,7 +244,8 @@ button.send:hover { transform: translateY(-2px); }
     });
     suggestionChips.forEach(c => c.addEventListener('click', () => sendMsg(c.textContent)));
 
-    // Initial greeting
+    // Initial setup
+    loadThreads();
     addMsg('Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?', false);
   </script>
 </body>
