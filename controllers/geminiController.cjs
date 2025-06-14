@@ -19,7 +19,11 @@ sequelize.sync({ alter: true })
   .then(() => console.log('SQLite database synced'))
   .catch(err => console.error('SQLite sync error:', err.message));
 
-const apiKey = process.env.API_KEY || 'Nicht gefunden';
+const apiKey = process.env.API_KEY;
+if (!apiKey) {
+  console.error('Fehler: Kein API-Key gefunden. Bitte setze die Umgebungsvariable API_KEY.');
+  process.exit(1);
+}
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
