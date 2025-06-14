@@ -1,0 +1,46 @@
+sh: line 1: /www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: Permission denied
+[2025-06-14 06:01:59] Output: 
+sh: line 1: /www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: Permission denied
+[2025-06-14 06:03:09] Output: 
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 4: pm2: command not found
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 7: pm2: command not found
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 10: pm2: command not found
+[2025-06-14 06:04:02] Output: 
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 4: pm2: command not found
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 7: pm2: command not found
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 10: pm2: command not found
+[2025-06-14 06:04:08] Output: 
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 4: pm2: command not found
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 7: pm2: command not found
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 10: pm2: command not found
+[2025-06-14 06:04:42] Output: 
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 4: pm2: command not found
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 7: pm2: command not found
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 10: pm2: command not found
+[2025-06-14 06:04:45] Output: 
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 4: pm2: command not found
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 7: pm2: command not found
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 10: pm2: command not found
+[2025-06-14 06:05:47] Output: 
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 7: /node/lib/node_modules/pm2/bin/pm2: No such file or directory
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 10: /node/lib/node_modules/pm2/bin/pm2: No such file or directory
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 13: /node/lib/node_modules/pm2/bin/pm2: No such file or directory
+[2025-06-14 06:17:21] Output: 
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 7: /node/lib/node_modules/pm2/bin/pm2: No such file or directory
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 10: /node/lib/node_modules/pm2/bin/pm2: No such file or directory
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 13: /node/lib/node_modules/pm2/bin/pm2: No such file or directory
+[2025-06-14 06:17:24] Output: 
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 12: /usr/bin/whoami: Permission denied
+[Sat Jun 14 06:26:16 CEST 2025] Running script as , PATH: /usr/local/bin:/usr/bin:/bin:/node/bin:/node/lib/node_modules/pm2/bin, HOME: /home/w01fd8d6, NODE_PATH: /node/lib/node_modules
+[Sat Jun 14 06:26:16 CEST 2025] Checking PM2 path: /node/lib/node_modules/pm2/bin/pm2
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 14: /usr/bin/ls: Permission denied
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 15: /usr/bin/ls: Permission denied
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 24: /node/lib/node_modules/pm2/bin/pm2: No such file or directory
+[Sat Jun 14 06:26:16 CEST 2025] Server app not online, starting...
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 26: /node/lib/node_modules/pm2/bin/pm2: No such file or directory
+[2025-06-14 06:26:16] Output: 
+[Sat Jun 14 06:36:01 CEST 2025] Starting script, PATH: /usr/local/bin:/usr/bin:/bin:/node/bin, HOME: /home/w01fd8d6, NODE_PATH: /node/lib/node_modules
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 24: /node/bin/node: No such file or directory
+[Sat Jun 14 06:36:01 CEST 2025] Server app not online, starting...
+/www/htdocs/w01fd8d6/dev.olomek.com/cron/cron_keep_node_server_alive.sh: line 26: /node/bin/node: No such file or directory
+[2025-06-14 06:36:01] Output: 
