@@ -10,7 +10,6 @@ const express = require("express");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const { generateResponse, Conversation } = require("./controllers/geminiController.cjs");
-const { Op } = require('sequelize');
 const path = require('path');
 
 const pid = process.pid;
@@ -45,6 +44,7 @@ app.use((req, res, next) => {
 // Routes
 app.post("/api/chat", generateResponse);
 
+
 // List all stored conversation threads
 app.get("/api/threads", async (req, res) => {
   try {
@@ -77,6 +77,59 @@ app.get("/api/threads/:id", async (req, res) => {
   }
 });
 
+// Return list of unanswered questions
+app.get('/api/unanswered', async (req, res) => {
+  try {
+    const file = path.resolve(__dirname, 'ai_fragen/offene_fragen.txt');
+    const data = await fs.promises.readFile(file, 'utf8');
+    const questions = data
+      .split(/\n+/)
+      .filter(Boolean)
+      .map(line => {
+        const match = line.match(/Frage:\s*(.*)$/);
+        return match ? match[1].trim() : null;
+      })
+      .filter(Boolean);
+    res.json(questions);
+  } catch (err) {
+    console.error('Failed to read unanswered questions:', err);
+    res.status(500).json({ error: 'Failed to read unanswered questions' });
+  }
+});
+
+// Submit an answer for a question
+app.post('/api/answer', async (req, res) => {
+  const { question, answer } = req.body || {};
+  if (!question || !answer) {
+    return res.status(400).json({ error: 'question and answer required' });
+  }
+
+  try {
+    const faqFile = path.resolve(__dirname, 'ai_input/faq.txt');
+    const unansweredFile = path.resolve(__dirname, 'ai_fragen/offene_fragen.txt');
+
+    // Append to FAQ file
+    await fs.promises.appendFile(
+      faqFile,
+      `F:${question}\nA:${answer}\n`,
+      'utf8'
+    );
+
+    // Remove the question from offene_fragen.txt
+    const content = await fs.promises.readFile(unansweredFile, 'utf8');
+    const updated = content
+      .split(/\n+/)
+      .filter(line => !line.includes(`Frage: ${question}`))
+      .join('\n');
+    await fs.promises.writeFile(unansweredFile, updated + (updated.endsWith('\n') ? '' : '\n'), 'utf8');
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Failed to store answer:', err);
+    res.status(500).json({ error: 'Failed to store answer' });
+  }
+});
+
 // Basic health check
 //app.get("/", (req, res) => {
 //  res.send("Gemini Assistant API is running");
@@ -95,7 +148,7 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   // Save PID to file
-  fs.writeFileSync('server.pid', pid.toString(), (err) => {
+  fs.writeFile('server.pid', pid.toString(), err => {
     if (err) console.error('Error writing PID to server.pid:', err);
   });
 });
