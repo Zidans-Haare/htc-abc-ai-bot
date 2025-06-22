@@ -1,5 +1,5 @@
 node_modules/
 nohup.out
 server.pid
-controllers/offene_fragen.txt
+ai_fragen/offene_fragen.txt
 chatbot.db
