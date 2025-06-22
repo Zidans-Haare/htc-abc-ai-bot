@@ -40,7 +40,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// API Endpoints
 app.post("/api/chat", generateResponse);
 
 // List all stored conversation threads
