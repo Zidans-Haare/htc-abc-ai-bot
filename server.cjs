@@ -10,7 +10,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const { generateResponse, Conversation } = require("./controllers/geminiController.cjs");
-const path = require('path');
+const path = require("path");
 
 const pid = process.pid;
 
