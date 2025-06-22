@@ -8,52 +8,8 @@
   <title>HTW Dresden AI Chat Assistant</title>
   <script defer src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous">
-  <style>
-    /* Theme Variables */
-[data-theme="light"] { --bg: #f8fafc; --fg: #1f2937; --border: #e5e7eb; --accent: #3b82f6; }
-[data-theme="dark"]  { --bg: #1a1a2e; --fg: #f3f4f6; --border: #374151; --accent: #3b82f6; }
-* { box-sizing: border-box; }
-body { margin: 0; height: 100vh; display: grid; grid-template-rows: auto 1fr auto; background: var(--bg); color: var(--fg); font-family: 'Inter', sans-serif; }
-header { grid-row: 1; display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background: var(--accent); color: white; }
-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
-.actions { display: flex; gap: 1rem; align-items: center; }
-.actions button { background: transparent; border: none; color: white; font-size: 1.25rem; cursor: pointer; transition: transform .2s; }
-.actions button:hover { transform: scale(1.1); }
-#main { grid-row: 2; display: grid; grid-template-columns: 300px 1fr; height: 100%; overflow: hidden; }
-@media (max-width: 768px) { #main { grid-template-columns: 1fr; } }
-#threads { background: var(--bg); border-right: 1px solid var(--border); padding: 1rem; overflow-y: auto; }
-#threads h2 { margin: 0 0 1rem; font-size: 1.125rem; font-weight: 500; }
-.thread { display: flex; justify-content: space-between; align-items: center; padding: .75rem 1rem; border-radius: .75rem; cursor: pointer; transition: background .2s, color .2s; }
-.thread.active, .thread:hover { background: var(--accent); color: white; }
-@media (max-width: 768px) { #threads { display: none; } }
-#chat { display: flex; flex-direction: column; background: var(--bg); position: relative; height: 100%; min-height: 0; }
-#messages { flex: 1 1 auto; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; scroll-behavior: smooth; min-height: 0; }
-.message { position: relative; max-width: 70%; padding: 1rem 1.25rem; border-radius: 1rem; line-height: 1.5; background: var(--border); transition: transform .2s; }
-.message:hover { transform: translateY(-2px); }
-.message.user { margin-left: auto; background: var(--accent); color: white; border-bottom-right-radius: .25rem; }
-.message.ai { margin-right: auto; background: var(--bg); border: 1px solid var(--border); color: var(--fg); border-bottom-left-radius: .25rem; }
-.metadata { font-size: .75rem; opacity: .6; margin-top: .5rem; text-align: right; }
-.copy-btn { position: absolute; top: .5rem; right: .5rem; opacity: .4; cursor: pointer; transition: opacity .2s; }
-.copy-btn:hover { opacity: 1; }
-#typing { display: none; align-items: center; padding: .75rem 1.5rem; }
-.dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; margin: 0 4px; animation: bounce 1.2s infinite; }
-.dot:nth-child(2) { animation-delay: .2s; }
-.dot:nth-child(3) { animation-delay: .4s; }
-@keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
-#scroll-btn { position: fixed; bottom: 3rem; right: 2rem; background: var(--accent); color: white; border: none; border-radius: 50%; padding: .75rem; cursor: pointer; display: none; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform .2s; }
-#scroll-btn:hover { transform: scale(1.1); }
-#input { grid-row: 3; background: var(--bg); border-top: 1px solid var(--border); padding: 1rem 2rem; }
-@media (max-width: 768px) { #input { padding: .75rem 1rem; } }
-.wrapper { max-width: 900px; margin: 0 auto; display: flex; gap: .75rem; align-items: center; }
-@media (max-width: 768px) { .wrapper { flex-direction: column; align-items: stretch; gap: .5rem; } }
-#chat-input { flex: 1; padding: .75rem 1rem; border: 1px solid var(--border); border-radius: .75rem; resize: none; min-height: 2.5rem; font-size: .95rem; }
-button.send { background: var(--accent); color: white; padding: .75rem 1.5rem; border: none; border-radius: .75rem; cursor: pointer; font-weight: 500; transition: transform .2s; }
-button.send:hover { transform: translateY(-2px); }
-.suggest { display: flex; justify-content: center; gap: .5rem; margin-top: .75rem; flex-wrap: wrap; }
-.chip { background: var(--border); padding: .5rem 1rem; border-radius: 9999px; cursor: pointer; transition: transform .2s; }
-.chip:hover { background: var(--accent); color: white; transform: scale(1.05); }
-  </style>
 </head>
 <body>
   <header>
@@ -61,7 +17,7 @@ button.send:hover { transform: translateY(-2px); }
     <div class="actions">
       <button id="theme-toggle" title="Theme wechseln"><i class="fas fa-adjust"></i></button>
       <span id="current-time"></span>
-      <button id="new-chat" title="Neues Gespräch"><i class="fas fa-plus"></i></button>
+      <button id="new-chat" title="Neues Gespräch"><i class="fas fa-plus"></i></button> <button id="settings-btn" title="Einstellungen"><i class="fas fa-cog"></i></button>
     </div>
   </header>
   <div id="main">
@@ -86,6 +42,13 @@ button.send:hover { transform: translateY(-2px); }
     </div>
   </div>
   <button id="scroll-btn" title="Zum neuesten springen"><i class="fas fa-arrow-down"></i></button>
+  <div id="settings-modal">
+    <div class="modal-content">
+      <h3 class="mb-2 font-medium">Einstellungen</h3>
+      <label class="block mb-2">Akzentfarbe: <input type="color" id="accent-color"></label>
+      <button id="close-settings" class="send mt-2">Schließen</button>
+    </div>
+  </div>
   <script>
     const root = document.documentElement;
     const themeToggle = document.getElementById('theme-toggle');
@@ -99,6 +62,10 @@ button.send:hover { transform: translateY(-2px); }
     const suggestionChips = document.querySelectorAll('.chip');
     let conversationId = null;
 
+    const settingsBtn = document.getElementById("settings-btn");
+    const settingsModal = document.getElementById("settings-modal");
+    const closeSettings = document.getElementById("close-settings");
+    const accentColorInput = document.getElementById("accent-color");
     // Update clock every minute
     function updateClock() {
       currentTimeEl.textContent = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
@@ -116,6 +83,18 @@ button.send:hover { transform: translateY(-2px); }
     if (saved) root.setAttribute('data-theme', saved);
 
     // Scroll handling
+    const savedAccent = localStorage.getItem("accent");
+    if (savedAccent) {
+      root.style.setProperty("--accent", savedAccent);
+      accentColorInput.value = savedAccent;
+    }
+    settingsBtn.addEventListener("click", () => settingsModal.classList.add("open"));
+    closeSettings.addEventListener("click", () => settingsModal.classList.remove("open"));
+    settingsModal.addEventListener("click", e => { if (e.target === settingsModal) settingsModal.classList.remove("open"); });
+    accentColorInput.addEventListener("input", () => {
+      root.style.setProperty("--accent", accentColorInput.value);
+      localStorage.setItem("accent", accentColorInput.value);
+    });
     function scrollToBottom() {
       scrollBtnEl.style.display = 'none';
       messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -136,18 +115,30 @@ button.send:hover { transform: translateY(-2px); }
     function addMsg(text, isUser, timestamp, copyable = false) {
       const m = document.createElement('div');
       m.className = `message ${isUser ? 'user' : 'ai'}`;
-      m.innerHTML = `<div>${text}</div>`;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.innerHTML = `<i class="fas ${isUser ? 'fa-user' : 'fa-robot'}"></i>`;
+      m.appendChild(avatar);
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = text;
+
       if (!isUser && copyable) {
         const c = document.createElement('span');
         c.className = 'copy-btn';
         c.innerHTML = '<i class="fas fa-copy"></i>';
         c.addEventListener('click', () => navigator.clipboard.writeText(text));
-        m.appendChild(c);
+        bubble.appendChild(c);
       }
+
       const md = document.createElement('div');
       md.className = 'metadata';
       md.textContent = new Date(timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-      m.appendChild(md);
+      bubble.appendChild(md);
+
+      m.appendChild(bubble);
       messagesEl.appendChild(m);
       scrollToBottom();
     }
@@ -155,7 +146,7 @@ button.send:hover { transform: translateY(-2px); }
     // Load conversation threads
     async function loadThreads() {
       try {
-        const res = await fetch('https://dev.olomek.com/api/threads');
+        const res = await fetch('/api/threads');
         const threads = await res.json();
         threadsEl.innerHTML = '<h2>Unterhaltungen</h2>';
         threads.forEach(thread => {
@@ -178,7 +169,7 @@ button.send:hover { transform: translateY(-2px); }
       document.querySelectorAll('.thread').forEach(t => t.classList.remove('active'));
       document.querySelector(`.thread[data-conversation-id="${id}"]`).classList.add('active');
       try {
-        const res = await fetch(`https://dev.olomek.com/api/threads/${id}`);
+        const res = await fetch(`/api/threads/${id}`);
         const conversation = await res.json();
         conversation.messages.forEach(msg => {
           addMsg(msg.text, msg.isUser, msg.timestamp, !msg.isUser);
@@ -214,7 +205,7 @@ button.send:hover { transform: translateY(-2px); }
       sendBtnEl.disabled = true;
       typingEl.style.display = 'flex';
       try {
-        const res = await fetch('https://dev.olomek.com/api/chat', {
+        const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: txt, conversationId })
