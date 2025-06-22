@@ -23,7 +23,8 @@ async function summarizeConversation(messages) {
     const summaryMessage = {
       text: `Summary: ${summary}`,
       isUser: false,
-      timestamp: new Date()
+      // Use ISO string to match the timestamp format of other messages
+      timestamp: new Date().toISOString()
     };
     // Keep last 2 messages to maintain recent context
     return [summaryMessage, ...messages.slice(-2)];
