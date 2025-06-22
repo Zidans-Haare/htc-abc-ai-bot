@@ -46,4 +46,4 @@ The log entry includes a timestamp and the original prompt.
 Zur Auflistung aller noch offenen Fragen kann `GET /api/unanswered` verwendet werden. Eine Antwort 
 kann – zusammen mit der ursprünglichen Frage – 
 mittels `POST /api/answer` im JSON-Body übermittelt werden. Eine einfache Administrationsoberfläche
-befindet sich unter `public/admin.html`.
+befindet sich unter `public/Admin/index.html`.
