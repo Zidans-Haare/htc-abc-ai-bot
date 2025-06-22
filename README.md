@@ -15,6 +15,7 @@ This project provides a simple Node.js server that exposes an API endpoint for a
    ```env
    API_KEY=your-google-api-key
    PORT=3000 # optional, defaults to 3000
+   ADMIN_PASSWORD=choose-a-password
    ```
 
 ## Running `server.cjs`
@@ -46,4 +47,5 @@ The log entry includes a timestamp and the original prompt.
 Zur Auflistung aller noch offenen Fragen kann `GET /api/unanswered` verwendet werden. Eine Antwort 
 kann – zusammen mit der ursprünglichen Frage – 
 mittels `POST /api/answer` im JSON-Body übermittelt werden. Eine einfache Administrationsoberfläche
-befindet sich unter `public/Admin/index.html`.
+befindet sich unter `public/Admin/index.html` und ist per HTTP-Basic-Auth durch das in
+`ADMIN_PASSWORD` gesetzte Passwort geschützt.

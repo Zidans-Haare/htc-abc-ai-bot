@@ -152,6 +152,27 @@ app.post('/api/answer', async (req, res) => {
 //});
 
 // Serve static files from the public folder
+const adminPath = path.join(__dirname, 'public', 'Admin');
+const adminStatic = express.static(adminPath);
+
+function requireAdminAuth(req, res, next) {
+  const expected = process.env.ADMIN_PASSWORD;
+  const auth = req.headers.authorization || '';
+  const [scheme, encoded] = auth.split(' ');
+  if (scheme !== 'Basic' || !encoded) {
+    res.set('WWW-Authenticate', 'Basic realm="Admin"');
+    return res.status(401).send('Authentication required');
+  }
+  const [, password] = Buffer.from(encoded, 'base64').toString().split(':');
+  if (!expected || password !== expected) {
+    res.set('WWW-Authenticate', 'Basic realm="Admin"');
+    return res.status(401).send('Authentication failed');
+  }
+  return adminStatic(req, res, next);
+}
+
+app.use('/Admin', requireAdminAuth);
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Catch-all for debugging
