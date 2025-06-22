@@ -4,12 +4,14 @@
   --fg: #1f2937;
   --border: #e5e7eb;
   --accent: #3b82f6;
+  --gradient: linear-gradient(90deg, var(--accent), #8b5cf6);
 }
 [data-theme="dark"] {
   --bg: #1a1a2e;
   --fg: #f3f4f6;
   --border: #374151;
   --accent: #3b82f6;
+  --gradient: linear-gradient(90deg, var(--accent), #8b5cf6);
 }
 * { box-sizing: border-box; }
 body {
@@ -17,26 +19,47 @@ body {
   height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  background: var(--bg);
-  background-image: radial-gradient(circle at 0 0, rgba(0,0,0,0.05), transparent 70%);
+  background: linear-gradient(135deg, #eef2ff, #fafafa);
   color: var(--fg);
   font-family: 'Inter', sans-serif;
+  overflow: hidden;
 }
-header {
+.app-header {
   grid-row: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background: linear-gradient(90deg, var(--accent), #8b5cf6);
-  color: white;
   position: sticky;
   top: 0;
   z-index: 50;
-  backdrop-filter: saturate(180%) blur(10px);
+  color: #fff;
+  background: var(--gradient);
   box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.branding {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.branding .logo {
+  font-size: 1.75rem;
+}
+.branding .title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+.branding .subtitle {
+  font-size: 0.875rem;
+  opacity: 0.8;
+  margin: 0;
+  line-height: 1;
+}
 .actions { display: flex; gap: 1rem; align-items: center; }
 .actions button {
   background: transparent;
@@ -47,21 +70,23 @@ header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
   transition: transform .2s;
 }
 .actions button:hover { transform: scale(1.1); }
-#main {
+#main,
+.app-main {
   grid-row: 2;
   display: grid;
   grid-template-columns: 300px 1fr;
   height: 100%;
   overflow: hidden;
 }
-@media (max-width: 768px) { #main { grid-template-columns: 1fr; } }
-#threads {
-  background: var(--bg);
+@media (max-width: 768px) { #main, .app-main { grid-template-columns: 1fr; } }
+.threads-panel {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(6px);
   border-right: 1px solid var(--border);
   padding: 1rem;
   overflow-y: auto;
 }
-#threads h2 { margin: 0 0 1rem; font-size: 1.125rem; font-weight: 500; }
+.threads-panel h2 { margin: 0 0 1rem; font-size: 1.125rem; font-weight: 500; }
 .thread {
   padding: .75rem 1rem;
   border-radius: .75rem;
@@ -74,11 +99,13 @@ header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
   color: white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-@media (max-width: 768px) { #threads { display: none; } }
+@media (max-width: 768px) { .threads-panel { display: none; } }
+.chat-panel,
 #chat {
   display: flex;
   flex-direction: column;
   background: var(--bg);
+  background-image: radial-gradient(circle at 25% 100%, rgba(0,0,0,0.05), transparent 70%);
   position: relative;
   height: 100%;
   min-height: 0;
@@ -108,7 +135,7 @@ header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 .message.user .bubble {
-  background: var(--accent);
+  background: var(--gradient);
   color: white;
   border-bottom-right-radius: .25rem;
 }
@@ -117,6 +144,7 @@ header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
   border: 1px solid var(--border);
   color: var(--fg);
   border-bottom-left-radius: .25rem;
+  backdrop-filter: saturate(120%) blur(2px);
 }
 .avatar {
   width: 2.25rem;
@@ -177,13 +205,14 @@ header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
   transition: transform .2s;
 }
 #scroll-btn:hover { transform: scale(1.1); }
-#input {
+.input-area {
   grid-row: 3;
-  background: var(--bg);
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(6px);
   border-top: 1px solid var(--border);
   padding: 1rem 2rem;
 }
-@media (max-width: 768px) { #input { padding: .75rem 1rem; } }
+@media (max-width: 768px) { .input-area { padding: .75rem 1rem; } }
 .wrapper {
   max-width: 900px;
   margin: 0 auto;
