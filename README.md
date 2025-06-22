@@ -40,3 +40,8 @@ If the Gemini API responds with
 "Diese Frage kann basierend auf den bereitgestellten Informationen nicht beantwortet werden",
 this question is logged to `ai_fragen/offene_fragen.txt` for later review.
 The log entry includes a timestamp and the original prompt.
+
+## Conversation Threads
+
+- `GET /api/threads` lists stored conversations.
+- `GET /api/threads/:id` returns messages for a conversation.
