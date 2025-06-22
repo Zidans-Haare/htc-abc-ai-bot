@@ -146,6 +146,61 @@ app.post('/api/answer', async (req, res) => {
   }
 });
 
+// Return list of already answered questions
+app.get('/api/answered', async (req, res) => {
+  try {
+    const faqFile = path.resolve(__dirname, 'ai_input/faq.txt');
+    const data = await fs.promises.readFile(faqFile, 'utf8');
+    const lines = data.split(/\n+/).filter(Boolean);
+    const result = [];
+    for (let i = 0; i < lines.length; i++) {
+      const qMatch = lines[i].match(/^F:(.*)/);
+      const aMatch = lines[i + 1] && lines[i + 1].match(/^A:(.*)/);
+      if (qMatch && aMatch) {
+        result.push({
+          question: qMatch[1].trim(),
+          answer: aMatch[1].trim()
+        });
+        i++; // skip next line
+      }
+    }
+    res.json(result);
+  } catch (err) {
+    console.error('Failed to read answered questions:', err);
+    res.status(500).json({ error: 'Failed to read answered questions' });
+  }
+});
+
+// Update an existing answer
+app.post('/api/update', async (req, res) => {
+  const { question, answer } = req.body || {};
+  if (!question || !answer) {
+    return res.status(400).json({ error: 'question and answer required' });
+  }
+  try {
+    const faqFile = path.resolve(__dirname, 'ai_input/faq.txt');
+    const lines = (await fs.promises.readFile(faqFile, 'utf8')).split(/\n/);
+    let found = false;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith('F:') && lines[i].slice(2).trim() === question) {
+        if (i + 1 < lines.length && lines[i + 1].startsWith('A:')) {
+          lines[i + 1] = `A:${answer}`;
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!found) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+    await fs.promises.writeFile(faqFile, lines.join('\n'), 'utf8');
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Failed to update answer:', err);
+    res.status(500).json({ error: 'Failed to update answer' });
+  }
+});
+
 // Basic health check
 //app.get("/", (req, res) => {
 //  res.send("Gemini Assistant API is running");
