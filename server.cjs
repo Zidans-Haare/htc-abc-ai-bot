@@ -40,10 +40,8 @@ app.use((req, res, next) => {
   next();
 });
 
-
 // Routes
 app.post("/api/chat", generateResponse);
-
 
 // List all stored conversation threads
 app.get("/api/threads", async (req, res) => {
