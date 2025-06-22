@@ -155,7 +155,7 @@ button.send:hover { transform: translateY(-2px); }
     // Load conversation threads
     async function loadThreads() {
       try {
-        const res = await fetch('https://dev.olomek.com/api/threads');
+        const res = await fetch('/api/threads');
         const threads = await res.json();
         threadsEl.innerHTML = '<h2>Unterhaltungen</h2>';
         threads.forEach(thread => {
@@ -178,7 +178,7 @@ button.send:hover { transform: translateY(-2px); }
       document.querySelectorAll('.thread').forEach(t => t.classList.remove('active'));
       document.querySelector(`.thread[data-conversation-id="${id}"]`).classList.add('active');
       try {
-        const res = await fetch(`https://dev.olomek.com/api/threads/${id}`);
+        const res = await fetch(`/api/threads/${id}`);
         const conversation = await res.json();
         conversation.messages.forEach(msg => {
           addMsg(msg.text, msg.isUser, msg.timestamp, !msg.isUser);
@@ -214,7 +214,7 @@ button.send:hover { transform: translateY(-2px); }
       sendBtnEl.disabled = true;
       typingEl.style.display = 'flex';
       try {
-        const res = await fetch('https://dev.olomek.com/api/chat', {
+        const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: txt, conversationId })

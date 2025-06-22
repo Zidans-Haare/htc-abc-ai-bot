@@ -168,4 +168,4 @@ async function generateResponse(req, res) {
   }
 }
 
-module.exports = { generateResponse };
+module.exports = { generateResponse, Conversation };

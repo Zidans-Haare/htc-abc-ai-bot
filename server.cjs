@@ -9,7 +9,8 @@ const fs = require('fs');
 const express = require("express");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
-const { generateResponse } = require("./controllers/geminiController.cjs");
+const { generateResponse, Conversation } = require("./controllers/geminiController.cjs");
+const { Op } = require('sequelize');
 const path = require('path');
 
 const pid = process.pid;
@@ -43,6 +44,38 @@ app.use((req, res, next) => {
 
 // Routes
 app.post("/api/chat", generateResponse);
+
+// List all stored conversation threads
+app.get("/api/threads", async (req, res) => {
+  try {
+    const conversations = await Conversation.findAll({
+      attributes: ['conversationId', 'createdAt'],
+      order: [['createdAt', 'DESC']]
+    });
+    const threads = conversations.map(c => ({
+      conversationId: c.conversationId,
+      createdAt: c.createdAt
+    }));
+    res.json(threads);
+  } catch (err) {
+    console.error('Failed to fetch threads:', err.message);
+    res.status(500).json({ error: 'Unable to fetch threads' });
+  }
+});
+
+// Fetch messages for a specific conversation
+app.get("/api/threads/:id", async (req, res) => {
+  try {
+    const convo = await Conversation.findOne({ where: { conversationId: req.params.id } });
+    if (!convo) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+    res.json({ conversationId: convo.conversationId, messages: convo.messages });
+  } catch (err) {
+    console.error('Failed to fetch conversation:', err.message);
+    res.status(500).json({ error: 'Unable to fetch conversation' });
+  }
+});
 
 // Basic health check
 //app.get("/", (req, res) => {
