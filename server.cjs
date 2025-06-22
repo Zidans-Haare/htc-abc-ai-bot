@@ -62,7 +62,7 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   // Save PID to file
-  fs.writeFileSync('server.pid', pid.toString(), (err) => {
+  fs.writeFile('server.pid', pid.toString(), err => {
     if (err) console.error('Error writing PID to server.pid:', err);
   });
 });
