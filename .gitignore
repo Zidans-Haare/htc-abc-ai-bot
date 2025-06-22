@@ -2,4 +2,5 @@ node_modules/
 nohup.out
 server.pid
 ai_fragen/offene_fragen.txt
+cron/cron.log
 chatbot.db
