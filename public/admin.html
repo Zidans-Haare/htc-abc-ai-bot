@@ -1,55 +1,11 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Unbeantwortete Fragen</title>
-  <script defer src="https://cdn.tailwindcss.com"></script>
+  <meta http-equiv="refresh" content="0; url=/Admin/">
+  <title>Redirecting...</title>
 </head>
-<body class="p-6 font-sans">
-  <h1 class="text-2xl font-bold mb-4">Unbeantwortete Fragen</h1>
-  <ul id="questions" class="space-y-4"></ul>
-
-  <script>
-  async function load() {
-    const list = document.getElementById('questions');
-    list.innerHTML = '';
-    try {
-      const res = await fetch('/api/unanswered');
-      const questions = await res.json();
-      if (!Array.isArray(questions)) return;
-      questions.forEach(q => {
-        const li = document.createElement('li');
-        li.className = 'border p-4 rounded';
-        const form = document.createElement('form');
-        form.innerHTML = `
-          <p class="mb-2 font-medium">${q}</p>
-          <input type="hidden" name="question" value="${q}">
-          <input name="answer" class="border p-2 w-full mb-2" placeholder="Antwort" required>
-          <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Senden</button>
-        `;
-        form.addEventListener('submit', async e => {
-          e.preventDefault();
-          const data = {
-            question: q,
-            answer: form.answer.value
-          };
-          const resp = await fetch('/api/answer', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-          });
-          if (resp.ok) li.remove();
-        });
-        li.appendChild(form);
-        list.appendChild(li);
-      });
-    } catch (err) {
-      list.innerHTML = '<li>Fehler beim Laden</li>';
-      console.error(err);
-    }
-  }
-  load();
-  </script>
+<body>
+  <p>Redirecting to <a href="/Admin/">/Admin/</a>...</p>
 </body>
 </html>
