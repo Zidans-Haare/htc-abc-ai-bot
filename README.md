@@ -49,3 +49,4 @@ kann – zusammen mit der ursprünglichen Frage –
 mittels `POST /api/answer` im JSON-Body übermittelt werden. Eine einfache Administrationsoberfläche
 befindet sich unter `public/Admin/index.html` und ist per HTTP-Basic-Auth durch das in
 `ADMIN_PASSWORD` gesetzte Passwort geschützte Verzeichnis zugänglich. Standardmäßig ist das Passwort `tommy123`.
+Die vorherige Datei `public/admin.html` bleibt als Weiterleitung erhalten und führt automatisch auf das neue Verzeichnis.
