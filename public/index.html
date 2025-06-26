@@ -132,7 +132,21 @@
 
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
-      bubble.innerHTML = text;
+	  
+	  // Convert plain text to HTML if it contains markup-like formatting
+      let formattedText = text;
+      if (!isUser) {
+        formattedText = formattedText
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/^\s*-\s*(.*)$/gm, '<li>$1</li>')
+          .replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>')
+          .replace(/^##\s*(.*)$/gm, '<h2>$1</h2>')
+          .replace(/^#\s*(.*)$/gm, '<h1>$1</h1>')
+		  .replace(/\n/g, '<br>');
+      }
+      bubble.innerHTML = formattedText;
+
 
       if (!isUser && copyable) {
         const c = document.createElement('span');
