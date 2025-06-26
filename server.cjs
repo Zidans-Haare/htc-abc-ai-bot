@@ -1,9 +1,18 @@
 // run on all-inkl.com:
+//
+// old way:
 // 	$ nohup node server.cjs &
 // kill 
 //	$ kill -9 $(cat server.pid) 
 // restart
 //	$ kill -9 $(cat server.pid) ; sleep 1 ; nohup node server.cjs &
+//
+// new way: pm2 to start the server
+// 		$ cd dev.olomek.com ; pm2 kill ; nohup pm2 start server_pm2_watch.ecosystem.config.js ; pm2 list
+// end pm2
+//		$ pm2 kill
+// log
+//		$ pm2 log server
 
 const fs = require('fs');
 const express = require("express");

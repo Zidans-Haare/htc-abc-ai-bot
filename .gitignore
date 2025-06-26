@@ -3,3 +3,4 @@ nohup.out
 server.pid
 ai_fragen/offene_fragen.txt
 chatbot.db
+chatbot.db-journal
