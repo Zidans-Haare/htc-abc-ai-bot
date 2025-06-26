@@ -46,14 +46,6 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(bodyParser.json());
 
-// workaround for all-inkl.com webhost. the jsnode server seems to inject /components/ into the request url (unknown reason).
-app.use((req, res, next) => {
-  if (req.url.startsWith("/components/")) {
-    req.url = req.url.replace(/^\/components/, "");
-    console.log(`Rewrote URL to: ${req.url}`);
-  }
-  next();
-});
 
 
 // Log all incoming requests
