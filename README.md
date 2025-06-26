@@ -40,3 +40,10 @@ If the Gemini API responds with
 "Diese Frage kann basierend auf den bereitgestellten Informationen nicht beantwortet werden",
 this question is logged to `ai_fragen/offene_fragen.txt` for later review.
 The log entry includes a timestamp and the original prompt.
+
+## Verwalten unbeantworteter Fragen
+
+Zur Auflistung aller noch offenen Fragen kann `GET /api/unanswered` verwendet werden. Eine Antwort 
+kann – zusammen mit der ursprünglichen Frage – 
+mittels `POST /api/answer` im JSON-Body übermittelt werden. Eine einfache Administrationsoberfläche
+befindet sich unter `public/admin.html`.

@@ -12,25 +12,34 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous">
 </head>
 <body>
-  <header>
-    <h1>Alex – HTW Dresden AI Assistant</h1>
-    <div class="actions">
-      <button id="theme-toggle" title="Theme wechseln"><i class="fas fa-adjust"></i></button>
-      <span id="current-time"></span>
-      <button id="new-chat" title="Neues Gespräch"><i class="fas fa-plus"></i></button> <button id="settings-btn" title="Einstellungen"><i class="fas fa-cog"></i></button>
+  <header class="app-header">
+    <div class="header-content">
+      <div class="branding">
+        <i class="fas fa-graduation-cap logo"></i>
+        <div class="text">
+          <h1 class="title">Alex</h1>
+          <p class="subtitle">HTW Dresden AI Assistant</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="theme-toggle" title="Theme wechseln"><i class="fas fa-adjust"></i></button>
+        <span id="current-time"></span>
+        <button id="new-chat" title="Neues Gespräch"><i class="fas fa-plus"></i></button>
+        <button id="settings-btn" title="Einstellungen"><i class="fas fa-cog"></i></button>
+      </div>
     </div>
   </header>
-  <div id="main">
-    <aside id="threads">
+  <div id="main" class="app-main">
+    <aside id="threads" class="threads-panel">
       <h2>Unterhaltungen</h2>
       <div class="thread active">Aktuelles Gespräch</div>
     </aside>
-    <section id="chat">
+    <section id="chat" class="chat-panel">
       <div id="messages"></div>
       <div id="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
     </section>
   </div>
-  <div id="input">
+  <div id="input" class="input-area">
     <div class="wrapper">
       <textarea id="chat-input" placeholder="Stelle deine Frage..." rows="1"></textarea>
       <button class="send" id="send-btn"><i class="fas fa-paper-plane"></i></button>
@@ -146,7 +155,7 @@
     // Load conversation threads
     async function loadThreads() {
       try {
-        const res = await fetch('https://dev.olomek.com/api/threads');
+        const res = await fetch('/api/threads');
         const threads = await res.json();
         threadsEl.innerHTML = '<h2>Unterhaltungen</h2>';
         threads.forEach(thread => {
@@ -169,7 +178,7 @@
       document.querySelectorAll('.thread').forEach(t => t.classList.remove('active'));
       document.querySelector(`.thread[data-conversation-id="${id}"]`).classList.add('active');
       try {
-        const res = await fetch(`https://dev.olomek.com/api/threads/${id}`);
+        const res = await fetch(`/api/threads/${id}`);
         const conversation = await res.json();
         conversation.messages.forEach(msg => {
           addMsg(msg.text, msg.isUser, msg.timestamp, !msg.isUser);
@@ -205,7 +214,7 @@
       sendBtnEl.disabled = true;
       typingEl.style.display = 'flex';
       try {
-        const res = await fetch('https://dev.olomek.com/api/chat', {
+        const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: txt, conversationId })
