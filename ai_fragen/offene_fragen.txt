@@ -1,19 +1,8 @@
 [8.6.2025, 13:25:16] Frage: Tell me a joke
 [8.6.2025, 13:25:54] Frage: Wer ist im Studentenrat?
 [8.6.2025, 15:23:42] Frage: Tell me a joke
-[8.6.2025, 18:51:24] Frage: hi
 [8.6.2025, 18:54:23] Frage: wer kann gez bezahlen
-[8.6.2025, 19:02:25] Frage: test
-[8.6.2025, 19:05:02] Frage: test
-[8.6.2025, 19:06:31] Frage: test
-[8.6.2025, 19:08:26] Frage: test
-[8.6.2025, 19:17:05] Frage: test
-[8.6.2025, 19:22:21] Frage: hi
-[8.6.2025, 19:32:40] Frage: hi
-[8.6.2025, 19:35:27] Frage: test
-[8.6.2025, 20:10:09] Frage: f
 [8.6.2025, 20:10:23] Frage: Wie komme ich vom A Gebäude zum Z Gebäude?
-[8.6.2025, 20:11:30] Frage: Test
 [8.6.2025, 20:13:24] Frage: Wie komme ich vom A Gebäude zum Z Gebäude?
 [8.6.2025, 20:13:50] Frage: Wer ist der Ansprechpartner für Maschinenbau?
 [8.6.2025, 20:16:46] Frage: Schreibe mir eine Email für die Stabstelle Internationales, ich möchte ins Ausland nach Italien
@@ -21,13 +10,6 @@
 [8.6.2025, 20:18:28] Frage: Hast du die Kontaktdaten für Herrn Gestring?
 [8.6.2025, 20:18:44] Frage: Hast du die Kontaktdaten für Ingo Gestring?
 [8.6.2025, 20:19:02] Frage: Exmatrikuliert, was jetzt?
-[8.6.2025, 20:19:51] Frage: Nick Olomek
-[8.6.2025, 21:01:24] Frage: Test
-[8.6.2025, 22:28:53] Frage: test
-[9.6.2025, 06:54:27] Frage: Hallo
-[9.6.2025, 07:08:49] Frage: test
-[9.6.2025, 07:08:53] Frage: test
-[11.6.2025, 16:05:06] Frage: Test
 [11.6.2025, 18:45:50] Frage: Who is that again?
 [14.6.2025, 09:06:54] Frage: was war meine erste frage?
-[14.6.2025, 09:07:51] Frage: test
+
