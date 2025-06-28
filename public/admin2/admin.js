@@ -290,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeCheckbox = document.getElementById('active-toggle');
   const saveBtn = document.getElementById('save-btn');
   const deleteBtn = document.getElementById('delete-btn');
+  deleteBtn.disabled = true;
 
   let currentId = null;
   let allHeadlines = [];
@@ -338,6 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
       editorNameInput.value = entry.editor || '';
       quill.root.innerHTML = entry.text;
       activeCheckbox.checked = !!entry.active;
+      deleteBtn.disabled = false;
     } catch (err) {
       console.error('Failed to load entry', err);
     }
@@ -379,6 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         currentId = data.id;
         await loadHeadlines();
+        deleteBtn.disabled = false;
         alert('Gespeichert');
       }
     } catch (err) {
@@ -404,6 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editorNameInput.value = '';
         quill.root.innerHTML = '';
         activeCheckbox.checked = false;
+        deleteBtn.disabled = true;
         await loadHeadlines();
         alert('Gelöscht');
       }
@@ -421,6 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editorNameInput.value = '';
     quill.root.innerHTML = '';
     activeCheckbox.checked = true;
+    deleteBtn.disabled = true;
   });
 
   async function loadArchive() {
