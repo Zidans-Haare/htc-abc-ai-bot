@@ -15,7 +15,11 @@ This project provides a simple Node.js server that exposes an API endpoint for a
    ```env
    API_KEY=your-google-api-key
    PORT=3000 # optional, defaults to 3000
+   ADMIN_TOKEN=choose-a-secret-token
    ```
+
+   Requests to admin endpoints (e.g. `/api/admin/*`, `/api/answer`, `/api/update`)
+   must include this token in the `Authorization` header as `Bearer <token>`.
 
 ## Running `server.cjs`
 

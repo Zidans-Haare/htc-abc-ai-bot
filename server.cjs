@@ -27,6 +27,7 @@ const ConversationModel = require('./models/Conversation');
 const pid = process.pid;
 
 dotenv.config();
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 // Setup database connection for conversation threads
 const sequelize = new Sequelize({
@@ -46,6 +47,15 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
+
+function adminAuth(req, res, next) {
+  if (!ADMIN_TOKEN) return next();
+  const header = req.headers['authorization'] || '';
+  if (header === `Bearer ${ADMIN_TOKEN}`) {
+    return next();
+  }
+  res.status(401).json({ error: 'Unauthorized' });
+}
 
 
 
@@ -96,7 +106,7 @@ app.get('/api/threads/:id', async (req, res) => {
 });
 
 // Return list of unanswered questions
-app.get('/api/unanswered', async (req, res) => {
+app.get('/api/unanswered', adminAuth, async (req, res) => {
   try {
     const file = path.resolve(__dirname, 'ai_fragen/offene_fragen.txt');
     const data = await fs.promises.readFile(file, 'utf8');
@@ -116,7 +126,7 @@ app.get('/api/unanswered', async (req, res) => {
 });
 
 // Submit an answer for a question
-app.post('/api/answer', async (req, res) => {
+app.post('/api/answer', adminAuth, async (req, res) => {
   const { question, answer } = req.body || {};
   if (!question || !answer) {
     return res.status(400).json({ error: 'question and answer required' });
@@ -149,7 +159,7 @@ app.post('/api/answer', async (req, res) => {
 });
 
 // Return list of already answered questions
-app.get('/api/answered', async (req, res) => {
+app.get('/api/answered', adminAuth, async (req, res) => {
   try {
     const faqFile = path.resolve(__dirname, 'ai_input/faq.txt');
     const data = await fs.promises.readFile(faqFile, 'utf8');
@@ -174,7 +184,7 @@ app.get('/api/answered', async (req, res) => {
 });
 
 // Update an existing answer
-app.post('/api/update', async (req, res) => {
+app.post('/api/update', adminAuth, async (req, res) => {
   const { question, answer } = req.body || {};
   if (!question || !answer) {
     return res.status(400).json({ error: 'question and answer required' });
@@ -206,6 +216,7 @@ app.post('/api/update', async (req, res) => {
 
 
 // Admin routes Grok/thomas
+app.use('/api/admin', adminAuth);
 app.get("/api/admin/headlines", getHeadlines);
 app.get("/api/admin/entries/:id", getEntry);
 app.post("/api/admin/entries", createEntry);
