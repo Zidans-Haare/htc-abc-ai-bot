@@ -1,4 +1,35 @@
 document.addEventListener('DOMContentLoaded', () => {
+  function ensureLoggedIn() {
+    let token = sessionStorage.getItem('adminToken');
+    while (token !== 'htw123') {
+      const pwd = prompt('Admin Passwort eingeben:');
+      if (pwd === null) {
+        alert('Login erforderlich');
+      } else if (pwd === 'htw123') {
+        token = pwd;
+        sessionStorage.setItem('adminToken', token);
+      }
+      if (token) break;
+    }
+  }
+
+  ensureLoggedIn();
+
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = async (input, init = {}) => {
+    init.headers = init.headers || {};
+    const token = sessionStorage.getItem('adminToken');
+    if (token) {
+      init.headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await originalFetch(input, init);
+    if (res.status === 401) {
+      sessionStorage.removeItem('adminToken');
+      alert('Session abgelaufen, bitte erneut anmelden');
+      location.reload();
+    }
+    return res;
+  };
   // Tabs for switching between editor and question management
   const editorBtn = document.getElementById('btn-editor');
   const questionsBtn = document.getElementById('btn-questions');
