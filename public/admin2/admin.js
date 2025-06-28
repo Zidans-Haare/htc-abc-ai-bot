@@ -127,11 +127,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // initially show editor
   showEditor();
 
+
+=======
+
   const listEl = document.getElementById('headline-list');
   const searchEl = document.getElementById('search');
   const editorEl = document.getElementById('editor');
   const addBtn = document.getElementById('add-heading');
   const pane = document.getElementById('editor-pane');
+
 
   const placeholderText = editorEl.dataset.placeholder || '';
 
@@ -161,6 +165,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   showPlaceholder();
+=======
+  const boldBtn = document.getElementById('btn-bold');
+  const italicBtn = document.getElementById('btn-italic');
+  const linkBtn = document.getElementById('btn-link');
+  const headingBtn = document.getElementById('btn-heading');
+
+  function exec(command, arg = null) {
+    document.execCommand(command, false, arg);
+    editorEl.focus();
+  }
+
+  boldBtn.addEventListener('click', () => exec('bold'));
+  italicBtn.addEventListener('click', () => exec('italic'));
+  linkBtn.addEventListener('click', () => {
+    const url = prompt('Enter link URL');
+    if (url) exec('createLink', url);
+  });
+  headingBtn.addEventListener('click', () => exec('formatBlock', 'h2'));
+
 
   // create headline input
   const headlineInput = document.createElement('input');
