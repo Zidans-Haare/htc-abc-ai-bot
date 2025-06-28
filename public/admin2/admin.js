@@ -1,27 +1,47 @@
 
 document.addEventListener('DOMContentLoaded', () => {
+  /*
   const loginScreen = document.getElementById('login-screen');
   const loginForm = document.getElementById('login-form');
   const userInput = document.getElementById('login-user');
   const passInput = document.getElementById('login-pass');
 
   async function doLogin(u,p){
-    const res = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
-    if(res.ok){
-      const data=await res.json();
-      sessionStorage.setItem('sessionToken',data.token);
-      sessionStorage.setItem('userRole', data.role);
-      loginScreen.classList.add('hidden');
-      init();
-    }else{alert('Login fehlgeschlagen');}
+    try {
+      const res = await fetch('/api/login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:u,password:p})
+      });
+      if(res.ok){
+        const data=await res.json();
+        sessionStorage.setItem('sessionToken',data.token);
+        sessionStorage.setItem('userRole', data.role);
+        loginScreen.classList.add('hidden');
+        afterLogin();
+      } else if (res.status === 401) {
+        alert('Login fehlgeschlagen');
+      } else {
+        const msg = await res.text().catch(() => res.statusText);
+        alert('Login fehlgeschlagen: ' + msg);
+      }
+    } catch (err) {
+      alert('Server nicht erreichbar');
+      console.error('Login error:', err);
+    }
   }
 
   loginForm.addEventListener('submit',e=>{e.preventDefault();doLogin(userInput.value,passInput.value);});
 
   if(sessionStorage.getItem('sessionToken')){
     loginScreen.classList.add('hidden');
-    init();
+    afterLogin();
   }
+  */
+
+  // always prepare the interface so buttons are wired even before login
+  init();
+  afterLogin();
 
   function init() {
   const originalFetch = window.fetch.bind(window);
@@ -257,15 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // initially show editor
-  showEditor();
-  loadOpen();
-
-
-
-
-
-
+  // show editor after successful login
   const listEl = document.getElementById('headline-list');
   const searchEl = document.getElementById('search');
   const quill = new Quill('#editor', {
@@ -564,7 +576,12 @@ document.addEventListener('DOMContentLoaded', () => {
   archiveSearch.addEventListener('input', renderArchive);
   archiveSort.addEventListener('change', renderArchive);
 
-  loadHeadlines();
+  }
+
+  function afterLogin(){
+    showEditor();
+    loadOpen();
+    loadHeadlines();
   }
 
 });
