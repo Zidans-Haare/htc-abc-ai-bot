@@ -18,7 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('sessionToken',data.token);
         sessionStorage.setItem('userRole', data.role);
         loginScreen.classList.add('hidden');
+
         afterLogin();
+=======
+
+        afterLogin();
+=======
+        init();
+
+
       } else if (res.status === 401) {
         alert('Login fehlgeschlagen');
       } else {
@@ -32,6 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loginForm.addEventListener('submit',e=>{e.preventDefault();doLogin(userInput.value,passInput.value);});
+
+  // always prepare the interface so buttons are wired even before login
+  init();
 
   if(sessionStorage.getItem('sessionToken')){
     loginScreen.classList.add('hidden');
