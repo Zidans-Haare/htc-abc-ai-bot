@@ -1,3 +1,5 @@
+const AUTH_TOKEN = 'htw123';
+
 document.addEventListener('DOMContentLoaded', () => {
   // Tabs for switching between editor and question management
   const editorBtn = document.getElementById('btn-editor');
@@ -58,7 +60,12 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadOpen() {
     openList.innerHTML = '';
     try {
-      const res = await fetch('/api/unanswered');
+      const res = await fetch('/api/unanswered', {
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
       const questions = await res.json();
       if (!Array.isArray(questions)) return;
       questions.forEach(q => {
@@ -76,7 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const data = { question: q, answer: form.answer.value };
           const resp = await fetch('/api/answer', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              Authorization: `Bearer ${AUTH_TOKEN}`,
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify(data)
           });
           if (resp.ok) div.remove();
@@ -93,7 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadAnswered() {
     answeredList.innerHTML = '';
     try {
-      const res = await fetch('/api/answered');
+      const res = await fetch('/api/answered', {
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
       const pairs = await res.json();
       if (!Array.isArray(pairs)) return;
       pairs.forEach(p => {
@@ -111,7 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const data = { question: p.question, answer: form.answer.value };
           await fetch('/api/update', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              Authorization: `Bearer ${AUTH_TOKEN}`,
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify(data)
           });
         });
@@ -126,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // initially show editor
   showEditor();
-=======
   const listEl = document.getElementById('headline-list');
   const searchEl = document.getElementById('search');
   const editorEl = document.getElementById('editor');
@@ -174,7 +191,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadHeadlines() {
     try {
-      const res = await fetch('/api/admin/headlines');
+      const res = await fetch('/api/admin/headlines', {
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
       allHeadlines = await res.json();
       renderHeadlines(allHeadlines);
     } catch (err) {
@@ -196,7 +218,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadEntry(id) {
     try {
-      const res = await fetch(`/api/admin/entries/${id}`);
+      const res = await fetch(`/api/admin/entries/${id}`, {
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (!res.ok) return;
       const entry = await res.json();
       currentId = entry.id;
@@ -220,13 +247,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentId) {
         res = await fetch(`/api/admin/entries/${currentId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            Authorization: `Bearer ${AUTH_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify(payload)
         });
       } else {
         res = await fetch('/api/admin/entries', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            Authorization: `Bearer ${AUTH_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify(payload)
         });
       }
@@ -243,7 +276,13 @@ document.addEventListener('DOMContentLoaded', () => {
   async function deleteEntry() {
     if (!currentId) return;
     try {
-      const res = await fetch(`/api/admin/entries/${currentId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/entries/${currentId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (res.ok) {
         currentId = null;
         headlineInput.value = '';
