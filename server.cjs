@@ -19,6 +19,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const { generateResponse } = require("./controllers/geminiController.cjs");
+const { getHeadlines, getEntry, createEntry, updateEntry, deleteEntry } = require("./controllers/adminController.cjs");
 const path = require('path');
 const { Sequelize } = require('sequelize');
 const ConversationModel = require('./models/Conversation');
@@ -202,10 +203,15 @@ app.post('/api/update', async (req, res) => {
   }
 });
 
-// Basic health check
-//app.get("/", (req, res) => {
-//  res.send("Gemini Assistant API is running");
-//});
+
+
+// Admin routes Grok/thomas
+app.get("/api/admin/headlines", getHeadlines);
+app.get("/api/admin/entries/:id", getEntry);
+app.post("/api/admin/entries", createEntry);
+app.put("/api/admin/entries/:id", updateEntry);
+app.delete("/api/admin/entries/:id", deleteEntry);
+
 
 // Serve static files from the public folder
 app.use(express.static(path.join(__dirname, 'public')));
