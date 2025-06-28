@@ -376,6 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         currentId = data.id;
         await loadHeadlines();
+        alert('Gespeichert');
       }
     } catch (err) {
       console.error('Failed to save entry', err);
@@ -399,6 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
         quill.root.innerHTML = '';
         activeCheckbox.checked = false;
         await loadHeadlines();
+        alert('Gelöscht');
       }
     } catch (err) {
       console.error('Failed to delete entry', err);
