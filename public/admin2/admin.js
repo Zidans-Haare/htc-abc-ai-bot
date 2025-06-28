@@ -126,11 +126,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // initially show editor
   showEditor();
+
+=======
+
+
+=======
+
   const listEl = document.getElementById('headline-list');
   const searchEl = document.getElementById('search');
   const editorEl = document.getElementById('editor');
   const addBtn = document.getElementById('add-heading');
   const pane = document.getElementById('editor-pane');
+
+
+  const placeholderText = editorEl.dataset.placeholder || '';
+
+  function showPlaceholder() {
+    if (!editorEl.textContent.trim()) {
+      editorEl.textContent = placeholderText;
+      editorEl.classList.add('text-gray-400');
+      editorEl.dataset.showingPlaceholder = 'true';
+    }
+  }
+
+  function hidePlaceholder() {
+    if (editorEl.dataset.showingPlaceholder === 'true') {
+      editorEl.textContent = '';
+      editorEl.classList.remove('text-gray-400');
+      delete editorEl.dataset.showingPlaceholder;
+    }
+  }
+
+  editorEl.addEventListener('focus', hidePlaceholder);
+  editorEl.addEventListener('blur', showPlaceholder);
+  editorEl.addEventListener('input', () => {
+    if (editorEl.textContent.trim()) {
+      editorEl.classList.remove('text-gray-400');
+      delete editorEl.dataset.showingPlaceholder;
+    }
+  });
+
+  showPlaceholder();
+=======
+  const boldBtn = document.getElementById('btn-bold');
+  const italicBtn = document.getElementById('btn-italic');
+  const linkBtn = document.getElementById('btn-link');
+  const headingBtn = document.getElementById('btn-heading');
+
+  function exec(command, arg = null) {
+    document.execCommand(command, false, arg);
+    editorEl.focus();
+  }
+
+  boldBtn.addEventListener('click', () => exec('bold'));
+  italicBtn.addEventListener('click', () => exec('italic'));
+  linkBtn.addEventListener('click', () => {
+    const url = prompt('Enter link URL');
+    if (url) exec('createLink', url);
+  });
+  headingBtn.addEventListener('click', () => exec('formatBlock', 'h2'));
+
 
   // create headline input
   const headlineInput = document.createElement('input');
@@ -201,6 +256,11 @@ document.addEventListener('DOMContentLoaded', () => {
       currentId = entry.id;
       headlineInput.value = entry.headline;
       editorEl.innerHTML = entry.text;
+      if (entry.text) {
+        hidePlaceholder();
+      } else {
+        showPlaceholder();
+      }
       activeCheckbox.checked = !!entry.active;
     } catch (err) {
       console.error('Failed to load entry', err);
@@ -247,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentId = null;
         headlineInput.value = '';
         editorEl.innerHTML = '';
+        showPlaceholder();
         activeCheckbox.checked = false;
         await loadHeadlines();
       }
@@ -261,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentId = null;
     headlineInput.value = '';
     editorEl.innerHTML = '';
+    showPlaceholder();
     activeCheckbox.checked = true;
   });
 
