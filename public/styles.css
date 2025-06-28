@@ -74,7 +74,7 @@ body {
 .app-main {
   grid-row: 2;
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 1fr;
   height: 100%;
   overflow: hidden;
 }
@@ -103,15 +103,16 @@ body {
   display: flex;
   align-items: flex-end;
   gap: .5rem;
-  max-width: 75%;
+  width: 100%;
   animation: fadeIn .3s ease;
 }
-.message.user { margin-left: auto; flex-direction: row-reverse; }
+.message.user { flex-direction: row-reverse; }
 .bubble {
   padding: 1rem 1.25rem;
   border-radius: 1rem;
   line-height: 1.5;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  flex: 1;
 }
 .message.user .bubble {
   background: var(--gradient);
