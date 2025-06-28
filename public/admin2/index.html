@@ -5,9 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - Hochschuhl ABC Management</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="admin.js"></script>
 </head>
 <body class="bg-gray-100 flex flex-col h-screen">
-  <div class="flex flex-1 overflow-hidden">
+  <!-- Top navigation -->
+  <div class="p-4 bg-white border-b flex space-x-2">
+    <button id="btn-editor" class="px-4 py-2 bg-blue-600 text-white rounded">Editor</button>
+    <button id="btn-questions" class="px-4 py-2 bg-gray-200 rounded">Fragen</button>
+  </div>
+
+  <!-- Editor View -->
+  <div id="editor-view" class="flex flex-1 overflow-hidden">
     <!-- Left Sidebar: Headlines (20%) -->
     <div class="w-1/5 bg-white border-r border-gray-200 flex flex-col">
       <!-- Search Field -->
@@ -58,6 +66,18 @@
       </div>
     </div>
   </div>
+
+
+  <!-- Question Management View -->
+  <div id="questions-view" class="flex flex-col flex-1 hidden p-4 space-y-4 overflow-y-auto">
+    <div class="mb-4 space-x-2">
+      <button id="tab-open" class="px-4 py-2 bg-blue-600 text-white rounded">Offene Fragen</button>
+      <button id="tab-answered" class="px-4 py-2 bg-gray-200 rounded">Bereits beantwortete Fragen</button>
+    </div>
+    <div id="open-list" class="space-y-4"></div>
+    <div id="answered-list" class="space-y-4 hidden"></div>
+  </div>
+=======
   <script src="admin.js" defer></script>
 </body>
 </html>
