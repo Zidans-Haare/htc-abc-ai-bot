@@ -447,8 +447,6 @@ document.addEventListener('DOMContentLoaded', () => {
       w.document.write(`<h1>${entry.headline}</h1>` + entry.text);
     } catch (err) {
       console.error('Preview failed', err);
-=======
-
     }
   }
 
