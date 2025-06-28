@@ -79,8 +79,11 @@ The page communicates with several JSON endpoints:
   `false` and recording the time in `archived`.
 * `GET /api/admin/archive` – return all archived entries ordered by the time they
   were archived.
+
 * `POST /api/admin/restore/:id` – restore an archived entry. The current active
   version (if any) is archived and a new entry is created from the archived data.
+=======
+
 
 Only active records are served by the API. Archived entries remain in the
 database for reference and history tracking.
