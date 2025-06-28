@@ -398,6 +398,9 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadHeadlines();
         deleteBtn.disabled = false;
         alert('Gespeichert');
+      } else {
+        const msg = await res.text().catch(() => res.statusText);
+        alert('Speichern fehlgeschlagen: ' + msg);
       }
     } catch (err) {
       console.error('Failed to save entry', err);
@@ -425,6 +428,9 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteBtn.disabled = true;
         await loadHeadlines();
         alert('Gelöscht');
+      } else {
+        const msg = await res.text().catch(() => res.statusText);
+        alert('Löschen fehlgeschlagen: ' + msg);
       }
     } catch (err) {
       console.error('Failed to delete entry', err);
@@ -459,6 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
     quill.root.innerHTML = '';
     activeCheckbox.checked = true;
     deleteBtn.disabled = true;
+    headlineInput.focus();
   });
 
   async function loadArchive() {
