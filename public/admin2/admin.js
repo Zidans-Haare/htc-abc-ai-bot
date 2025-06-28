@@ -290,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeCheckbox = document.getElementById('active-toggle');
   const saveBtn = document.getElementById('save-btn');
   const deleteBtn = document.getElementById('delete-btn');
+  deleteBtn.disabled = true;
 
   let currentId = null;
   let allHeadlines = [];
@@ -315,10 +316,25 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl.innerHTML = '';
     items.forEach(h => {
       const li = document.createElement('li');
-      li.textContent = h.headline;
-      li.className = 'p-2 hover:bg-gray-100 cursor-pointer rounded';
-      li.dataset.id = h.id;
-      li.addEventListener('click', () => loadEntry(h.id));
+      li.className = 'p-2 hover:bg-gray-100 rounded flex justify-between items-center';
+
+      const span = document.createElement('span');
+      span.textContent = h.headline;
+      span.className = 'cursor-pointer flex-grow';
+      span.addEventListener('click', () => loadEntry(h.id));
+      li.appendChild(span);
+
+      const link = document.createElement('a');
+      link.href = '#';
+      link.className = 'text-blue-600 text-sm ml-2';
+      link.textContent = '↗';
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openPreview(h.id);
+      });
+      li.appendChild(link);
+
       listEl.appendChild(li);
     });
   }
@@ -338,6 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
       editorNameInput.value = entry.editor || '';
       quill.root.innerHTML = entry.text;
       activeCheckbox.checked = !!entry.active;
+      deleteBtn.disabled = false;
     } catch (err) {
       console.error('Failed to load entry', err);
     }
@@ -350,7 +367,10 @@ document.addEventListener('DOMContentLoaded', () => {
       active: activeCheckbox.checked,
       editor: editorNameInput.value.trim()
     };
-    if (!payload.headline || !payload.text) return;
+    if (!payload.headline || !payload.text) {
+      alert('\u00dcberschrift und Text werden benötigt');
+      return;
+    }
     try {
       let res;
       if (currentId) {
@@ -376,15 +396,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         currentId = data.id;
         await loadHeadlines();
+        deleteBtn.disabled = false;
         alert('Gespeichert');
       }
     } catch (err) {
       console.error('Failed to save entry', err);
+      alert('Speichern fehlgeschlagen');
     }
   }
 
   async function deleteEntry() {
     if (!currentId) return;
+    if (!confirm('Eintrag wirklich löschen?')) return;
     try {
       const res = await fetch(`/api/admin/entries/${currentId}`, {
         method: 'DELETE',
@@ -399,11 +422,30 @@ document.addEventListener('DOMContentLoaded', () => {
         editorNameInput.value = '';
         quill.root.innerHTML = '';
         activeCheckbox.checked = false;
+        deleteBtn.disabled = true;
         await loadHeadlines();
         alert('Gelöscht');
       }
     } catch (err) {
       console.error('Failed to delete entry', err);
+      alert('Löschen fehlgeschlagen');
+    }
+  }
+
+  async function openPreview(id) {
+    try {
+      const res = await fetch(`/api/admin/entries/${id}`, {
+        headers: {
+          'x-session-token': sessionStorage.getItem('sessionToken'),
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!res.ok) return;
+      const entry = await res.json();
+      const w = window.open('', '_blank');
+      w.document.write(`<h1>${entry.headline}</h1>` + entry.text);
+    } catch (err) {
+      console.error('Preview failed', err);
     }
   }
 
@@ -415,6 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editorNameInput.value = '';
     quill.root.innerHTML = '';
     activeCheckbox.checked = true;
+    deleteBtn.disabled = true;
   });
 
   async function loadArchive() {
