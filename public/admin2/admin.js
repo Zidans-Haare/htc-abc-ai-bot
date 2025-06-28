@@ -17,7 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('sessionToken',data.token);
         sessionStorage.setItem('userRole', data.role);
         loginScreen.classList.add('hidden');
+
         afterLogin();
+=======
+        init();
+
       } else if (res.status === 401) {
         alert('Login fehlgeschlagen');
       } else {
