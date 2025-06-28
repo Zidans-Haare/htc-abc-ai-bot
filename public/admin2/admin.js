@@ -40,6 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const openCountSpan = document.getElementById('open-count');
 =======
 
+  const openCountSpan = document.getElementById('open-count');
+=======
+
+
   const editorView = document.getElementById('editor-view');
   const questionsView = document.getElementById('questions-view');
   const archiveView = document.getElementById('archive-view');
@@ -75,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (openCountSpan) openCountSpan.textContent = num;
   }
 
-=======
 
   function showArchive() {
     archiveView.classList.remove('hidden');
@@ -451,7 +454,10 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadArchive() {
 
 =======
+
+=======
     archiveView.innerHTML = '';
+
 
     try {
       const res = await fetch('/api/admin/archive', {
@@ -466,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderArchive();
     } catch (err) {
       archiveList.innerHTML = '<div>Fehler beim Laden</div>';
-=======
+
       const entries = await res.json();
       if (!Array.isArray(entries)) return;
       entries.forEach(e => {
@@ -478,6 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     } catch (err) {
       archiveView.innerHTML = '<div>Fehler beim Laden</div>';
+
 
       console.error('Failed to load archive', err);
     }
@@ -532,7 +539,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-=======
 
   searchEl.addEventListener('input', () => {
     const q = searchEl.value.toLowerCase();

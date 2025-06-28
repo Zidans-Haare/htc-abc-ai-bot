@@ -16,7 +16,13 @@
       <span id="open-count" class="ml-1 text-sm bg-red-500 text-white rounded-full px-2">0</span>
     </button>
 =======
+
+    <button id="btn-questions" class="px-4 py-2 bg-gray-200 rounded">Fragen
+      <span id="open-count" class="ml-1 text-sm bg-red-500 text-white rounded-full px-2">0</span>
+    </button>
+=======
     <button id="btn-questions" class="px-4 py-2 bg-gray-200 rounded">Fragen</button>
+
 
     <button id="btn-archive" class="px-4 py-2 bg-gray-200 rounded">Archiv</button>
   </div>
@@ -37,12 +43,7 @@
       <!-- Headlines List -->
       <div class="flex-1 overflow-y-auto p-4">
         <!-- Headlines will be populated here -->
-        <ul id="headline-list" class="space-y-2">
-          <!-- Placeholder for headlines -->
-          <li class="p-2 hover:bg-gray-100 cursor-pointer rounded">Sample Headline 1</li>
-          <li class="p-2 hover:bg-gray-100 cursor-pointer rounded">Sample Headline 2</li>
-          <li class="p-2 hover:bg-gray-100 cursor-pointer rounded">Sample Headline 3</li>
-        </ul>
+        <ul id="headline-list" class="space-y-2"></ul>
       </div>
       <!-- Add Heading Button -->
       <div class="p-4 border-t border-gray-200">
@@ -63,7 +64,11 @@
       <!-- Editable Text Area -->
       <div
         id="editor"
+
+        class="p-4 bg-white overflow-y-auto h-64 flex-none"
+=======
         class="p-4 bg-white overflow-y-auto h-96 flex-none"
+
         contenteditable="true"
         data-placeholder="Click here to edit the text content..."
       >
@@ -95,12 +100,13 @@
     </div>
     <div id="archive-list" class="space-y-4"></div>
   </div>
-=======
+
   <div id="archive-view" class="flex flex-col flex-1 hidden p-4 space-y-4 overflow-y-auto"></div>
 
 
   <script src="admin.js" defer></script>
   
+
 
 </body>
 </html>
