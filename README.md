@@ -40,7 +40,7 @@ The server writes its process id to `server.pid` so you can stop it using:
 kill -9 $(cat server.pid)
 ```
 
-The server listens on `/api/chat` for POST requests and serves the static files from the `public` directory.
+The server listens on `/api/chat` for POST requests and serves the static files from the `public` directory. Conversation history is stored only in memory and disappears when the server restarts, so chats are private to each session.
 
 ## Handling Unanswered Questions
 
