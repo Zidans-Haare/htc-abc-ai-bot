@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(res.ok){
       const data=await res.json();
       sessionStorage.setItem('sessionToken',data.token);
+      sessionStorage.setItem('userRole', data.role);
       loginScreen.classList.add('hidden');
       init();
     }else{alert('Login fehlgeschlagen');}
@@ -17,7 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loginForm.addEventListener('submit',e=>{e.preventDefault();doLogin(userInput.value,passInput.value);});
 
-  if(sessionStorage.getItem('sessionToken')){loginScreen.classList.add('hidden');init();}
+  if(sessionStorage.getItem('sessionToken')){
+    loginScreen.classList.add('hidden');
+    init();
+  }
 
   function init() {
   const originalFetch = window.fetch.bind(window);
@@ -34,11 +38,28 @@ document.addEventListener('DOMContentLoaded', () => {
       location.reload();
     }
     return res;
-  };
+  }; 
+
+  if(sessionStorage.getItem('userRole')==='admin'){
+    document.getElementById('user-admin').classList.remove('hidden');
+    document.getElementById('create-user').addEventListener('click', async () => {
+      const u = document.getElementById('new-user').value.trim();
+      const p = document.getElementById('new-pass').value.trim();
+      const r = document.getElementById('new-role').value;
+      if(!u||!p) return;
+      await fetch('/api/admin/users', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-session-token':sessionStorage.getItem('sessionToken')},
+        body: JSON.stringify({username:u,password:p,role:r})
+      });
+      alert('User created');
+    });
+  }
   // Tabs for switching between editor and question management
   const editorBtn = document.getElementById('btn-editor');
   const questionsBtn = document.getElementById('btn-questions');
   const archiveBtn = document.getElementById('btn-archive');
+  const exportBtn = document.getElementById('btn-export');
 
   const openCountSpan = document.getElementById('open-count');
 
@@ -95,6 +116,24 @@ document.addEventListener('DOMContentLoaded', () => {
   editorBtn.addEventListener('click', showEditor);
   questionsBtn.addEventListener('click', showQuestions);
   archiveBtn.addEventListener('click', showArchive);
+  exportBtn.addEventListener('click', async () => {
+    const res = await fetch('/api/admin/export', { headers: { 'x-session-token': sessionStorage.getItem('sessionToken') }});
+    if(res.ok){
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      const statsRes = await fetch('/api/admin/stats', { headers: { 'x-session-token': sessionStorage.getItem('sessionToken') }});
+      if(statsRes.ok){
+        const s = await statsRes.json();
+        alert('Gesamt:'+s.total); // simple stats display
+      }
+    }
+  });
 
   // Question management logic (copied from public/admin/index.html)
   const tabOpen = document.getElementById('tab-open');
@@ -229,7 +268,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const listEl = document.getElementById('headline-list');
   const searchEl = document.getElementById('search');
-  const quill = new Quill('#editor', { theme: 'snow', modules: { toolbar: '#quill-toolbar' } });
+  const quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: {
+      toolbar: '#quill-toolbar',
+      table: true,
+      syntax: true
+    }
+  });
   const addBtn = document.getElementById('add-heading');
   const pane = document.getElementById('editor-pane');
   const archiveList = document.getElementById('archive-list');
@@ -241,34 +287,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const headlineInput = document.getElementById('headline-input');
   const editorNameInput = document.getElementById('editor-name');
 
-  // footer controls
-  const controls = document.createElement('div');
-  controls.className = 'p-4 bg-white border-t border-gray-200 flex justify-end space-x-2';
-
-  const activeLabel = document.createElement('label');
-  activeLabel.className = 'flex items-center space-x-2 mr-auto';
-  const activeCheckbox = document.createElement('input');
-  activeCheckbox.type = 'checkbox';
-  activeCheckbox.id = 'active-toggle';
-  activeLabel.appendChild(activeCheckbox);
-  const activeSpan = document.createElement('span');
-  activeSpan.textContent = 'Active';
-  activeLabel.appendChild(activeSpan);
-  controls.appendChild(activeLabel);
-
-  const deleteBtn = document.createElement('button');
-  deleteBtn.id = 'delete-btn';
-  deleteBtn.className = 'px-3 py-2 bg-red-500 text-white rounded';
-  deleteBtn.textContent = 'Delete';
-  controls.appendChild(deleteBtn);
-
-  const saveBtn = document.createElement('button');
-  saveBtn.id = 'save-btn';
-  saveBtn.className = 'px-3 py-2 bg-blue-500 text-white rounded';
-  saveBtn.textContent = 'Save';
-  controls.appendChild(saveBtn);
-
-  pane.appendChild(controls);
+  const activeCheckbox = document.getElementById('active-toggle');
+  const saveBtn = document.getElementById('save-btn');
+  const deleteBtn = document.getElementById('delete-btn');
 
   let currentId = null;
   let allHeadlines = [];
@@ -276,7 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadHeadlines() {
     try {
-      const res = await fetch('/api/admin/headlines', {
+      const q = encodeURIComponent(searchEl.value.trim());
+      const res = await fetch('/api/admin/headlines?q='+q, {
         headers: {
           'x-session-token': sessionStorage.getItem('sessionToken'),
           'Content-Type': 'application/json'
@@ -354,6 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         currentId = data.id;
         await loadHeadlines();
+        alert('Gespeichert');
       }
     } catch (err) {
       console.error('Failed to save entry', err);
@@ -377,6 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
         quill.root.innerHTML = '';
         activeCheckbox.checked = false;
         await loadHeadlines();
+        alert('Gelöscht');
       }
     } catch (err) {
       console.error('Failed to delete entry', err);
@@ -462,7 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
       diffBtn.addEventListener('click', () => {
         const active = allHeadlines.find(h => h.headline === e.headline);
         const current = active ? active.text : '';
-        alert(diffText(current, e.text));
+        const w = window.open('', '_blank');
+        w.document.body.innerHTML = diffText(current, e.text);
       });
       div.appendChild(btn);
       div.appendChild(diffBtn);
@@ -471,27 +496,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function diffText(a,b){
-    const aW=a.split(/\s+/); const bW=b.split(/\s+/);
-    const len=Math.max(aW.length,bW.length); const out=[];
-    for(let i=0;i<len;i++){
-      if(aW[i]===bW[i]) out.push(aW[i]||'');
-      else {
-        if(aW[i]) out.push('[-'+aW[i]+'-]');
-        if(bW[i]) out.push('[+'+bW[i]+'+]');
-      }
-    }
-    return out.join(' ');
+    const dmp = new diff_match_patch();
+    const diffs = dmp.diff_main(a,b);
+    dmp.diff_cleanupSemantic(diffs);
+    return diffs.map(d=>{
+      if(d[0]===0) return d[1];
+      if(d[0]===-1) return '<del>'+d[1]+'</del>';
+      return '<ins>'+d[1]+'</ins>';
+    }).join('');
   }
 
 
-  searchEl.addEventListener('input', () => {
-    const q = searchEl.value.toLowerCase();
-    const filtered = allHeadlines.filter(h =>
-      h.headline.toLowerCase().includes(q) ||
-      (h.text && h.text.toLowerCase().includes(q))
-    );
-    renderHeadlines(filtered);
-  });
+  searchEl.addEventListener('input', () => { loadHeadlines(); });
 
   archiveSearch.addEventListener('input', renderArchive);
   archiveSort.addEventListener('change', renderArchive);

@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/quill-table-ui@1.0.2/dist/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/diff-match-patch@1.0.5/index.js"></script>
   <script defer src="admin.js"></script>
 </head>
 <body class="bg-gray-100 flex flex-col h-screen">
@@ -26,6 +28,7 @@
     </button>
 
     <button id="btn-archive" class="px-4 py-2 bg-gray-200 rounded">Archiv</button>
+    <button id="btn-export" class="px-4 py-2 bg-gray-200 rounded">Export</button>
   </div>
 
   <!-- Editor View -->
@@ -56,7 +59,21 @@
 
     <!-- Right Content Area: Text Editor (80%) -->
     <div id="editor-pane" class="w-4/5 flex flex-col">
-      <div id="quill-toolbar" class="p-2 bg-white border-b border-gray-200"></div>
+      <div id="quill-toolbar" class="p-2 bg-white border-b border-gray-200">
+        <span class="ql-formats">
+          <select class="ql-header"></select>
+          <button class="ql-bold"></button>
+          <button class="ql-italic"></button>
+          <button class="ql-underline"></button>
+        </span>
+        <span class="ql-formats">
+          <button class="ql-list" value="ordered"></button>
+          <button class="ql-list" value="bullet"></button>
+          <button class="ql-image"></button>
+          <button class="ql-code-block"></button>
+          <button class="ql-table"></button>
+        </span>
+      </div>
       <!-- Editor name and headline -->
       <div class="p-4 bg-white border-b border-gray-200 flex space-x-2">
         <input id="editor-name" class="p-2 border border-gray-300 rounded w-1/3" placeholder="Name">
@@ -64,6 +81,14 @@
       </div>
       <!-- Editable Text Area -->
       <div id="editor" class="h-96"></div>
+      <div class="p-4 bg-white border-t border-gray-200 flex justify-end space-x-2">
+        <label class="flex items-center space-x-2 mr-auto">
+          <input id="active-toggle" type="checkbox">
+          <span>Active</span>
+        </label>
+        <button id="delete-btn" class="px-3 py-2 bg-red-500 text-white rounded">Delete</button>
+        <button id="save-btn" class="px-3 py-2 bg-blue-500 text-white rounded">Save</button>
+      </div>
     </div>
   </div>
 
@@ -91,6 +116,17 @@
       </select>
     </div>
     <div id="archive-list" class="space-y-4"></div>
+  </div>
+
+  <div id="user-admin" class="hidden p-4 space-y-2">
+    <h2 class="font-semibold">Benutzer anlegen</h2>
+    <input id="new-user" class="border p-2" placeholder="Username">
+    <input id="new-pass" type="password" class="border p-2" placeholder="Password">
+    <select id="new-role" class="border p-2">
+      <option value="editor">Editor</option>
+      <option value="admin">Admin</option>
+    </select>
+    <button id="create-user" class="px-2 py-1 bg-blue-500 text-white rounded">Anlegen</button>
   </div>
 
 
