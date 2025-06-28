@@ -23,6 +23,10 @@ const HochschuhlABC = sequelize.define('HochschuhlABC', {
     type: DataTypes.TEXT,
     allowNull: false
   },
+  editor: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   lastUpdated: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
@@ -44,11 +48,11 @@ const HochschuhlABC = sequelize.define('HochschuhlABC', {
 sequelize.sync({ alter: true })
   .catch(err => console.error('SQLite sync error:', err.message));
 
-// Get all active headlines
+// Get all active headlines (include text for searching)
 exports.getHeadlines = async (req, res) => {
   try {
     const headlines = await HochschuhlABC.findAll({
-      attributes: ['id', 'headline'],
+      attributes: ['id', 'headline', 'text'],
       where: { active: true },
       order: [['lastUpdated', 'DESC']]
     });
@@ -73,7 +77,7 @@ exports.getEntry = async (req, res) => {
 
 // Create a new entry
 exports.createEntry = async (req, res) => {
-  const { headline, text } = req.body;
+  const { headline, text, active, editor } = req.body;
   if (!headline || !text) {
     return res.status(400).json({ error: 'Headline and text are required' });
   }
@@ -81,8 +85,9 @@ exports.createEntry = async (req, res) => {
     const entry = await HochschuhlABC.create({
       headline,
       text,
+      editor,
       lastUpdated: new Date(),
-      active: true,
+      active: active !== false,
       archived: null
     });
     res.status(201).json(entry);
@@ -94,7 +99,7 @@ exports.createEntry = async (req, res) => {
 
 // Update an existing entry
 exports.updateEntry = async (req, res) => {
-  const { headline, text } = req.body;
+  const { headline, text, active, editor } = req.body;
   if (!headline || !text) {
     return res.status(400).json({ error: 'Headline and text are required' });
   }
@@ -111,8 +116,9 @@ exports.updateEntry = async (req, res) => {
     const newEntry = await HochschuhlABC.create({
       headline,
       text,
+      editor,
       lastUpdated: new Date(),
-      active: true,
+      active: active !== false,
       archived: null
     });
 
@@ -135,5 +141,53 @@ exports.deleteEntry = async (req, res) => {
   } catch (err) {
     console.error('Failed to delete entry:', err);
     res.status(500).json({ error: 'Failed to delete entry' });
+  }
+};
+
+// Get archived entries
+exports.getArchive = async (req, res) => {
+  try {
+    const archivedEntries = await HochschuhlABC.findAll({
+      where: {
+        active: false,
+        archived: { [Sequelize.Op.not]: null }
+      },
+      order: [['archived', 'DESC']]
+    });
+    res.json(archivedEntries);
+  } catch (err) {
+    console.error('Failed to load archive:', err);
+    res.status(500).json({ error: 'Failed to load archive' });
+  }
+};
+
+// Restore an archived entry by creating a new active version
+exports.restoreEntry = async (req, res) => {
+  try {
+    const archived = await HochschuhlABC.findByPk(req.params.id);
+    if (!archived || archived.active) {
+      return res.status(404).json({ error: 'Archived entry not found' });
+    }
+    const { editor } = req.body || {};
+    const activeEntry = await HochschuhlABC.findOne({
+      where: { headline: archived.headline, active: true }
+    });
+    if (activeEntry) {
+      activeEntry.active = false;
+      activeEntry.archived = new Date();
+      await activeEntry.save();
+    }
+    const newEntry = await HochschuhlABC.create({
+      headline: archived.headline,
+      text: archived.text,
+      editor: editor || archived.editor,
+      lastUpdated: new Date(),
+      active: true,
+      archived: null
+    });
+    res.json(newEntry);
+  } catch (err) {
+    console.error('Failed to restore entry:', err);
+    res.status(500).json({ error: 'Failed to restore entry' });
   }
 };
