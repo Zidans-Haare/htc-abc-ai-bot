@@ -73,7 +73,7 @@ exports.getEntry = async (req, res) => {
 
 // Create a new entry
 exports.createEntry = async (req, res) => {
-  const { headline, text } = req.body;
+  const { headline, text, active } = req.body;
   if (!headline || !text) {
     return res.status(400).json({ error: 'Headline and text are required' });
   }
@@ -82,7 +82,7 @@ exports.createEntry = async (req, res) => {
       headline,
       text,
       lastUpdated: new Date(),
-      active: true,
+      active: active !== false,
       archived: null
     });
     res.status(201).json(entry);
@@ -94,7 +94,7 @@ exports.createEntry = async (req, res) => {
 
 // Update an existing entry
 exports.updateEntry = async (req, res) => {
-  const { headline, text } = req.body;
+  const { headline, text, active } = req.body;
   if (!headline || !text) {
     return res.status(400).json({ error: 'Headline and text are required' });
   }
@@ -112,7 +112,7 @@ exports.updateEntry = async (req, res) => {
       headline,
       text,
       lastUpdated: new Date(),
-      active: true,
+      active: active !== false,
       archived: null
     });
 
