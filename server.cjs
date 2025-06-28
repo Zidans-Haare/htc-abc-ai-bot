@@ -21,11 +21,6 @@ const bodyParser = require("body-parser");
 const { generateResponse } = require("./controllers/geminiController.cjs");
 
 const { getHeadlines, getEntry, createEntry, updateEntry, deleteEntry, getArchive, restoreEntry } = require("./controllers/adminController.cjs");
-=======
-
-const { getHeadlines, getEntry, createEntry, updateEntry, deleteEntry, getArchive, restoreEntry } = require("./controllers/adminController.cjs");
-=======
-const { getHeadlines, getEntry, createEntry, updateEntry, deleteEntry, getArchive } = require("./controllers/adminController.cjs");
 
 
 const path = require('path');
@@ -189,10 +184,6 @@ app.get("/api/admin/headlines", getHeadlines);
 app.get("/api/admin/archive", getArchive);
 
 app.post("/api/admin/restore/:id", restoreEntry);
-=======
-
-app.post("/api/admin/restore/:id", restoreEntry);
-=======
 
 
 app.get("/api/admin/entries/:id", getEntry);
