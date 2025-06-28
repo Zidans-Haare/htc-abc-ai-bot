@@ -51,3 +51,30 @@ Zur Auflistung aller noch offenen Fragen kann `GET /api/unanswered` verwendet we
 kann – zusammen mit der ursprünglichen Frage – 
 mittels `POST /api/answer` im JSON-Body übermittelt werden. Eine einfache Administrationsoberfläche
 befindet sich unter `public/admin.html`.
+
+## Admin2 Interface
+
+The folder `public/admin2/` contains a more modern interface for editing the
+content of the Hochschul‑ABC. Open `public/admin2/index.html` in a browser or
+visit `/admin2/` on the running server to use it.
+
+### API routes
+
+The page communicates with several JSON endpoints:
+
+* `GET /api/admin/headlines` – list headlines of all **active** entries.
+* `GET /api/admin/entries/:id` – retrieve a single entry by id.
+* `POST /api/admin/entries` – create a new entry. Provide `headline` and `text`
+  in the request body.
+* `PUT /api/admin/entries/:id` – update an entry. The previous version is marked
+  as inactive and timestamped in the `archived` field while a new record is
+  created and returned.
+* `DELETE /api/admin/entries/:id` – archive an entry by setting `active` to
+  `false` and recording the time in `archived`.
+
+Only active records are served by the API. Archived entries remain in the
+database for reference and history tracking.
+
+If the unanswered‑question workflow from `public/admin.html` is added to this
+interface, you can review questions logged in
+`ai_fragen/offene_fragen.txt` and submit answers via `/api/answer`.
