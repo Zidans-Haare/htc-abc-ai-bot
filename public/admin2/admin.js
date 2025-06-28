@@ -350,7 +350,10 @@ document.addEventListener('DOMContentLoaded', () => {
       active: activeCheckbox.checked,
       editor: editorNameInput.value.trim()
     };
-    if (!payload.headline || !payload.text) return;
+    if (!payload.headline || !payload.text) {
+      alert('\u00dcberschrift und Text werden benötigt');
+      return;
+    }
     try {
       let res;
       if (currentId) {
@@ -380,11 +383,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (err) {
       console.error('Failed to save entry', err);
+      alert('Speichern fehlgeschlagen');
     }
   }
 
   async function deleteEntry() {
     if (!currentId) return;
+    if (!confirm('Eintrag wirklich löschen?')) return;
     try {
       const res = await fetch(`/api/admin/entries/${currentId}`, {
         method: 'DELETE',
@@ -404,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (err) {
       console.error('Failed to delete entry', err);
+      alert('Löschen fehlgeschlagen');
     }
   }
 
