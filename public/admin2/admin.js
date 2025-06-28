@@ -275,18 +275,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 
-  // create headline input
-  const headlineInput = document.createElement('input');
-  headlineInput.id = 'headline-input';
-  headlineInput.placeholder = 'Headline';
-  headlineInput.className = 'p-2 border border-gray-300 rounded mb-2';
-  pane.insertBefore(headlineInput, pane.firstChild);
-
-  const editorNameInput = document.createElement('input');
-  editorNameInput.id = 'editor-name';
-  editorNameInput.placeholder = 'Name';
-  editorNameInput.className = 'p-2 border border-gray-300 rounded mb-2';
-  pane.insertBefore(editorNameInput, pane.firstChild);
+  const headlineInput = document.getElementById('headline-input');
+  const editorNameInput = document.getElementById('editor-name');
 
   // footer controls
   const controls = document.createElement('div');
