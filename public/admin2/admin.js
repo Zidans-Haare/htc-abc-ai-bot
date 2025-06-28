@@ -287,34 +287,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const headlineInput = document.getElementById('headline-input');
   const editorNameInput = document.getElementById('editor-name');
 
-  // footer controls
-  const controls = document.createElement('div');
-  controls.className = 'p-4 bg-white border-t border-gray-200 flex justify-end space-x-2';
-
-  const activeLabel = document.createElement('label');
-  activeLabel.className = 'flex items-center space-x-2 mr-auto';
-  const activeCheckbox = document.createElement('input');
-  activeCheckbox.type = 'checkbox';
-  activeCheckbox.id = 'active-toggle';
-  activeLabel.appendChild(activeCheckbox);
-  const activeSpan = document.createElement('span');
-  activeSpan.textContent = 'Active';
-  activeLabel.appendChild(activeSpan);
-  controls.appendChild(activeLabel);
-
-  const deleteBtn = document.createElement('button');
-  deleteBtn.id = 'delete-btn';
-  deleteBtn.className = 'px-3 py-2 bg-red-500 text-white rounded';
-  deleteBtn.textContent = 'Delete';
-  controls.appendChild(deleteBtn);
-
-  const saveBtn = document.createElement('button');
-  saveBtn.id = 'save-btn';
-  saveBtn.className = 'px-3 py-2 bg-blue-500 text-white rounded';
-  saveBtn.textContent = 'Save';
-  controls.appendChild(saveBtn);
-
-  pane.appendChild(controls);
+  const activeCheckbox = document.getElementById('active-toggle');
+  const saveBtn = document.getElementById('save-btn');
+  const deleteBtn = document.getElementById('delete-btn');
 
   let currentId = null;
   let allHeadlines = [];
