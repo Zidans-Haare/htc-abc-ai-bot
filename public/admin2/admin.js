@@ -316,10 +316,25 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl.innerHTML = '';
     items.forEach(h => {
       const li = document.createElement('li');
-      li.textContent = h.headline;
-      li.className = 'p-2 hover:bg-gray-100 cursor-pointer rounded';
-      li.dataset.id = h.id;
-      li.addEventListener('click', () => loadEntry(h.id));
+      li.className = 'p-2 hover:bg-gray-100 rounded flex justify-between items-center';
+
+      const span = document.createElement('span');
+      span.textContent = h.headline;
+      span.className = 'cursor-pointer flex-grow';
+      span.addEventListener('click', () => loadEntry(h.id));
+      li.appendChild(span);
+
+      const link = document.createElement('a');
+      link.href = '#';
+      link.className = 'text-blue-600 text-sm ml-2';
+      link.textContent = '↗';
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openPreview(h.id);
+      });
+      li.appendChild(link);
+
       listEl.appendChild(li);
     });
   }
@@ -414,6 +429,26 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error('Failed to delete entry', err);
       alert('Löschen fehlgeschlagen');
+
+    }
+  }
+
+  async function openPreview(id) {
+    try {
+      const res = await fetch(`/api/admin/entries/${id}`, {
+        headers: {
+          'x-session-token': sessionStorage.getItem('sessionToken'),
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!res.ok) return;
+      const entry = await res.json();
+      const w = window.open('', '_blank');
+      w.document.write(`<h1>${entry.headline}</h1>` + entry.text);
+    } catch (err) {
+      console.error('Preview failed', err);
+=======
+
     }
   }
 
