@@ -44,9 +44,18 @@ sequelize.sync({ alter: true })
 // Get all active headlines (include text for searching)
 exports.getHeadlines = async (req, res) => {
   try {
+    const where = { active: true };
+    const { q } = req.query;
+    if (q) {
+      where[Sequelize.Op.or] = [
+        { headline: { [Sequelize.Op.like]: `%${q}%` } },
+        { text: { [Sequelize.Op.like]: `%${q}%` } },
+        { editor: { [Sequelize.Op.like]: `%${q}%` } }
+      ];
+    }
     const headlines = await HochschuhlABC.findAll({
       attributes: ['id', 'headline', 'text'],
-      where: { active: true },
+      where,
       order: [['lastUpdated', 'DESC']]
     });
     res.json(headlines);

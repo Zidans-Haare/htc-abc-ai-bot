@@ -32,14 +32,20 @@ const pid = process.pid;
 dotenv.config();
 
 const app = express();
+const SESSION_TTL = 1000 * 60 * 60; // 1 hour
 const sessions = {};
-function createSession(username) {
+function createSession(username, role) {
   const token = crypto.randomBytes(16).toString('hex');
-  sessions[token] = { username, created: Date.now() };
+  sessions[token] = { username, role, created: Date.now(), expires: Date.now() + SESSION_TTL };
   return token;
 }
 function destroySession(token) { delete sessions[token]; }
-function getSession(token) { return sessions[token]; }
+function getSession(token) {
+  const s = sessions[token];
+  if (!s) return null;
+  if (Date.now() > s.expires) { delete sessions[token]; return null; }
+  return s;
+}
 const auditLog = path.resolve(__dirname, 'logs/audit.log');
 function logAction(user, action) {
   const line = `[${new Date().toISOString()}] ${user} ${action}\n`;
@@ -56,6 +62,7 @@ function adminAuth(req, res, next) {
   const session = token && getSession(token);
   if (session) {
     req.user = session.username;
+    req.role = session.role;
     logAction(session.username, `${req.method} ${req.originalUrl}`);
     return next();
   }
@@ -78,10 +85,10 @@ app.post('/api/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
   try {
-    const ok = await auth.verifyUser(username, password);
-    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-    const token = createSession(username);
-    res.json({ token });
+    const user = await auth.verifyUser(username, password);
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    const token = createSession(user.username, user.role);
+    res.json({ token, role: user.role });
   } catch (err) {
     console.error('Login failed', err);
     res.status(500).json({ error: 'Login failed' });
@@ -227,6 +234,25 @@ app.post("/api/admin/entries", createEntry);
 app.put("/api/admin/entries/:id", updateEntry);
 app.delete("/api/admin/entries/:id", deleteEntry);
 
+app.get('/api/admin/users', async (req, res) => {
+  if (req.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const users = await auth.listUsers();
+  res.json(users);
+});
+
+app.post('/api/admin/users', async (req, res) => {
+  if (req.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const { username, password, role } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: 'missing' });
+  try {
+    const user = await auth.createUser(username, password, role || 'editor');
+    res.status(201).json({ id: user.id, username: user.username, role: user.role });
+  } catch (err) {
+    console.error('Failed to create user', err);
+    res.status(500).json({ error: 'failed' });
+  }
+});
+
 app.get('/api/admin/export', async (req, res) => {
   try {
     const entries = await HochschuhlABC.findAll();
@@ -248,6 +274,21 @@ app.get('/api/admin/export', async (req, res) => {
   } catch (err) {
     console.error('Export failed', err);
     res.status(500).json({ error: 'export failed' });
+  }
+});
+
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const entries = await HochschuhlABC.findAll();
+    const perEditor = {};
+    entries.forEach(e => {
+      const name = e.editor || 'unknown';
+      perEditor[name] = (perEditor[name] || 0) + 1;
+    });
+    res.json({ total: entries.length, perEditor });
+  } catch (err) {
+    console.error('Stats failed', err);
+    res.status(500).json({ error: 'stats failed' });
   }
 });
 
