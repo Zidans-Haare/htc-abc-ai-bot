@@ -23,6 +23,10 @@ const HochschuhlABC = sequelize.define('HochschuhlABC', {
     type: DataTypes.TEXT,
     allowNull: false
   },
+  editor: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   lastUpdated: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
@@ -73,7 +77,11 @@ exports.getEntry = async (req, res) => {
 
 // Create a new entry
 exports.createEntry = async (req, res) => {
+
+  const { headline, text, active, editor } = req.body;
+=======
   const { headline, text, active } = req.body;
+
   if (!headline || !text) {
     return res.status(400).json({ error: 'Headline and text are required' });
   }
@@ -81,6 +89,10 @@ exports.createEntry = async (req, res) => {
     const entry = await HochschuhlABC.create({
       headline,
       text,
+
+      editor,
+=======
+
       lastUpdated: new Date(),
       active: active !== false,
       archived: null
@@ -94,7 +106,11 @@ exports.createEntry = async (req, res) => {
 
 // Update an existing entry
 exports.updateEntry = async (req, res) => {
+
+  const { headline, text, active, editor } = req.body;
+=======
   const { headline, text, active } = req.body;
+
   if (!headline || !text) {
     return res.status(400).json({ error: 'Headline and text are required' });
   }
@@ -111,6 +127,10 @@ exports.updateEntry = async (req, res) => {
     const newEntry = await HochschuhlABC.create({
       headline,
       text,
+
+      editor,
+=======
+
       lastUpdated: new Date(),
       active: active !== false,
       archived: null
@@ -154,3 +174,37 @@ exports.getArchive = async (req, res) => {
     res.status(500).json({ error: 'Failed to load archive' });
   }
 };
+
+
+// Restore an archived entry by creating a new active version
+exports.restoreEntry = async (req, res) => {
+  try {
+    const archived = await HochschuhlABC.findByPk(req.params.id);
+    if (!archived || archived.active) {
+      return res.status(404).json({ error: 'Archived entry not found' });
+    }
+    const { editor } = req.body || {};
+    const activeEntry = await HochschuhlABC.findOne({
+      where: { headline: archived.headline, active: true }
+    });
+    if (activeEntry) {
+      activeEntry.active = false;
+      activeEntry.archived = new Date();
+      await activeEntry.save();
+    }
+    const newEntry = await HochschuhlABC.create({
+      headline: archived.headline,
+      text: archived.text,
+      editor: editor || archived.editor,
+      lastUpdated: new Date(),
+      active: true,
+      archived: null
+    });
+    res.json(newEntry);
+  } catch (err) {
+    console.error('Failed to restore entry:', err);
+    res.status(500).json({ error: 'Failed to restore entry' });
+  }
+};
+=======
+

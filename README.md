@@ -80,8 +80,16 @@ The page communicates with several JSON endpoints:
 * `GET /api/admin/archive` – return all archived entries ordered by the time they
   were archived.
 
+* `POST /api/admin/restore/:id` – restore an archived entry. The current active
+  version (if any) is archived and a new entry is created from the archived data.
+=======
+
+
 Only active records are served by the API. Archived entries remain in the
 database for reference and history tracking.
+
+Each entry also stores the name of the editor in the `editor` field which is
+archived together with older versions.
 
 If the unanswered‑question workflow from `public/admin.html` is added to this
 interface, you can review questions logged in

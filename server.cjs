@@ -19,7 +19,11 @@ const express = require("express");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const { generateResponse } = require("./controllers/geminiController.cjs");
+
+const { getHeadlines, getEntry, createEntry, updateEntry, deleteEntry, getArchive, restoreEntry } = require("./controllers/adminController.cjs");
+=======
 const { getHeadlines, getEntry, createEntry, updateEntry, deleteEntry, getArchive } = require("./controllers/adminController.cjs");
+
 const path = require('path');
 const { Sequelize } = require('sequelize');
 const ConversationModel = require('./models/Conversation');
@@ -127,7 +131,7 @@ app.get('/api/unanswered', adminAuth, async (req, res) => {
 
 // Submit an answer for a question
 app.post('/api/answer', adminAuth, async (req, res) => {
-  const { question, answer } = req.body || {};
+  const { question, answer, editor } = req.body || {};
   if (!question || !answer) {
     return res.status(400).json({ error: 'question and answer required' });
   }
@@ -139,7 +143,7 @@ app.post('/api/answer', adminAuth, async (req, res) => {
     // Append to FAQ file
     await fs.promises.appendFile(
       faqFile,
-      `F:${question}\nA:${answer}\n`,
+      `F:${question}\nA:${answer}\nE:${editor || ''}\n`,
       'utf8'
     );
 
@@ -169,11 +173,13 @@ app.get('/api/answered', adminAuth, async (req, res) => {
       const qMatch = lines[i].match(/^F:(.*)/);
       const aMatch = lines[i + 1] && lines[i + 1].match(/^A:(.*)/);
       if (qMatch && aMatch) {
+        const eMatch = lines[i + 2] && lines[i + 2].match(/^E:(.*)/);
         result.push({
           question: qMatch[1].trim(),
-          answer: aMatch[1].trim()
+          answer: aMatch[1].trim(),
+          editor: eMatch ? eMatch[1].trim() : ''
         });
-        i++; // skip next line
+        i += eMatch ? 2 : 1;
       }
     }
     res.json(result);
@@ -185,7 +191,7 @@ app.get('/api/answered', adminAuth, async (req, res) => {
 
 // Update an existing answer
 app.post('/api/update', adminAuth, async (req, res) => {
-  const { question, answer } = req.body || {};
+  const { question, answer, editor } = req.body || {};
   if (!question || !answer) {
     return res.status(400).json({ error: 'question and answer required' });
   }
@@ -197,6 +203,11 @@ app.post('/api/update', adminAuth, async (req, res) => {
       if (lines[i].startsWith('F:') && lines[i].slice(2).trim() === question) {
         if (i + 1 < lines.length && lines[i + 1].startsWith('A:')) {
           lines[i + 1] = `A:${answer}`;
+          if (i + 2 < lines.length && lines[i + 2].startsWith('E:')) {
+            lines[i + 2] = `E:${editor || ''}`;
+          } else {
+            lines.splice(i + 2, 0, `E:${editor || ''}`);
+          }
           found = true;
           break;
         }
@@ -219,6 +230,10 @@ app.post('/api/update', adminAuth, async (req, res) => {
 app.use('/api/admin', adminAuth);
 app.get("/api/admin/headlines", getHeadlines);
 app.get("/api/admin/archive", getArchive);
+
+app.post("/api/admin/restore/:id", restoreEntry);
+=======
+
 app.get("/api/admin/entries/:id", getEntry);
 app.post("/api/admin/entries", createEntry);
 app.put("/api/admin/entries/:id", updateEntry);
