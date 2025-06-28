@@ -66,7 +66,9 @@ visit `/admin2/` on the running server to use it.
 
 The page communicates with several JSON endpoints:
 
-* `GET /api/admin/headlines` – list headlines of all **active** entries.
+* `GET /api/admin/headlines` – list headlines of all **active** entries. The response
+  also includes the text of each entry so the admin interface can search
+  through both headline and content.
 * `GET /api/admin/entries/:id` – retrieve a single entry by id.
 * `POST /api/admin/entries` – create a new entry. Provide `headline` and `text`
   in the request body.
@@ -75,6 +77,8 @@ The page communicates with several JSON endpoints:
   created and returned.
 * `DELETE /api/admin/entries/:id` – archive an entry by setting `active` to
   `false` and recording the time in `archived`.
+* `GET /api/admin/archive` – return all archived entries ordered by the time they
+  were archived.
 
 Only active records are served by the API. Archived entries remain in the
 database for reference and history tracking.
