@@ -290,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeCheckbox = document.getElementById('active-toggle');
   const saveBtn = document.getElementById('save-btn');
   const deleteBtn = document.getElementById('delete-btn');
+  deleteBtn.disabled = true;
 
   let currentId = null;
   let allHeadlines = [];
@@ -338,6 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
       editorNameInput.value = entry.editor || '';
       quill.root.innerHTML = entry.text;
       activeCheckbox.checked = !!entry.active;
+      deleteBtn.disabled = false;
     } catch (err) {
       console.error('Failed to load entry', err);
     }
@@ -350,7 +352,10 @@ document.addEventListener('DOMContentLoaded', () => {
       active: activeCheckbox.checked,
       editor: editorNameInput.value.trim()
     };
-    if (!payload.headline || !payload.text) return;
+    if (!payload.headline || !payload.text) {
+      alert('\u00dcberschrift und Text werden benötigt');
+      return;
+    }
     try {
       let res;
       if (currentId) {
@@ -376,15 +381,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         currentId = data.id;
         await loadHeadlines();
+        deleteBtn.disabled = false;
         alert('Gespeichert');
       }
     } catch (err) {
       console.error('Failed to save entry', err);
+      alert('Speichern fehlgeschlagen');
     }
   }
 
   async function deleteEntry() {
     if (!currentId) return;
+    if (!confirm('Eintrag wirklich löschen?')) return;
     try {
       const res = await fetch(`/api/admin/entries/${currentId}`, {
         method: 'DELETE',
@@ -399,11 +407,13 @@ document.addEventListener('DOMContentLoaded', () => {
         editorNameInput.value = '';
         quill.root.innerHTML = '';
         activeCheckbox.checked = false;
+        deleteBtn.disabled = true;
         await loadHeadlines();
         alert('Gelöscht');
       }
     } catch (err) {
       console.error('Failed to delete entry', err);
+      alert('Löschen fehlgeschlagen');
     }
   }
 
@@ -415,6 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editorNameInput.value = '';
     quill.root.innerHTML = '';
     activeCheckbox.checked = true;
+    deleteBtn.disabled = true;
   });
 
   async function loadArchive() {
