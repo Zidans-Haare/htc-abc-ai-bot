@@ -6,14 +6,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const passInput = document.getElementById('login-pass');
 
   async function doLogin(u,p){
-    const res = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
-    if(res.ok){
-      const data=await res.json();
-      sessionStorage.setItem('sessionToken',data.token);
-      sessionStorage.setItem('userRole', data.role);
-      loginScreen.classList.add('hidden');
-      init();
-    }else{alert('Login fehlgeschlagen');}
+    try {
+      const res = await fetch('/api/login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:u,password:p})
+      });
+      if(res.ok){
+        const data=await res.json();
+        sessionStorage.setItem('sessionToken',data.token);
+        sessionStorage.setItem('userRole', data.role);
+        loginScreen.classList.add('hidden');
+        init();
+      } else if (res.status === 401) {
+        alert('Login fehlgeschlagen');
+      } else {
+        const msg = await res.text().catch(() => res.statusText);
+        alert('Login fehlgeschlagen: ' + msg);
+      }
+    } catch (err) {
+      alert('Server nicht erreichbar');
+      console.error('Login error:', err);
+    }
   }
 
   loginForm.addEventListener('submit',e=>{e.preventDefault();doLogin(userInput.value,passInput.value);});
