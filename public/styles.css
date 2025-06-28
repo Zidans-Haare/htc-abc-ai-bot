@@ -79,27 +79,6 @@ body {
   overflow: hidden;
 }
 @media (max-width: 768px) { #main, .app-main { grid-template-columns: 1fr; } }
-.threads-panel {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(6px);
-  border-right: 1px solid var(--border);
-  padding: 1rem;
-  overflow-y: auto;
-}
-.threads-panel h2 { margin: 0 0 1rem; font-size: 1.125rem; font-weight: 500; }
-.thread {
-  padding: .75rem 1rem;
-  border-radius: .75rem;
-  cursor: pointer;
-  transition: background .2s, color .2s, box-shadow .2s;
-}
-.thread.active,
-.thread:hover {
-  background: var(--accent);
-  color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-@media (max-width: 768px) { .threads-panel { display: none; } }
 .chat-panel,
 #chat {
   display: flex;

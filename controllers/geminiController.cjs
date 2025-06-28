@@ -1,23 +1,10 @@
-const { Sequelize, DataTypes } = require('sequelize');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { getCached } = require('../utils/cache');
 const { estimateTokens, isWithinTokenLimit } = require('../utils/tokenizer');
 const { summarizeConversation } = require('../utils/summarizer');
 
-// Initialize Sequelize with SQLite
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './chatbot.db',
-  logging: false // Disable verbose SQL logs
-});
-
-// Define Conversation model
-const Conversation = require('../models/Conversation')(sequelize);
-
-// Sync database
-sequelize.sync({ alter: true })
-  .then(() => console.log('SQLite database synced'))
-  .catch(err => console.error('SQLite sync error:', err.message));
+// In-memory conversation store
+const conversations = new Map();
 
 const apiKey = process.env.API_KEY;
 if (!apiKey) {
@@ -53,12 +40,13 @@ async function generateResponse(req, res) {
     console.log(`Processing conversationId: ${convoId}`);
 
     // Retrieve or create conversation
-    let conversation = await Conversation.findOne({ where: { conversationId: convoId } });
-    if (!conversation) {
-      conversation = await Conversation.create({ conversationId: convoId, messages: [] });
+    let messages = conversations.get(convoId);
+    if (!messages) {
+      messages = [];
+      conversations.set(convoId, messages);
       console.log(`Created new conversation: ${convoId}`);
     } else {
-      console.log(`Found conversation: ${convoId}, messages: ${conversation.messages.length}`);
+      console.log(`Found conversation: ${convoId}, messages: ${messages.length}`);
     }
 
     // Add user prompt to conversation
@@ -67,27 +55,21 @@ async function generateResponse(req, res) {
       isUser: true,
       timestamp: new Date().toISOString()
     };
-    conversation.messages = [...conversation.messages, userMessage];
-    conversation.changed('messages', true); // Mark messages as changed
-    try {
-      await conversation.save();
-      console.log(`Saved user message: ${prompt}`);
-    } catch (saveError) {
-      console.error(`Failed to save user message: ${saveError.message}`);
-      throw saveError;
-    }
+    messages = [...messages, userMessage];
+    conversations.set(convoId, messages);
+    console.log(`Saved user message: ${prompt}`);
 
     // Read cached file contents
     const hochschulText = await getCached('ai_input/Hochschul_ABC_2025_text.txt');
     const faqText = await getCached('ai_input/faq.txt');
 
     // Format conversation history for prompt
-    const historyText = conversation.messages.map(m => 
+    const historyText = messages.map(m =>
       `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`
     ).join('\n');
 
     // Check token limit and summarize if needed
-    let messagesToUse = conversation.messages;
+    let messagesToUse = messages;
     const fullText = `
       **Inhalt von Hochschul_ABC_2025_text.txt**:
       ${hochschulText}
@@ -101,16 +83,10 @@ async function generateResponse(req, res) {
       Benutzerfrage: ${prompt}
     `;
     if (!isWithinTokenLimit(fullText, 6000)) {
-      messagesToUse = await summarizeConversation(conversation.messages);
-      conversation.messages = messagesToUse;
-      conversation.changed('messages', true); // Mark messages as changed
-      try {
-        await conversation.save();
-        console.log(`Summarized conversation, new message count: ${messagesToUse.length}`);
-      } catch (saveError) {
-        console.error(`Failed to save summarized messages: ${saveError.message}`);
-        throw saveError;
-      }
+      messagesToUse = await summarizeConversation(messages);
+      messages = messagesToUse;
+      conversations.set(convoId, messages);
+      console.log(`Summarized conversation, new message count: ${messagesToUse.length}`);
     }
 
     // Create the full prompt
@@ -154,15 +130,9 @@ async function generateResponse(req, res) {
       isUser: false,
       timestamp: new Date().toISOString()
     };
-    conversation.messages = [...conversation.messages, aiMessage];
-    conversation.changed('messages', true); // Mark messages as changed
-    try {
-      await conversation.save();
-      console.log(`Saved AI response: ${text.slice(0, 50)}...`);
-    } catch (saveError) {
-      console.error(`Failed to save AI response: ${saveError.message}`);
-      throw saveError;
-    }
+    messages = [...messages, aiMessage];
+    conversations.set(convoId, messages);
+    console.log(`Saved AI response: ${text.slice(0, 50)}...`);
 
     // Log unanswered questions
     if (text.includes('Diese Frage kann basierend auf den bereitgestellten Informationen nicht beantwortet werden')) {
