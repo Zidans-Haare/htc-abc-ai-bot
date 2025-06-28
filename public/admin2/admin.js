@@ -38,10 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const archiveBtn = document.getElementById('btn-archive');
 
   const openCountSpan = document.getElementById('open-count');
-=======
-
-  const openCountSpan = document.getElementById('open-count');
-=======
 
 
   const editorView = document.getElementById('editor-view');
@@ -453,9 +449,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadArchive() {
 
-=======
-
-=======
     archiveView.innerHTML = '';
 
 

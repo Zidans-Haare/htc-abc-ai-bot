@@ -82,11 +82,6 @@ The page communicates with several JSON endpoints:
 
 * `POST /api/admin/restore/:id` – restore an archived entry. The current active
   version (if any) is archived and a new entry is created from the archived data.
-=======
-
-* `POST /api/admin/restore/:id` – restore an archived entry. The current active
-  version (if any) is archived and a new entry is created from the archived data.
-=======
 
 
 
