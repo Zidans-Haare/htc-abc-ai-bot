@@ -15,12 +15,14 @@
 //		$ pm2 log server
 
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require("express");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const { generateResponse } = require("./controllers/geminiController.cjs");
 
-const { getHeadlines, getEntry, createEntry, updateEntry, deleteEntry, getArchive, restoreEntry } = require("./controllers/adminController.cjs");
+const { getHeadlines, getEntry, createEntry, updateEntry, deleteEntry, getArchive, restoreEntry, HochschuhlABC } = require("./controllers/adminController.cjs");
+const auth = require('./controllers/authController.cjs');
 
 
 const path = require('path');
@@ -28,19 +30,33 @@ const path = require('path');
 const pid = process.pid;
 
 dotenv.config();
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
-
 
 const app = express();
+const sessions = {};
+function createSession(username) {
+  const token = crypto.randomBytes(16).toString('hex');
+  sessions[token] = { username, created: Date.now() };
+  return token;
+}
+function destroySession(token) { delete sessions[token]; }
+function getSession(token) { return sessions[token]; }
+const auditLog = path.resolve(__dirname, 'logs/audit.log');
+function logAction(user, action) {
+  const line = `[${new Date().toISOString()}] ${user} ${action}\n`;
+  fs.appendFile(auditLog, line, () => {});
+}
+auth.init();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
 
 function adminAuth(req, res, next) {
-  if (!ADMIN_TOKEN) return next();
-  const header = req.headers['authorization'] || '';
-  if (header === `Bearer ${ADMIN_TOKEN}`) {
+  const token = req.headers['x-session-token'];
+  const session = token && getSession(token);
+  if (session) {
+    req.user = session.username;
+    logAction(session.username, `${req.method} ${req.originalUrl}`);
     return next();
   }
   res.status(401).json({ error: 'Unauthorized' });
@@ -58,6 +74,26 @@ app.use((req, res, next) => {
 
 
 // Routes
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
+  try {
+    const ok = await auth.verifyUser(username, password);
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+    const token = createSession(username);
+    res.json({ token });
+  } catch (err) {
+    console.error('Login failed', err);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+app.post('/api/logout', (req, res) => {
+  const token = req.headers['x-session-token'];
+  if (token) destroySession(token);
+  res.json({ success: true });
+});
+
 app.post("/api/chat", generateResponse);
 
 
@@ -190,6 +226,30 @@ app.get("/api/admin/entries/:id", getEntry);
 app.post("/api/admin/entries", createEntry);
 app.put("/api/admin/entries/:id", updateEntry);
 app.delete("/api/admin/entries/:id", deleteEntry);
+
+app.get('/api/admin/export', async (req, res) => {
+  try {
+    const entries = await HochschuhlABC.findAll();
+    const unansweredFile = path.resolve(__dirname, 'ai_fragen/offene_fragen.txt');
+    const unanswered = (await fs.promises.readFile(unansweredFile, 'utf8')).split(/\n+/).filter(Boolean);
+    const faqFile = path.resolve(__dirname, 'ai_input/faq.txt');
+    const data = await fs.promises.readFile(faqFile, 'utf8');
+    const lines = data.split(/\n+/).filter(Boolean);
+    const answered = [];
+    for (let i=0;i<lines.length;i++) {
+      const q = lines[i].match(/^F:(.*)/);
+      const a = lines[i+1] && lines[i+1].match(/^A:(.*)/);
+      if (q && a) {
+        answered.push({ question: q[1].trim(), answer: a[1].trim() });
+        i++;
+      }
+    }
+    res.json({ entries, unanswered, answered });
+  } catch (err) {
+    console.error('Export failed', err);
+    res.status(500).json({ error: 'export failed' });
+  }
+});
 
 
 // Serve static files from the public folder

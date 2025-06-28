@@ -14,16 +14,13 @@ This project provides a simple Node.js server that exposes an API endpoint for a
    Create a `.env` file in the project root containing the API key for the Gemini API and an optional port:
    ```env
    API_KEY=your-google-api-key
-   PORT=3000 # optional, defaults to 3000
-   ADMIN_TOKEN=htw123
+  PORT=3000 # optional, defaults to 3000
    ```
 
-   Requests to admin endpoints (e.g. `/api/admin/*`, `/api/answer`, `/api/update`)
-   must include this token in the `Authorization` header as `Bearer <token>`.
-
-   The admin interface in `public/admin2/` uses the token `htw123` by default.
-   Make sure the `ADMIN_TOKEN` in your `.env` matches this value or adjust the
-   `AUTH_TOKEN` constant in `public/admin2/admin.js` accordingly.
+  The admin interface now requires login with a username and password.
+  A default user `admin` with password `admin` is created when the
+  database is initialized. After logging in, the browser stores a session
+  token which is sent with all admin requests.
 
 ## Running `server.cjs`
 

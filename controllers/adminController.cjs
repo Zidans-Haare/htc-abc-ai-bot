@@ -1,12 +1,5 @@
 const { Sequelize, DataTypes } = require('sequelize');
-const path = require('path');
-
-// Initialize SQLite database
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: path.join(__dirname, '../hochschuhl-abc.db'),
-  logging: false
-});
+const sequelize = require('./db.cjs');
 
 // Define HochschuhlABC model
 const HochschuhlABC = sequelize.define('HochschuhlABC', {
@@ -192,3 +185,5 @@ exports.restoreEntry = async (req, res) => {
     res.status(500).json({ error: 'Failed to restore entry' });
   }
 };
+
+module.exports.HochschuhlABC = HochschuhlABC;

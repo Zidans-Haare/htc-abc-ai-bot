@@ -1,32 +1,35 @@
-const AUTH_TOKEN = 'htw123';
 
 document.addEventListener('DOMContentLoaded', () => {
-  function ensureLoggedIn() {
-    let token = sessionStorage.getItem('adminToken');
-    while (token !== 'htw123') {
-      const pwd = prompt('Admin Passwort eingeben:');
-      if (pwd === null) {
-        alert('Login erforderlich');
-      } else if (pwd === 'htw123') {
-        token = pwd;
-        sessionStorage.setItem('adminToken', token);
-      }
-      if (token) break;
-    }
+  const loginScreen = document.getElementById('login-screen');
+  const loginForm = document.getElementById('login-form');
+  const userInput = document.getElementById('login-user');
+  const passInput = document.getElementById('login-pass');
+
+  async function doLogin(u,p){
+    const res = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    if(res.ok){
+      const data=await res.json();
+      sessionStorage.setItem('sessionToken',data.token);
+      loginScreen.classList.add('hidden');
+      init();
+    }else{alert('Login fehlgeschlagen');}
   }
 
-  ensureLoggedIn();
+  loginForm.addEventListener('submit',e=>{e.preventDefault();doLogin(userInput.value,passInput.value);});
 
+  if(sessionStorage.getItem('sessionToken')){loginScreen.classList.add('hidden');init();}
+
+  function init() {
   const originalFetch = window.fetch.bind(window);
   window.fetch = async (input, init = {}) => {
     init.headers = init.headers || {};
-    const token = sessionStorage.getItem('adminToken');
+    const token = sessionStorage.getItem('sessionToken');
     if (token) {
-      init.headers['Authorization'] = `Bearer ${token}`;
+      init.headers['x-session-token'] = token;
     }
     const res = await originalFetch(input, init);
     if (res.status === 401) {
-      sessionStorage.removeItem('adminToken');
+      sessionStorage.removeItem('sessionToken');
       alert('Session abgelaufen, bitte erneut anmelden');
       location.reload();
     }
@@ -98,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabAnswered = document.getElementById('tab-answered');
   const openList = document.getElementById('open-list');
   const answeredList = document.getElementById('answered-list');
+  const questionSearch = document.getElementById('question-search');
 
   function showOpen() {
     openList.classList.remove('hidden');
@@ -119,20 +123,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   tabOpen.addEventListener('click', showOpen);
   tabAnswered.addEventListener('click', showAnswered);
+  questionSearch.addEventListener('input', () => { loadOpen(); loadAnswered(); });
 
   async function loadOpen() {
     openList.innerHTML = '';
     try {
       const res = await fetch('/api/unanswered', {
         headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'x-session-token': sessionStorage.getItem('sessionToken'),
           'Content-Type': 'application/json'
         }
       });
       const questions = await res.json();
       if (!Array.isArray(questions)) return;
+      const qFilter = questionSearch.value.toLowerCase();
       updateOpenCount(questions.length);
-      questions.forEach(q => {
+      questions.filter(q => !qFilter || q.toLowerCase().includes(qFilter)).forEach(q => {
         const div = document.createElement('div');
         div.className = 'border p-4 rounded';
         const form = document.createElement('form');
@@ -149,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const resp = await fetch('/api/answer', {
             method: 'POST',
             headers: {
-              Authorization: `Bearer ${AUTH_TOKEN}`,
+              'x-session-token': sessionStorage.getItem('sessionToken'),
               'Content-Type': 'application/json'
             },
             body: JSON.stringify(data)
@@ -173,13 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/api/answered', {
         headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'x-session-token': sessionStorage.getItem('sessionToken'),
           'Content-Type': 'application/json'
         }
       });
       const pairs = await res.json();
       if (!Array.isArray(pairs)) return;
-      pairs.forEach(p => {
+      const qFilter = questionSearch.value.toLowerCase();
+      pairs.filter(p=>!qFilter || p.question.toLowerCase().includes(qFilter)).forEach(p => {
         const div = document.createElement('div');
         div.className = 'border p-4 rounded';
         const form = document.createElement('form');
@@ -196,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
           await fetch('/api/update', {
             method: 'POST',
             headers: {
-              Authorization: `Bearer ${AUTH_TOKEN}`,
+              'x-session-token': sessionStorage.getItem('sessionToken'),
               'Content-Type': 'application/json'
             },
             body: JSON.stringify(data)
@@ -222,57 +229,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const listEl = document.getElementById('headline-list');
   const searchEl = document.getElementById('search');
-  const editorEl = document.getElementById('editor');
+  const quill = new Quill('#editor', { theme: 'snow', modules: { toolbar: '#quill-toolbar' } });
   const addBtn = document.getElementById('add-heading');
   const pane = document.getElementById('editor-pane');
   const archiveList = document.getElementById('archive-list');
   const archiveSearch = document.getElementById('archive-search');
   const archiveSort = document.getElementById('archive-sort');
 
-
-  const placeholderText = editorEl.dataset.placeholder || '';
-
-  function showPlaceholder() {
-    if (!editorEl.textContent.trim()) {
-      editorEl.textContent = placeholderText;
-      editorEl.classList.add('text-gray-400');
-      editorEl.dataset.showingPlaceholder = 'true';
-    }
-  }
-
-  function hidePlaceholder() {
-    if (editorEl.dataset.showingPlaceholder === 'true') {
-      editorEl.textContent = '';
-      editorEl.classList.remove('text-gray-400');
-      delete editorEl.dataset.showingPlaceholder;
-    }
-  }
-
-  editorEl.addEventListener('focus', hidePlaceholder);
-  editorEl.addEventListener('blur', showPlaceholder);
-  editorEl.addEventListener('input', () => {
-    if (editorEl.textContent.trim()) {
-      editorEl.classList.remove('text-gray-400');
-      delete editorEl.dataset.showingPlaceholder;
-    }
-  });
-
-  showPlaceholder();
-  const boldBtn = document.getElementById('btn-bold');
-  const italicBtn = document.getElementById('btn-italic');
-  const linkBtn = document.getElementById('btn-link');
-
-  function exec(command, arg = null) {
-    document.execCommand(command, false, arg);
-    editorEl.focus();
-  }
-
-  boldBtn.addEventListener('click', () => exec('bold'));
-  italicBtn.addEventListener('click', () => exec('italic'));
-  linkBtn.addEventListener('click', () => {
-    const url = prompt('Enter link URL');
-    if (url) exec('createLink', url);
-  });
 
 
   const headlineInput = document.getElementById('headline-input');
@@ -315,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/api/admin/headlines', {
         headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'x-session-token': sessionStorage.getItem('sessionToken'),
           'Content-Type': 'application/json'
         }
       });
@@ -342,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`/api/admin/entries/${id}`, {
         headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'x-session-token': sessionStorage.getItem('sessionToken'),
           'Content-Type': 'application/json'
         }
       });
@@ -351,12 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
       currentId = entry.id;
       headlineInput.value = entry.headline;
       editorNameInput.value = entry.editor || '';
-      editorEl.innerHTML = entry.text;
-      if (entry.text) {
-        hidePlaceholder();
-      } else {
-        showPlaceholder();
-      }
+      quill.root.innerHTML = entry.text;
       activeCheckbox.checked = !!entry.active;
     } catch (err) {
       console.error('Failed to load entry', err);
@@ -366,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function saveEntry() {
     const payload = {
       headline: headlineInput.value.trim(),
-      text: editorEl.innerHTML.trim(),
+      text: quill.root.innerHTML.trim(),
       active: activeCheckbox.checked,
       editor: editorNameInput.value.trim()
     };
@@ -377,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         res = await fetch(`/api/admin/entries/${currentId}`, {
           method: 'PUT',
           headers: {
-            Authorization: `Bearer ${AUTH_TOKEN}`,
+            'x-session-token': sessionStorage.getItem('sessionToken'),
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(payload)
@@ -386,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         res = await fetch('/api/admin/entries', {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${AUTH_TOKEN}`,
+            'x-session-token': sessionStorage.getItem('sessionToken'),
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(payload)
@@ -408,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`/api/admin/entries/${currentId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'x-session-token': sessionStorage.getItem('sessionToken'),
           'Content-Type': 'application/json'
         }
       });
@@ -416,8 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentId = null;
         headlineInput.value = '';
         editorNameInput.value = '';
-        editorEl.innerHTML = '';
-        showPlaceholder();
+        quill.root.innerHTML = '';
         activeCheckbox.checked = false;
         await loadHeadlines();
       }
@@ -432,8 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentId = null;
     headlineInput.value = '';
     editorNameInput.value = '';
-    editorEl.innerHTML = '';
-    showPlaceholder();
+    quill.root.innerHTML = '';
     activeCheckbox.checked = true;
   });
 
@@ -443,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/api/admin/archive', {
         headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'x-session-token': sessionStorage.getItem('sessionToken'),
           'Content-Type': 'application/json'
         }
       });
@@ -484,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <p class="text-sm text-gray-500 mb-2">${date} - ${e.editor || ''}</p>
         <div class="text-sm mb-2">${e.text}</div>`;
       const btn = document.createElement('button');
-      btn.className = 'px-2 py-1 bg-blue-500 text-white rounded';
+      btn.className = 'px-2 py-1 bg-blue-500 text-white rounded mr-2';
       btn.textContent = 'Wiederherstellen';
       btn.addEventListener('click', async () => {
         const name = prompt('Name des Editors?');
@@ -492,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await fetch(`/api/admin/restore/${e.id}`, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${AUTH_TOKEN}`,
+            'x-session-token': sessionStorage.getItem('sessionToken'),
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ editor: name })
@@ -500,9 +456,31 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadHeadlines();
         alert('Wiederhergestellt');
       });
+      const diffBtn = document.createElement('button');
+      diffBtn.className = 'px-2 py-1 bg-gray-500 text-white rounded';
+      diffBtn.textContent = 'Diff';
+      diffBtn.addEventListener('click', () => {
+        const active = allHeadlines.find(h => h.headline === e.headline);
+        const current = active ? active.text : '';
+        alert(diffText(current, e.text));
+      });
       div.appendChild(btn);
+      div.appendChild(diffBtn);
       archiveList.appendChild(div);
     });
+  }
+
+  function diffText(a,b){
+    const aW=a.split(/\s+/); const bW=b.split(/\s+/);
+    const len=Math.max(aW.length,bW.length); const out=[];
+    for(let i=0;i<len;i++){
+      if(aW[i]===bW[i]) out.push(aW[i]||'');
+      else {
+        if(aW[i]) out.push('[-'+aW[i]+'-]');
+        if(bW[i]) out.push('[+'+bW[i]+'+]');
+      }
+    }
+    return out.join(' ');
   }
 
 
@@ -519,5 +497,6 @@ document.addEventListener('DOMContentLoaded', () => {
   archiveSort.addEventListener('change', renderArchive);
 
   loadHeadlines();
+  }
 
 });
