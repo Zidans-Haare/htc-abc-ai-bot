@@ -275,18 +275,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 
-  // create headline input
-  const headlineInput = document.createElement('input');
-  headlineInput.id = 'headline-input';
-  headlineInput.placeholder = 'Headline';
-  headlineInput.className = 'p-2 border border-gray-300 rounded mb-2';
-  pane.insertBefore(headlineInput, pane.firstChild);
-
-  const editorNameInput = document.createElement('input');
-  editorNameInput.id = 'editor-name';
-  editorNameInput.placeholder = 'Name';
-  editorNameInput.className = 'p-2 border border-gray-300 rounded mb-2';
-  pane.insertBefore(editorNameInput, pane.firstChild);
+  const headlineInput = document.getElementById('headline-input');
+  const editorNameInput = document.getElementById('editor-name');
 
   // footer controls
   const controls = document.createElement('div');
@@ -448,10 +438,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   async function loadArchive() {
-
-    archiveView.innerHTML = '';
-
-
+    archiveEntries = [];
+    archiveList.innerHTML = '';
     try {
       const res = await fetch('/api/admin/archive', {
         headers: {
@@ -459,26 +447,11 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         }
       });
-
       archiveEntries = await res.json();
       if (!Array.isArray(archiveEntries)) archiveEntries = [];
       renderArchive();
     } catch (err) {
       archiveList.innerHTML = '<div>Fehler beim Laden</div>';
-
-      const entries = await res.json();
-      if (!Array.isArray(entries)) return;
-      entries.forEach(e => {
-        const div = document.createElement('div');
-        div.className = 'border p-4 rounded';
-        const date = e.archived ? new Date(e.archived).toLocaleString() : '';
-        div.innerHTML = `<h3 class="font-semibold mb-1">${e.headline}</h3><p class="text-sm text-gray-500 mb-2">${date}</p><div class="text-sm">${e.text}</div>`;
-        archiveView.appendChild(div);
-      });
-    } catch (err) {
-      archiveView.innerHTML = '<div>Fehler beim Laden</div>';
-
-
       console.error('Failed to load archive', err);
     }
   }
