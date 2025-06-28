@@ -12,6 +12,7 @@
   <div class="p-4 bg-white border-b flex space-x-2">
     <button id="btn-editor" class="px-4 py-2 bg-blue-600 text-white rounded">Editor</button>
     <button id="btn-questions" class="px-4 py-2 bg-gray-200 rounded">Fragen</button>
+    <button id="btn-archive" class="px-4 py-2 bg-gray-200 rounded">Archiv</button>
   </div>
 
   <!-- Editor View -->
@@ -52,12 +53,11 @@
         <button id="btn-bold" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">B</button>
         <button id="btn-italic" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">I</button>
         <button id="btn-link" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">Link</button>
-        <button id="btn-heading" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">Heading</button>
       </div>
       <!-- Editable Text Area -->
       <div
         id="editor"
-        class="flex-1 p-4 bg-white overflow-y-auto"
+        class="p-4 bg-white overflow-y-auto h-96 flex-none"
         contenteditable="true"
         data-placeholder="Click here to edit the text content..."
       >
@@ -75,6 +75,9 @@
     <div id="open-list" class="space-y-4"></div>
     <div id="answered-list" class="space-y-4 hidden"></div>
   </div>
+
+  <!-- Archive View -->
+  <div id="archive-view" class="flex flex-col flex-1 hidden p-4 space-y-4 overflow-y-auto"></div>
 
   <script src="admin.js" defer></script>
   

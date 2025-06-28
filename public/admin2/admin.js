@@ -35,31 +35,53 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tabs for switching between editor and question management
   const editorBtn = document.getElementById('btn-editor');
   const questionsBtn = document.getElementById('btn-questions');
+  const archiveBtn = document.getElementById('btn-archive');
   const editorView = document.getElementById('editor-view');
   const questionsView = document.getElementById('questions-view');
+  const archiveView = document.getElementById('archive-view');
 
   function showEditor() {
     editorView.classList.remove('hidden');
     questionsView.classList.add('hidden');
+    archiveView.classList.add('hidden');
     editorBtn.classList.add('bg-blue-600', 'text-white');
     editorBtn.classList.remove('bg-gray-200');
     questionsBtn.classList.remove('bg-blue-600', 'text-white');
     questionsBtn.classList.add('bg-gray-200');
+    archiveBtn.classList.remove('bg-blue-600', 'text-white');
+    archiveBtn.classList.add('bg-gray-200');
   }
 
   function showQuestions() {
     questionsView.classList.remove('hidden');
     editorView.classList.add('hidden');
+    archiveView.classList.add('hidden');
     questionsBtn.classList.add('bg-blue-600', 'text-white');
     questionsBtn.classList.remove('bg-gray-200');
     editorBtn.classList.remove('bg-blue-600', 'text-white');
     editorBtn.classList.add('bg-gray-200');
+    archiveBtn.classList.remove('bg-blue-600', 'text-white');
+    archiveBtn.classList.add('bg-gray-200');
     loadOpen();
     loadAnswered();
   }
 
+  function showArchive() {
+    archiveView.classList.remove('hidden');
+    editorView.classList.add('hidden');
+    questionsView.classList.add('hidden');
+    archiveBtn.classList.add('bg-blue-600', 'text-white');
+    archiveBtn.classList.remove('bg-gray-200');
+    editorBtn.classList.remove('bg-blue-600', 'text-white');
+    editorBtn.classList.add('bg-gray-200');
+    questionsBtn.classList.remove('bg-blue-600', 'text-white');
+    questionsBtn.classList.add('bg-gray-200');
+    loadArchive();
+  }
+
   editorBtn.addEventListener('click', showEditor);
   questionsBtn.addEventListener('click', showQuestions);
+  archiveBtn.addEventListener('click', showArchive);
 
   // Question management logic (copied from public/admin/index.html)
   const tabOpen = document.getElementById('tab-open');
@@ -219,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const boldBtn = document.getElementById('btn-bold');
   const italicBtn = document.getElementById('btn-italic');
   const linkBtn = document.getElementById('btn-link');
-  const headingBtn = document.getElementById('btn-heading');
 
   function exec(command, arg = null) {
     document.execCommand(command, false, arg);
@@ -232,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = prompt('Enter link URL');
     if (url) exec('createLink', url);
   });
-  headingBtn.addEventListener('click', () => exec('formatBlock', 'h2'));
 
 
   // create headline input
@@ -396,9 +416,36 @@ document.addEventListener('DOMContentLoaded', () => {
     activeCheckbox.checked = true;
   });
 
+  async function loadArchive() {
+    archiveView.innerHTML = '';
+    try {
+      const res = await fetch('/api/admin/archive', {
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const entries = await res.json();
+      if (!Array.isArray(entries)) return;
+      entries.forEach(e => {
+        const div = document.createElement('div');
+        div.className = 'border p-4 rounded';
+        const date = e.archived ? new Date(e.archived).toLocaleString() : '';
+        div.innerHTML = `<h3 class="font-semibold mb-1">${e.headline}</h3><p class="text-sm text-gray-500 mb-2">${date}</p><div class="text-sm">${e.text}</div>`;
+        archiveView.appendChild(div);
+      });
+    } catch (err) {
+      archiveView.innerHTML = '<div>Fehler beim Laden</div>';
+      console.error('Failed to load archive', err);
+    }
+  }
+
   searchEl.addEventListener('input', () => {
     const q = searchEl.value.toLowerCase();
-    const filtered = allHeadlines.filter(h => h.headline.toLowerCase().includes(q));
+    const filtered = allHeadlines.filter(h =>
+      h.headline.toLowerCase().includes(q) ||
+      (h.text && h.text.toLowerCase().includes(q))
+    );
     renderHeadlines(filtered);
   });
 

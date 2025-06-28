@@ -44,11 +44,11 @@ const HochschuhlABC = sequelize.define('HochschuhlABC', {
 sequelize.sync({ alter: true })
   .catch(err => console.error('SQLite sync error:', err.message));
 
-// Get all active headlines
+// Get all active headlines (include text for searching)
 exports.getHeadlines = async (req, res) => {
   try {
     const headlines = await HochschuhlABC.findAll({
-      attributes: ['id', 'headline'],
+      attributes: ['id', 'headline', 'text'],
       where: { active: true },
       order: [['lastUpdated', 'DESC']]
     });
@@ -135,5 +135,22 @@ exports.deleteEntry = async (req, res) => {
   } catch (err) {
     console.error('Failed to delete entry:', err);
     res.status(500).json({ error: 'Failed to delete entry' });
+  }
+};
+
+// Get archived entries
+exports.getArchive = async (req, res) => {
+  try {
+    const archivedEntries = await HochschuhlABC.findAll({
+      where: {
+        active: false,
+        archived: { [Sequelize.Op.not]: null }
+      },
+      order: [['archived', 'DESC']]
+    });
+    res.json(archivedEntries);
+  } catch (err) {
+    console.error('Failed to load archive:', err);
+    res.status(500).json({ error: 'Failed to load archive' });
   }
 };
