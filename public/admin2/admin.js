@@ -1,5 +1,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
+  /*
   const loginScreen = document.getElementById('login-screen');
   const loginForm = document.getElementById('login-form');
   const userInput = document.getElementById('login-user');
@@ -20,7 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         afterLogin();
 =======
+
+        afterLogin();
+=======
         init();
+
 
       } else if (res.status === 401) {
         alert('Login fehlgeschlagen');
@@ -43,6 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
     loginScreen.classList.add('hidden');
     afterLogin();
   }
+  */
+
+  // always prepare the interface so buttons are wired even before login
+  init();
+  afterLogin();
 
   function init() {
   const originalFetch = window.fetch.bind(window);
