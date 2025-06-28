@@ -176,12 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // initially show editor
   showEditor();
 
-=======
-
-=======
 
 
-=======
+
 
 
   const listEl = document.getElementById('headline-list');
@@ -219,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   showPlaceholder();
-=======
   const boldBtn = document.getElementById('btn-bold');
   const italicBtn = document.getElementById('btn-italic');
   const linkBtn = document.getElementById('btn-link');
