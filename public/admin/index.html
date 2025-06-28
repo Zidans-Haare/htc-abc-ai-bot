@@ -7,6 +7,14 @@
   <script defer src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="p-6 font-sans">
+  <div id="login-screen" class="absolute inset-0 flex items-center justify-center bg-gray-100">
+    <form id="login-form" class="bg-white p-4 rounded shadow space-y-2">
+      <input id="login-user" class="border p-2 w-64" placeholder="User">
+      <input id="login-pass" type="password" class="border p-2 w-64" placeholder="Password">
+      <button class="w-full bg-blue-600 text-white px-4 py-2 rounded" type="submit">Login</button>
+      <p class="text-xs text-gray-500 text-center">Default: admin / admin</p>
+    </form>
+  </div>
   <h1 class="text-2xl font-bold mb-4">Fragenverwaltung</h1>
   <div class="mb-6 space-x-2">
     <button id="tab-open" class="px-4 py-2 bg-blue-600 text-white rounded">Offene Fragen</button>
@@ -16,10 +24,58 @@
   <div id="answered-list" class="space-y-4 hidden"></div>
 
   <script>
+  const loginScreen = document.getElementById('login-screen');
+  const loginForm = document.getElementById('login-form');
+  const userInput = document.getElementById('login-user');
+  const passInput = document.getElementById('login-pass');
+
   const openTab = document.getElementById('tab-open');
   const answeredTab = document.getElementById('tab-answered');
   const openList = document.getElementById('open-list');
   const answeredList = document.getElementById('answered-list');
+
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = async (input, init = {}) => {
+    init.headers = init.headers || {};
+    const token = sessionStorage.getItem('sessionToken');
+    if (token) init.headers['x-session-token'] = token;
+    const res = await originalFetch(input, init);
+    if (res.status === 401) {
+      sessionStorage.removeItem('sessionToken');
+      alert('Session abgelaufen, bitte erneut anmelden');
+      location.reload();
+    }
+    return res;
+  };
+
+  async function doLogin(u,p){
+    try {
+      const res = await fetch('/api/login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:u,password:p})
+      });
+      if(res.ok){
+        const data=await res.json();
+        sessionStorage.setItem('sessionToken',data.token);
+        loginScreen.classList.add('hidden');
+        loadOpen();
+        loadAnswered();
+      } else {
+        alert('Login fehlgeschlagen');
+      }
+    } catch (err) {
+      alert('Server nicht erreichbar');
+    }
+  }
+
+  loginForm.addEventListener('submit',e=>{e.preventDefault();doLogin(userInput.value,passInput.value);});
+
+  if(sessionStorage.getItem('sessionToken')){
+    loginScreen.classList.add('hidden');
+    loadOpen();
+    loadAnswered();
+  }
 
   function showOpen() {
     openList.classList.remove('hidden');
@@ -111,8 +167,11 @@
     }
   }
 
-  loadOpen();
-  loadAnswered();
+  // Initial load only if a token is already stored
+  if(sessionStorage.getItem('sessionToken')){
+    loadOpen();
+    loadAnswered();
+  }
   </script>
 </body>
 </html>
