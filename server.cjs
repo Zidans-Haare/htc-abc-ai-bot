@@ -25,26 +25,12 @@ const { getHeadlines, getEntry, createEntry, updateEntry, deleteEntry, getArchiv
 const { getHeadlines, getEntry, createEntry, updateEntry, deleteEntry, getArchive } = require("./controllers/adminController.cjs");
 
 const path = require('path');
-const { Sequelize } = require('sequelize');
-const ConversationModel = require('./models/Conversation');
 
 const pid = process.pid;
 
 dotenv.config();
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
-// Setup database connection for conversation threads
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './chatbot.db',
-  logging: false
-});
-
-const Conversation = ConversationModel(sequelize);
-
-// Ensure database tables exist
-sequelize.sync({ alter: true })
-  .catch(err => console.error('SQLite sync error:', err.message));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -75,39 +61,6 @@ app.use((req, res, next) => {
 // Routes
 app.post("/api/chat", generateResponse);
 
-// List conversation threads
-app.get('/api/threads', async (req, res) => {
-  try {
-    const convos = await Conversation.findAll({
-      order: [['updatedAt', 'DESC']]
-    });
-    const threads = convos.map(c => ({
-      conversationId: c.conversationId,
-      title: (c.messages && c.messages.length)
-        ? c.messages.find(m => m.isUser)?.text?.slice(0, 50) || ''
-        : ''
-    }));
-    res.json(threads);
-  } catch (err) {
-    console.error('Failed to load threads:', err);
-    res.status(500).json({ error: 'Failed to load threads' });
-  }
-});
-
-// Get a specific conversation by ID
-app.get('/api/threads/:id', async (req, res) => {
-  try {
-    const convo = await Conversation.findOne({ where: { conversationId: req.params.id } });
-    if (!convo) return res.status(404).json({ error: 'Not found' });
-    res.json({
-      conversationId: convo.conversationId,
-      messages: convo.messages
-    });
-  } catch (err) {
-    console.error('Failed to load conversation:', err);
-    res.status(500).json({ error: 'Failed to load conversation' });
-  }
-});
 
 // Return list of unanswered questions
 app.get('/api/unanswered', adminAuth, async (req, res) => {

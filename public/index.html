@@ -30,10 +30,6 @@
     </div>
   </header>
   <div id="main" class="app-main">
-    <aside id="threads" class="threads-panel">
-      <h2>Unterhaltungen</h2>
-      <div class="thread active">Aktuelles Gespräch</div>
-    </aside>
     <section id="chat" class="chat-panel">
       <div id="messages"></div>
       <div id="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
@@ -62,7 +58,6 @@
     const root = document.documentElement;
     const themeToggle = document.getElementById('theme-toggle');
     const currentTimeEl = document.getElementById('current-time');
-    const threadsEl = document.getElementById('threads');
     const messagesEl = document.getElementById('messages');
     const chatInput = document.getElementById('chat-input');
     const sendBtnEl = document.getElementById('send-btn');
@@ -166,56 +161,12 @@
       scrollToBottom();
     }
 
-    // Load conversation threads
-    async function loadThreads() {
-      try {
-        const res = await fetch('/api/threads');
-        const threads = await res.json();
-        threadsEl.innerHTML = '<h2>Unterhaltungen</h2>';
-        threads.forEach(thread => {
-          const t = document.createElement('div');
-          t.className = `thread ${thread.conversationId === conversationId ? 'active' : ''}`;
-          t.textContent = thread.title || `Gespräch ${thread.conversationId.slice(0, 8)}`;
-          t.dataset.conversationId = thread.conversationId;
-          t.addEventListener('click', () => loadConversation(thread.conversationId));
-          threadsEl.appendChild(t);
-        });
-      } catch (e) {
-        console.error('Fehler beim Laden der Threads:', e);
-      }
-    }
-
-    // Load messages for a conversation
-    async function loadConversation(id) {
-      conversationId = id;
-      messagesEl.innerHTML = '';
-      document.querySelectorAll('.thread').forEach(t => t.classList.remove('active'));
-      document.querySelector(`.thread[data-conversation-id="${id}"]`).classList.add('active');
-      try {
-        const res = await fetch(`/api/threads/${id}`);
-        const conversation = await res.json();
-        conversation.messages.forEach(msg => {
-          addMsg(msg.text, msg.isUser, msg.timestamp, !msg.isUser);
-        });
-      } catch (e) {
-        console.error('Fehler beim Laden der Konversation:', e);
-        addMsg('Fehler beim Laden der Konversation.', false);
-      }
-    }
 
     // New chat handler
-    document.getElementById('new-chat').addEventListener('click', async () => {
+    document.getElementById('new-chat').addEventListener('click', () => {
       messagesEl.innerHTML = '';
       conversationId = null;
-      document.querySelectorAll('.thread').forEach(t => t.classList.remove('active'));
-      const t = document.createElement('div');
-      t.className = 'thread active';
-      t.textContent = 'Neues Gespräch';
-      t.dataset.conversationId = '';
-      t.addEventListener('click', () => loadConversation(null));
-      threadsEl.appendChild(t);
       addMsg('Neues Gespräch gestartet. Wie kann ich helfen?', false);
-      await loadThreads(); // Refresh thread list
     });
 
     // Send message logic
@@ -236,7 +187,6 @@
         const data = await res.json();
         conversationId = data.conversationId;
         addMsg(data.response, false, new Date(), true);
-        await loadThreads(); // Refresh thread list
       } catch (e) {
         addMsg('Fehler beim Server.', false);
         console.error(e);
@@ -259,7 +209,6 @@
     suggestionChips.forEach(c => c.addEventListener('click', () => sendMsg(c.textContent)));
 
     // Initial setup
-    loadThreads();
     addMsg('Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?', false);
   </script>
 </body>
