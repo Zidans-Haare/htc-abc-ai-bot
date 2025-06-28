@@ -429,6 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error('Failed to delete entry', err);
       alert('Löschen fehlgeschlagen');
+
     }
   }
 
@@ -446,6 +447,8 @@ document.addEventListener('DOMContentLoaded', () => {
       w.document.write(`<h1>${entry.headline}</h1>` + entry.text);
     } catch (err) {
       console.error('Preview failed', err);
+=======
+
     }
   }
 
