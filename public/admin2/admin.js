@@ -126,7 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // initially show editor
   showEditor();
-=======
   const listEl = document.getElementById('headline-list');
   const searchEl = document.getElementById('search');
   const editorEl = document.getElementById('editor');
