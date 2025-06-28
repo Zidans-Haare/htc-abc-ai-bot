@@ -352,7 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
       currentId = entry.id;
       headlineInput.value = entry.headline;
       editorNameInput.value = entry.editor || '';
-      quill.root.innerHTML = entry.text;
+      // Use Quill API to properly insert HTML
+      quill.clipboard.dangerouslyPasteHTML(entry.text);
       activeCheckbox.checked = !!entry.active;
       deleteBtn.disabled = false;
     } catch (err) {
@@ -423,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentId = null;
         headlineInput.value = '';
         editorNameInput.value = '';
-        quill.root.innerHTML = '';
+        quill.setText('');
         activeCheckbox.checked = false;
         deleteBtn.disabled = true;
         await loadHeadlines();
@@ -462,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentId = null;
     headlineInput.value = '';
     editorNameInput.value = '';
-    quill.root.innerHTML = '';
+    quill.setText('');
     activeCheckbox.checked = true;
     deleteBtn.disabled = true;
     headlineInput.focus();
