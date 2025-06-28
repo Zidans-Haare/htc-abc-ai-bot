@@ -40,7 +40,7 @@ The server writes its process id to `server.pid` so you can stop it using:
 kill -9 $(cat server.pid)
 ```
 
-The server listens on `/api/chat` for POST requests and serves the static files from the `public` directory.
+The server listens on `/api/chat` for POST requests and serves the static files from the `public` directory. Conversation history is stored only in memory and disappears when the server restarts, so chats are private to each session.
 
 ## Handling Unanswered Questions
 
@@ -79,8 +79,16 @@ The page communicates with several JSON endpoints:
   `false` and recording the time in `archived`.
 * `GET /api/admin/archive` – return all archived entries ordered by the time they
   were archived.
+
 * `POST /api/admin/restore/:id` – restore an archived entry. The current active
   version (if any) is archived and a new entry is created from the archived data.
+=======
+
+* `POST /api/admin/restore/:id` – restore an archived entry. The current active
+  version (if any) is archived and a new entry is created from the archived data.
+=======
+
+
 
 Only active records are served by the API. Archived entries remain in the
 database for reference and history tracking.

@@ -36,7 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const editorBtn = document.getElementById('btn-editor');
   const questionsBtn = document.getElementById('btn-questions');
   const archiveBtn = document.getElementById('btn-archive');
+
   const openCountSpan = document.getElementById('open-count');
+=======
+
+  const openCountSpan = document.getElementById('open-count');
+=======
+
+
   const editorView = document.getElementById('editor-view');
   const questionsView = document.getElementById('questions-view');
   const archiveView = document.getElementById('archive-view');
@@ -67,9 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAnswered();
   }
 
+
   function updateOpenCount(num) {
     if (openCountSpan) openCountSpan.textContent = num;
   }
+
 
   function showArchive() {
     archiveView.classList.remove('hidden');
@@ -443,6 +452,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   async function loadArchive() {
+
+=======
+
+=======
+    archiveView.innerHTML = '';
+
+
     try {
       const res = await fetch('/api/admin/archive', {
         headers: {
@@ -450,14 +466,30 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         }
       });
+
       archiveEntries = await res.json();
       if (!Array.isArray(archiveEntries)) archiveEntries = [];
       renderArchive();
     } catch (err) {
       archiveList.innerHTML = '<div>Fehler beim Laden</div>';
+
+      const entries = await res.json();
+      if (!Array.isArray(entries)) return;
+      entries.forEach(e => {
+        const div = document.createElement('div');
+        div.className = 'border p-4 rounded';
+        const date = e.archived ? new Date(e.archived).toLocaleString() : '';
+        div.innerHTML = `<h3 class="font-semibold mb-1">${e.headline}</h3><p class="text-sm text-gray-500 mb-2">${date}</p><div class="text-sm">${e.text}</div>`;
+        archiveView.appendChild(div);
+      });
+    } catch (err) {
+      archiveView.innerHTML = '<div>Fehler beim Laden</div>';
+
+
       console.error('Failed to load archive', err);
     }
   }
+
 
   function renderArchive() {
     let items = archiveEntries.slice();
@@ -506,6 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
       archiveList.appendChild(div);
     });
   }
+
 
   searchEl.addEventListener('input', () => {
     const q = searchEl.value.toLowerCase();
