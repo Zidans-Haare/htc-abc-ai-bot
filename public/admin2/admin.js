@@ -17,7 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('sessionToken',data.token);
         sessionStorage.setItem('userRole', data.role);
         loginScreen.classList.add('hidden');
+
+        afterLogin();
+=======
         init();
+
       } else if (res.status === 401) {
         alert('Login fehlgeschlagen');
       } else {
@@ -32,9 +36,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loginForm.addEventListener('submit',e=>{e.preventDefault();doLogin(userInput.value,passInput.value);});
 
+  // always prepare the interface so buttons are wired even before login
+  init();
+
   if(sessionStorage.getItem('sessionToken')){
     loginScreen.classList.add('hidden');
-    init();
+    afterLogin();
   }
 
   function init() {
@@ -271,15 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // initially show editor
-  showEditor();
-  loadOpen();
-
-
-
-
-
-
+  // show editor after successful login
   const listEl = document.getElementById('headline-list');
   const searchEl = document.getElementById('search');
   const quill = new Quill('#editor', {
@@ -578,7 +577,12 @@ document.addEventListener('DOMContentLoaded', () => {
   archiveSearch.addEventListener('input', renderArchive);
   archiveSort.addEventListener('change', renderArchive);
 
-  loadHeadlines();
+  }
+
+  function afterLogin(){
+    showEditor();
+    loadOpen();
+    loadHeadlines();
   }
 
 });
