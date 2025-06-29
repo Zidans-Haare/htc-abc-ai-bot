@@ -79,6 +79,29 @@ module.exports = (getSession, logAction) => {
     }
   });
 
+  router.delete('/unanswered', adminAuth(getSession, logAction), async (req, res) => {
+    const { questions } = req.body || {};
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'questions required' });
+    }
+    try {
+      const file = path.resolve(__dirname, '../ai_fragen/offene_fragen.txt');
+      const data = await fs.readFile(file, 'utf8');
+      const lines = data.split(/\n+/).filter(Boolean);
+      const filtered = lines.filter(line => {
+        const match = line.match(/Frage:\s*(.*)$/);
+        if (!match) return true;
+        const q = match[1].trim();
+        return !questions.includes(q);
+      });
+      await fs.writeFile(file, filtered.join('\n') + (filtered.length ? '\n' : ''), 'utf8');
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Failed to delete unanswered questions:', err);
+      res.status(500).json({ error: 'Failed to delete unanswered questions' });
+    }
+  });
+
   router.post('/answer', adminAuth(getSession, logAction), async (req, res) => {
     const { question, answer, editor } = req.body || {};
     if (!question || !answer) {

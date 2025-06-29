@@ -213,6 +213,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const openList = document.getElementById('open-list');
   const answeredList = document.getElementById('answered-list');
   const questionSearch = document.getElementById('question-search');
+  const deleteSelectedBtn = document.getElementById('delete-selected');
+  let selectedQuestions = new Set();
 
   function showOpen() {
     console.log('Showing open questions...');
@@ -222,6 +224,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     tabAnswered.classList.remove('bg-blue-600', 'text-white');
     tabAnswered.classList.add('bg-gray-200');
     tabOpen.classList.remove('bg-gray-200');
+    selectedQuestions.clear();
+    deleteSelectedBtn.classList.add('hidden');
     loadOpen();
   }
 
@@ -243,9 +247,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadOpen();
     loadAnswered();
   });
+  deleteSelectedBtn.addEventListener('click', () => handleDelete(Array.from(selectedQuestions)));
 
   async function loadOpen() {
     openList.innerHTML = '';
+    selectedQuestions.clear();
+    deleteSelectedBtn.classList.add('hidden');
     try {
       console.log('Fetching unanswered questions...');
       const questions = await fetchAndParse('/api/unanswered');
@@ -260,9 +267,40 @@ document.addEventListener('DOMContentLoaded', async () => {
       questions.filter(q => !qFilter || q.toLowerCase().includes(qFilter)).forEach(q => {
         const div = document.createElement('div');
         div.className = 'border p-4 rounded';
+
+        const header = document.createElement('div');
+        header.className = 'flex justify-between items-start mb-2';
+
+        const left = document.createElement('div');
+        left.className = 'flex items-start space-x-2';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'mt-1';
+        cb.addEventListener('change', () => {
+          if (cb.checked) selectedQuestions.add(q); else selectedQuestions.delete(q);
+          deleteSelectedBtn.classList.toggle('hidden', selectedQuestions.size === 0);
+        });
+
+        const p = document.createElement('p');
+        p.className = 'font-medium';
+        p.textContent = q;
+
+        left.appendChild(cb);
+        left.appendChild(p);
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.textContent = '🗑️';
+        del.addEventListener('click', () => handleDelete([q]));
+
+        header.appendChild(left);
+        header.appendChild(del);
+
+        div.appendChild(header);
+
         const form = document.createElement('form');
         form.innerHTML = `
-          <p class="mb-2 font-medium">${q}</p>
           <input type="hidden" name="question" value="${q}">
           <input name="editor" class="border p-2 w-full mb-2" placeholder="Name" required>
           <input name="answer" class="border p-2 w-full mb-2" placeholder="Antwort" required>
@@ -296,6 +334,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
       openList.innerHTML = '<div>Fehler beim Laden</div>';
       console.error('Error loading unanswered questions:', err);
+    }
+  }
+
+  async function handleDelete(questions) {
+    if (!questions || questions.length === 0) return;
+    const text = questions.length === 1
+      ? `Frage wirklich löschen?\n${questions[0]}`
+      : `Fragen wirklich löschen?\n${questions.join('\n')}`;
+    if (!confirm(text)) return;
+    try {
+      const resp = await fetch('/api/unanswered', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questions }),
+        credentials: 'include'
+      });
+      if (resp.ok) {
+        selectedQuestions.clear();
+        deleteSelectedBtn.classList.add('hidden');
+        loadOpen();
+      } else {
+        console.error('Delete failed:', await resp.json());
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
     }
   }
 
