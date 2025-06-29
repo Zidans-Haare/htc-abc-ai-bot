@@ -14,10 +14,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       if (res.ok) {
         const data = await res.json();
-        console.log('Login successful, token:', data.token);
-        sessionStorage.setItem('sessionToken', data.token);
-        sessionStorage.setItem('userRole', data.role);
-        window.location.href = `/admin/index.html?sessionToken=${encodeURIComponent(data.token)}`;
+        console.log('Login successful, role:', data.role);
+        sessionStorage.setItem('userRole', data.role); // Nur Rolle speichern
+        window.location.href = '/admin/index.html';
       } else {
         const error = await res.json();
         console.error('Login failed:', error);
@@ -34,25 +33,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     doLogin(userInput.value, passInput.value);
   });
 
-  console.log('Checking for existing session token:', sessionStorage.getItem('sessionToken'));
-  const token = sessionStorage.getItem('sessionToken');
-  if (token) {
-    try {
-      const res = await fetch(`/api/validate?sessionToken=${encodeURIComponent(token)}`, {
-        headers: { 'x-session-token': token }
-      });
-      if (res.ok) {
-        console.log('Session token valid, redirecting to admin...');
-        window.location.href = `/admin/index.html?sessionToken=${encodeURIComponent(token)}`;
-      } else {
-        console.log('Session token invalid, clearing session...');
-        sessionStorage.removeItem('sessionToken');
-        sessionStorage.removeItem('userRole');
-      }
-    } catch (err) {
-      console.error('Validation error:', err);
-      sessionStorage.removeItem('sessionToken');
+  // Prüfe, ob eine gültige Sitzung existiert
+  try {
+    const res = await fetch('/api/validate');
+    if (res.ok) {
+      console.log('Session valid, redirecting to admin...');
+      window.location.href = '/admin/index.html';
+    } else {
+      console.log('No valid session, staying on login page...');
       sessionStorage.removeItem('userRole');
     }
+  } catch (err) {
+    console.error('Validation error:', err);
+    sessionStorage.removeItem('userRole');
   }
 });

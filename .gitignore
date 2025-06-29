@@ -6,3 +6,4 @@ cron/cron.log
 logs/audit.log
 hochschuhl-abc.db*
 chatbot.db*
+logs/

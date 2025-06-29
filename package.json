@@ -9,9 +9,10 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
-    "@toast-ui/editor": "^3.2.2",
+    "@toast-ui/editor": "^3.1.0",
     "bcrypt": "^6.0.0",
     "body-parser": "^1.20.3",
+    "cookie-parser": "^1.4.7",
     "diff-match-patch": "^1.0.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",

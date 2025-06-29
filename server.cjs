@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const rateLimit = require("express-rate-limit");
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const { generateResponse } = require("./controllers/geminiController.cjs");
 const adminController = require("./controllers/adminController.cjs");
 const auth = require('./controllers/authController.cjs');
@@ -21,20 +22,27 @@ const sessions = {};
 function createSession(username, role) {
   const token = crypto.randomBytes(32).toString('hex');
   sessions[token] = { username, role, created: Date.now(), expires: Date.now() + SESSION_TTL };
+  console.log('Created session:', { token, username, role, expires: new Date(sessions[token].expires).toISOString() });
   return token;
 }
 
 function destroySession(token) {
+  console.log('Destroying session:', token);
   delete sessions[token];
 }
 
 function getSession(token) {
   const s = sessions[token];
-  if (!s) return null;
+  if (!s) {
+    console.log('Session not found for token:', token);
+    return null;
+  }
   if (Date.now() > s.expires) {
+    console.log('Session expired for token:', token);
     delete sessions[token];
     return null;
   }
+  console.log('Session retrieved:', { token, username: s.username, role: s.role });
   return s;
 }
 
@@ -57,21 +65,20 @@ const loginLimiter = rateLimit({
 const protectAdmin = (req, res, next) => {
   // Erlaube /login/* ohne Sitzungsprüfung
   if (req.url.startsWith('/login/')) {
+    console.log('Allowing /login/* request:', req.url);
     return next();
   }
-  // Erlaube statische Dateien in /admin/* (z.B. .js, .css)
-  if (req.url.match(/^\/admin\/.*\.(js|css)$/)) {
-    return next();
-  }
-  // Prüfe Sitzung für /admin/* (nur für nicht-statische Dateien wie index.html)
+  // Prüfe Sitzung für /admin/*
   if (req.url.startsWith('/admin/')) {
-    const token = req.headers['x-session-token'] || req.query.sessionToken;
+    const token = req.cookies.sessionToken;
+    console.log('Checking session for /admin/* request:', { url: req.url, token });
     const session = token && getSession(token);
     if (session) {
       req.session = session;
+      console.log('Session valid for /admin/*:', { username: session.username, role: session.role });
       return next();
     }
-    // Bei fehlendem Login, sende login.html
+    console.log('No valid session, redirecting to login.html');
     return res.status(401).sendFile(path.join(__dirname, 'public', 'login', 'login.html'));
   }
   next();
@@ -93,6 +100,7 @@ app.use(helmet({
     }
   }
 }));
+app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(protectAdmin);
 app.use(express.static(path.join(__dirname, 'public')));
@@ -101,7 +109,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   console.log("Headers:", req.headers);
-  console.log("Query:", req.query);
+  console.log("Cookies:", req.cookies);
   next();
 });
 
@@ -120,7 +128,8 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     }
     const token = createSession(user.username, user.role);
     logAction(username, 'Successful login');
-    res.json({ token, role: user.role });
+    res.cookie('sessionToken', token, { httpOnly: true, maxAge: SESSION_TTL }); // Entferne secure für Tests
+    res.json({ role: user.role });
   } catch (err) {
     console.error('Login failed:', err);
     logAction(username, 'Login error');
@@ -129,7 +138,8 @@ app.post('/api/login', loginLimiter, async (req, res) => {
 });
 
 app.get('/api/validate', (req, res) => {
-  const token = req.headers['x-session-token'] || req.query.sessionToken;
+  const token = req.cookies.sessionToken;
+  console.log('Validating session:', { token });
   const session = token && getSession(token);
   if (session) {
     res.json({ valid: true, username: session.username, role: session.role });
@@ -139,12 +149,14 @@ app.get('/api/validate', (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-  const token = req.headers['x-session-token'] || req.query.sessionToken;
+  const token = req.cookies.sessionToken;
+  console.log('Logging out:', { token });
   if (token) {
     const session = getSession(token);
     if (session) logAction(session.username, 'Logout');
     destroySession(token);
   }
+  res.clearCookie('sessionToken');
   res.json({ success: true });
 });
 

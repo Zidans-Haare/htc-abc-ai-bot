@@ -1,41 +1,52 @@
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
-  const token = sessionStorage.getItem('sessionToken');
-  if (!token) {
-    console.log('No session token, redirecting to login...');
-    window.location.href = '/login/login.html';
-    return;
+
+  // Helper function to handle fetch and parse responses
+  async function fetchAndParse(url, options = {}) {
+    const res = await fetch(url, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      credentials: 'include'
+    });
+    console.log(`Response for ${url}:`, res.status, res.statusText);
+    if (!res.ok) {
+      let errorMessage = 'Unknown error';
+      try {
+        const error = await res.json();
+        errorMessage = error.error || errorMessage;
+      } catch (e) {
+        errorMessage = await res.text() || errorMessage;
+      }
+      throw new Error(`HTTP error ${res.status}: ${errorMessage}`);
+    }
+    return res.json();
   }
 
-  // Validate session token
+  // Validate session
   try {
-    const res = await fetch(`/api/validate?sessionToken=${encodeURIComponent(token)}`, {
-      headers: { 'x-session-token': token }
-    });
-    if (!res.ok) {
-      console.log('Session token invalid, redirecting to login...');
-      sessionStorage.removeItem('sessionToken');
-      sessionStorage.removeItem('userRole');
-      window.location.href = '/login/login.html';
-      return;
-    }
+    await fetchAndParse('/api/validate');
   } catch (err) {
     console.error('Validation error:', err);
-    sessionStorage.removeItem('sessionToken');
     sessionStorage.removeItem('userRole');
     window.location.href = '/login/login.html';
     return;
   }
 
+  // Override fetch to handle 401 errors
   const originalFetch = window.fetch.bind(window);
   window.fetch = async (input, init = {}) => {
     init.headers = init.headers || {};
-    init.headers['x-session-token'] = token;
+    init.credentials = 'include';
     console.log('Fetching:', input, 'with headers:', init.headers);
     const res = await originalFetch(input, init);
     if (res.status === 401) {
-      console.error('Unauthorized request:', input);
-      sessionStorage.removeItem('sessionToken');
+      let errorMessage = 'Unknown error';
+      try {
+        errorMessage = await res.text();
+      } catch (e) {
+        console.error('Failed to read 401 response:', e);
+      }
+      console.error('Unauthorized request:', input, errorMessage);
       sessionStorage.removeItem('userRole');
       alert('Session abgelaufen, bitte erneut anmelden');
       window.location.href = '/login/login.html';
@@ -55,8 +66,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const res = await fetch('/api/users', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-session-token': sessionStorage.getItem('sessionToken') },
-          body: JSON.stringify({ username: u, password: p, role: r })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p, role: r }),
+          credentials: 'include'
         });
         if (res.ok) {
           alert('User created');
@@ -135,26 +147,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   exportBtn.addEventListener('click', async () => {
     try {
       console.log('Exporting data...');
-      const res = await fetch('/api/export', { headers: { 'x-session-token': sessionStorage.getItem('sessionToken') } });
-      if (res.ok) {
-        const data = await res.json();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'export.json';
-        a.click();
-        URL.revokeObjectURL(url);
-        const statsRes = await fetch('/api/stats', { headers: { 'x-session-token': sessionStorage.getItem('sessionToken') } });
-        if (statsRes.ok) {
-          const s = await statsRes.json();
-          alert('Gesamt: ' + s.total);
-        } else {
-          console.error('Stats fetch failed:', await statsRes.json());
-        }
-      } else {
-        console.error('Export fetch failed:', await res.json());
-      }
+      const data = await fetchAndParse('/api/export');
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      const stats = await fetchAndParse('/api/stats');
+      alert('Gesamt: ' + stats.total);
     } catch (err) {
       console.error('Export error:', err);
     }
@@ -163,8 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   logoutBtn.addEventListener('click', async () => {
     try {
       console.log('Logging out...');
-      await fetch('/api/logout', { headers: { 'x-session-token': sessionStorage.getItem('sessionToken') } });
-      sessionStorage.removeItem('sessionToken');
+      await fetchAndParse('/api/logout');
       sessionStorage.removeItem('userRole');
       window.location.href = '/login/login.html';
     } catch (err) {
@@ -211,17 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     openList.innerHTML = '';
     try {
       console.log('Fetching unanswered questions...');
-      const res = await fetch('/api/unanswered', {
-        headers: {
-          'x-session-token': sessionStorage.getItem('sessionToken'),
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
-      }
-      const questions = await res.json();
+      const questions = await fetchAndParse('/api/unanswered');
       console.log('Unanswered questions received:', questions);
       if (!Array.isArray(questions)) {
         console.error('Expected array, got:', questions);
@@ -248,11 +239,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Submitting answer:', data);
             const resp = await fetch('/api/answer', {
               method: 'POST',
-              headers: {
-                'x-session-token': sessionStorage.getItem('sessionToken'),
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(data)
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+              credentials: 'include'
             });
             if (resp.ok) {
               div.remove();
@@ -277,17 +266,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     answeredList.innerHTML = '';
     try {
       console.log('Fetching answered questions...');
-      const res = await fetch('/api/answered', {
-        headers: {
-          'x-session-token': sessionStorage.getItem('sessionToken'),
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
-      }
-      const pairs = await res.json();
+      const pairs = await fetchAndParse('/api/answered');
       console.log('Answered questions received:', pairs);
       if (!Array.isArray(pairs)) {
         console.error('Expected array, got:', pairs);
@@ -313,11 +292,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Updating answer:', data);
             const resp = await fetch('/api/update', {
               method: 'POST',
-              headers: {
-                'x-session-token': sessionStorage.getItem('sessionToken'),
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(data)
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+              credentials: 'include'
             });
             if (!resp.ok) {
               console.error('Answer update failed:', await resp.json());
@@ -347,19 +324,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       initialEditType: 'wysiwyg',
       previewStyle: 'vertical',
       toolbarItems: [
-        ['heading', 'bold', 'italic', 'link', 'image'],
-        [{
-          name: 'underline',
-          tooltip: 'Underline',
-          action: (editor) => {
-            const range = editor.getCurrentRange();
-            const selectedText = editor.getSelectedText();
-            editor.replaceSelection('__' + selectedText + '__');
-          },
-          text: 'U',
-          className: 'toastui-editor-toolbar-icons',
-          style: { textDecoration: 'underline' }
-        }]
+        ['heading', 'bold', 'italic', 'link', 'image']
       ]
     });
     console.log('Toast UI Editor initialized');
@@ -385,17 +350,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('Fetching headlines...');
     try {
       const q = encodeURIComponent(searchEl.value.trim());
-      const res = await fetch('/api/headlines?q=' + q, {
-        headers: {
-          'x-session-token': sessionStorage.getItem('sessionToken'),
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
-      }
-      allHeadlines = await res.json();
+      allHeadlines = await fetchAndParse(`/api/headlines?q=${q}`);
       console.log('Headlines received:', allHeadlines);
       renderHeadlines(allHeadlines);
     } catch (err) {
@@ -424,17 +379,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadEntry(id) {
     try {
       console.log('Fetching entry:', id);
-      const res = await fetch(`/api/entries/${id}`, {
-        headers: {
-          'x-session-token': sessionStorage.getItem('sessionToken'),
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
-      }
-      const entry = await res.json();
+      const entry = await fetchAndParse(`/api/entries/${id}`);
       console.log('Entry received:', entry);
       currentId = entry.id;
       headlineInput.value = entry.headline;
@@ -460,20 +405,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (currentId) {
         res = await fetch(`/api/entries/${currentId}`, {
           method: 'PUT',
-          headers: {
-            'x-session-token': sessionStorage.getItem('sessionToken'),
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          credentials: 'include'
         });
       } else {
         res = await fetch('/api/entries', {
           method: 'POST',
-          headers: {
-            'x-session-token': sessionStorage.getItem('sessionToken'),
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          credentials: 'include'
         });
       }
       if (!res.ok) {
@@ -495,17 +436,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!currentId) return;
     try {
       console.log('Deleting entry:', currentId);
-      const res = await fetch(`/api/entries/${currentId}`, {
-        method: 'DELETE',
-        headers: {
-          'x-session-token': sessionStorage.getItem('sessionToken'),
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
-      }
+      await fetchAndParse(`/api/entries/${currentId}`, { method: 'DELETE' });
       console.log('Entry deleted');
       currentId = null;
       headlineInput.value = '';
@@ -536,17 +467,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveList.innerHTML = '';
     try {
       console.log('Fetching archive...');
-      const res = await fetch('/api/archive', {
-        headers: {
-          'x-session-token': sessionStorage.getItem('sessionToken'),
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
-      }
-      archiveEntries = await res.json();
+      archiveEntries = await fetchAndParse('/api/archive');
       console.log('Archive received:', archiveEntries);
       if (!Array.isArray(archiveEntries)) archiveEntries = [];
       renderArchive();
@@ -591,16 +512,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (name === null) return;
         try {
           console.log('Restoring entry:', e.id);
-          await fetch(`/api/restore/${e.id}`, {
+          const resp = await fetch(`/api/restore/${e.id}`, {
             method: 'POST',
-            headers: {
-              'x-session-token': sessionStorage.getItem('sessionToken'),
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ editor: name })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ editor: name }),
+            credentials: 'include'
           });
-          await loadHeadlines();
-          alert('Wiederhergestellt');
+          if (resp.ok) {
+            await loadHeadlines();
+            await loadArchive();
+            alert('Wiederhergestellt');
+          } else {
+            console.error('Restore failed:', await resp.json());
+          }
         } catch (err) {
           console.error('Restore failed:', err);
         }

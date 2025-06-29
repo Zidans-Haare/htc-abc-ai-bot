@@ -47,7 +47,7 @@ sequelize.sync({ alter: true })
 
 // Admin auth middleware factory
 const adminAuth = (getSession, logAction) => (req, res, next) => {
-  const token = req.headers['x-session-token'];
+  const token = req.cookies.sessionToken;
   const session = token && getSession(token);
   if (session) {
     req.user = session.username;
