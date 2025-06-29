@@ -7,3 +7,5 @@ logs/audit.log
 hochschuhl-abc.db*
 chatbot.db*
 logs/
+ai_fragen/offene_fragen.txt
+ai_input/faq.txt
