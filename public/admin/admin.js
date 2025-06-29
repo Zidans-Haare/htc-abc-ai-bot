@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   logoutBtn.addEventListener('click', async () => {
     try {
       console.log('Logging out...');
-      await fetchAndParse('/api/logout');
+      await fetchAndParse('/api/logout', { method: 'POST' });
       sessionStorage.removeItem('userRole');
       window.location.href = '/login/login.html';
     } catch (err) {
