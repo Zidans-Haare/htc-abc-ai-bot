@@ -181,7 +181,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const a = document.createElement('a');
         a.href = url;
         a.download = 'export.json';
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
       const stats = await fetchAndParse('/api/stats');
