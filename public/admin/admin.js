@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM loaded, initializing...'); // Debug: Confirm DOMContentLoaded
+  console.log('DOM loaded, initializing...');
   const loginScreen = document.getElementById('login-screen');
   const loginForm = document.getElementById('login-form');
   const userInput = document.getElementById('login-user');
   const passInput = document.getElementById('login-pass');
 
   async function doLogin(u, p) {
-    console.log('Attempting login with username:', u); // Debug: Log login attempt
+    console.log('Attempting login with username:', u);
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       if (res.ok) {
         const data = await res.json();
-        console.log('Login successful, token:', data.token); // Debug: Log token
+        console.log('Login successful, token:', data.token);
         sessionStorage.setItem('sessionToken', data.token);
         sessionStorage.setItem('userRole', data.role);
         loginScreen.classList.add('hidden');
@@ -36,14 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
     doLogin(userInput.value, passInput.value);
   });
 
-  console.log('Checking for existing session token:', sessionStorage.getItem('sessionToken')); // Debug: Check session
+  console.log('Checking for existing session token:', sessionStorage.getItem('sessionToken'));
   if (sessionStorage.getItem('sessionToken')) {
     loginScreen.classList.add('hidden');
     init();
   }
 
   function init() {
-    console.log('Starting init...'); // Debug: Confirm init start
+    console.log('Starting init...');
     const originalFetch = window.fetch.bind(window);
     window.fetch = async (input, init = {}) => {
       init.headers = init.headers || {};
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (token) {
         init.headers['x-session-token'] = token;
       }
-      console.log('Fetching:', input, 'with headers:', init.headers); // Debug: Log fetch requests
+      console.log('Fetching:', input, 'with headers:', init.headers);
       const res = await originalFetch(input, init);
       if (res.status === 401) {
         console.error('Unauthorized request:', input);
@@ -62,9 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return res;
     };
 
-    console.log('Setting up admin panel...'); // Debug: Admin panel setup
+    console.log('Setting up admin panel...');
     if (sessionStorage.getItem('userRole') === 'admin') {
-      console.log('Admin role detected, showing user admin panel'); // Debug: Admin panel
+      console.log('Admin role detected, showing user admin panel');
       document.getElementById('user-admin').classList.remove('hidden');
       document.getElementById('create-user').addEventListener('click', async () => {
         const u = document.getElementById('new-user').value.trim();
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    console.log('Adding event listeners for navigation...'); // Debug: Navigation setup
+    console.log('Adding event listeners for navigation...');
     const editorBtn = document.getElementById('btn-editor');
     const questionsBtn = document.getElementById('btn-questions');
     const archiveBtn = document.getElementById('btn-archive');
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const archiveView = document.getElementById('archive-view');
 
     function showEditor() {
-      console.log('Showing editor view...'); // Debug: Confirm view switch
+      console.log('Showing editor view...');
       editorView.classList.remove('hidden');
       questionsView.classList.add('hidden');
       archiveView.classList.add('hidden');
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showQuestions() {
-      console.log('Showing questions view...'); // Debug: Confirm view switch
+      console.log('Showing questions view...');
       questionsView.classList.remove('hidden');
       editorView.classList.add('hidden');
       archiveView.classList.add('hidden');
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showArchive() {
-      console.log('Showing archive view...'); // Debug: Confirm view switch
+      console.log('Showing archive view...');
       archiveView.classList.remove('hidden');
       editorView.classList.add('hidden');
       questionsView.classList.add('hidden');
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     archiveBtn.addEventListener('click', showArchive);
     exportBtn.addEventListener('click', async () => {
       try {
-        console.log('Exporting data...'); // Debug: Confirm export
+        console.log('Exporting data...');
         const res = await fetch('/api/export', { headers: { 'x-session-token': sessionStorage.getItem('sessionToken') } });
         if (res.ok) {
           const data = await res.json();
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    console.log('Setting up question tabs...'); // Debug: Question tabs setup
+    console.log('Setting up question tabs...');
     const tabOpen = document.getElementById('tab-open');
     const tabAnswered = document.getElementById('tab-answered');
     const openList = document.getElementById('open-list');
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const questionSearch = document.getElementById('question-search');
 
     function showOpen() {
-      console.log('Showing open questions...'); // Debug: Confirm tab switch
+      console.log('Showing open questions...');
       openList.classList.remove('hidden');
       answeredList.classList.add('hidden');
       tabOpen.classList.add('bg-blue-600', 'text-white');
@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showAnswered() {
-      console.log('Showing answered questions...'); // Debug: Confirm tab switch
+      console.log('Showing answered questions...');
       answeredList.classList.remove('hidden');
       openList.classList.add('hidden');
       tabAnswered.classList.add('bg-blue-600', 'text-white');
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tabOpen.addEventListener('click', showOpen);
     tabAnswered.addEventListener('click', showAnswered);
     questionSearch.addEventListener('input', () => {
-      console.log('Question search input changed...'); // Debug: Confirm search
+      console.log('Question search input changed...');
       loadOpen();
       loadAnswered();
     });
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadOpen() {
       openList.innerHTML = '';
       try {
-        console.log('Fetching unanswered questions...'); // Debug: Confirm fetch
+        console.log('Fetching unanswered questions...');
         const res = await fetch('/api/unanswered', {
           headers: {
             'x-session-token': sessionStorage.getItem('sessionToken'),
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
         }
         const questions = await res.json();
-        console.log('Unanswered questions received:', questions); // Debug: Log response
+        console.log('Unanswered questions received:', questions);
         if (!Array.isArray(questions)) {
           console.error('Expected array, got:', questions);
           openList.innerHTML = '<div>Keine Fragen verfügbar</div>';
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const data = { question: q, answer: form.answer.value, editor: form.editor.value };
             try {
-              console.log('Submitting answer:', data); // Debug: Confirm submission
+              console.log('Submitting answer:', data);
               const resp = await fetch('/api/answer', {
                 method: 'POST',
                 headers: {
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadAnswered() {
       answeredList.innerHTML = '';
       try {
-        console.log('Fetching answered questions...'); // Debug: Confirm fetch
+        console.log('Fetching answered questions...');
         const res = await fetch('/api/answered', {
           headers: {
             'x-session-token': sessionStorage.getItem('sessionToken'),
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
         }
         const pairs = await res.json();
-        console.log('Answered questions received:', pairs); // Debug: Log response
+        console.log('Answered questions received:', pairs);
         if (!Array.isArray(pairs)) {
           console.error('Expected array, got:', pairs);
           answeredList.innerHTML = '<div>Keine Antworten verfügbar</div>';
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const data = { question: p.question, answer: form.answer.value, editor: form.editor.value };
             try {
-              console.log('Updating answer:', data); // Debug: Confirm update
+              console.log('Updating answer:', data);
               const resp = await fetch('/api/update', {
                 method: 'POST',
                 headers: {
@@ -341,34 +341,37 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    console.log('Setting up editor...'); // Debug: Editor setup
+    console.log('Setting up editor...');
     const listEl = document.getElementById('headline-list');
     const searchEl = document.getElementById('search');
-    let quill;
+    let editor;
     try {
-      console.log('Initializing Quill...'); // Debug: Confirm Quill init
-      quill = new Quill('#editor', {
-        theme: 'snow',
-        modules: {
-          toolbar: '#quill-toolbar',
-        //  'better-table': { operationMenu: { items: { unmergeCells: { text: 'Unmerge cells' } } } },
-       //   syntax: typeof hljs !== 'undefined' ? { highlight: text => hljs.highlightAuto(text).value } : false
-        }
+      console.log('Initializing Toast UI Editor...');
+      editor = new toastui.Editor({
+        el: document.getElementById('editor'),
+        height: '100%',
+        initialEditType: 'wysiwyg',
+        previewStyle: 'vertical',
+        toolbarItems: [
+          ['heading', 'bold', 'italic', 'link', 'image'],
+          [{
+            name: 'underline',
+            tooltip: 'Underline',
+            action: (editor) => {
+              const range = editor.getCurrentRange();
+              const selectedText = editor.getSelectedText();
+              editor.replaceSelection('__' + selectedText + '__');
+            },
+            text: 'U',
+            className: 'toastui-editor-toolbar-icons',
+            style: { textDecoration: 'underline' }
+          }]
+        ]
       });
-      if (typeof QuillBetterTable !== 'undefined') {
-        Quill.register('modules/better-table', QuillBetterTable);
-        console.log('QuillBetterTable registered'); // Debug: Confirm table module
-      } else {
-        console.warn('QuillBetterTable not available, table functionality disabled');
-      }
+      console.log('Toast UI Editor initialized');
     } catch (e) {
-      console.error('Failed to initialize Quill:', e);
-      quill = new Quill('#editor', {
-        theme: 'snow',
-        modules: {
-          toolbar: '#quill-toolbar'
-        }
-      });
+      console.error('Failed to initialize Toast UI Editor:', e);
+      alert('Editor initialization failed: ' + e.message);
     }
     const addBtn = document.getElementById('add-heading');
     const archiveList = document.getElementById('archive-list');
@@ -385,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let archiveEntries = [];
 
     async function loadHeadlines() {
-      console.log('Fetching headlines...'); // Debug: Confirm fetch
+      console.log('Fetching headlines...');
       try {
         const q = encodeURIComponent(searchEl.value.trim());
         const res = await fetch('/api/headlines?q=' + q, {
@@ -399,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
         }
         allHeadlines = await res.json();
-        console.log('Headlines received:', allHeadlines); // Debug: Log response
+        console.log('Headlines received:', allHeadlines);
         renderHeadlines(allHeadlines);
       } catch (err) {
         console.error('Failed to load headlines:', err);
@@ -408,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderHeadlines(items) {
-      console.log('Rendering headlines:', items); // Debug: Confirm rendering
+      console.log('Rendering headlines:', items);
       listEl.innerHTML = '';
       if (items.length === 0) {
         listEl.innerHTML = '<div>Keine Überschriften verfügbar</div>';
@@ -426,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadEntry(id) {
       try {
-        console.log('Fetching entry:', id); // Debug: Confirm fetch
+        console.log('Fetching entry:', id);
         const res = await fetch(`/api/entries/${id}`, {
           headers: {
             'x-session-token': sessionStorage.getItem('sessionToken'),
@@ -438,11 +441,11 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
         }
         const entry = await res.json();
-        console.log('Entry received:', entry); // Debug: Log response
+        console.log('Entry received:', entry);
         currentId = entry.id;
         headlineInput.value = entry.headline;
         editorNameInput.value = entry.editor || '';
-        quill.root.innerHTML = entry.text;
+        editor.setMarkdown(entry.text);
         activeCheckbox.checked = !!entry.active;
       } catch (err) {
         console.error('Failed to load entry:', err);
@@ -452,13 +455,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function saveEntry() {
       const payload = {
         headline: headlineInput.value.trim(),
-        text: quill.root.innerHTML.trim(),
+        text: editor.getMarkdown().trim(),
         active: activeCheckbox.checked,
         editor: editorNameInput.value.trim()
       };
       if (!payload.headline || !payload.text) return;
       try {
-        console.log('Saving entry:', payload); // Debug: Confirm save
+        console.log('Saving entry:', payload);
         let res;
         if (currentId) {
           res = await fetch(`/api/entries/${currentId}`, {
@@ -484,7 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
         }
         const data = await res.json();
-        console.log('Entry saved:', data); // Debug: Log saved entry
+        console.log('Entry saved:', data);
         currentId = data.id;
         await loadHeadlines();
         alert('Gespeichert');
@@ -497,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deleteEntry() {
       if (!currentId) return;
       try {
-        console.log('Deleting entry:', currentId); // Debug: Confirm delete
+        console.log('Deleting entry:', currentId);
         const res = await fetch(`/api/entries/${currentId}`, {
           method: 'DELETE',
           headers: {
@@ -509,11 +512,11 @@ document.addEventListener('DOMContentLoaded', () => {
           const error = await res.json();
           throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
         }
-        console.log('Entry deleted'); // Debug: Confirm deletion
+        console.log('Entry deleted');
         currentId = null;
         headlineInput.value = '';
         editorNameInput.value = '';
-        quill.root.innerHTML = '';
+        editor.setMarkdown('');
         activeCheckbox.checked = false;
         await loadHeadlines();
         alert('Gelöscht');
@@ -526,11 +529,11 @@ document.addEventListener('DOMContentLoaded', () => {
     saveBtn.addEventListener('click', saveEntry);
     deleteBtn.addEventListener('click', deleteEntry);
     addBtn.addEventListener('click', () => {
-      console.log('Adding new heading...'); // Debug: Confirm add
+      console.log('Adding new heading...');
       currentId = null;
       headlineInput.value = '';
       editorNameInput.value = '';
-      quill.root.innerHTML = '';
+      editor.setMarkdown('');
       activeCheckbox.checked = true;
     });
 
@@ -538,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
       archiveEntries = [];
       archiveList.innerHTML = '';
       try {
-        console.log('Fetching archive...'); // Debug: Confirm fetch
+        console.log('Fetching archive...');
         const res = await fetch('/api/archive', {
           headers: {
             'x-session-token': sessionStorage.getItem('sessionToken'),
@@ -550,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
         }
         archiveEntries = await res.json();
-        console.log('Archive received:', archiveEntries); // Debug: Log response
+        console.log('Archive received:', archiveEntries);
         if (!Array.isArray(archiveEntries)) archiveEntries = [];
         renderArchive();
       } catch (err) {
@@ -560,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderArchive() {
-      console.log('Rendering archive:', archiveEntries); // Debug: Confirm rendering
+      console.log('Rendering archive:', archiveEntries);
       let items = archiveEntries.slice();
       const q = archiveSearch.value.toLowerCase();
       if (q) {
@@ -593,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const name = prompt('Name des Editors?');
           if (name === null) return;
           try {
-            console.log('Restoring entry:', e.id); // Debug: Confirm restore
+            console.log('Restoring entry:', e.id);
             await fetch(`/api/restore/${e.id}`, {
               method: 'POST',
               headers: {
@@ -608,52 +611,24 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Restore failed:', err);
           }
         });
-        const diffBtn = document.createElement('button');
-        diffBtn.className = 'px-2 py-1 bg-gray-500 text-white rounded';
-        diffBtn.textContent = 'Diff';
-        diffBtn.addEventListener('click', () => {
-          console.log('Computing diff for:', e.headline); // Debug: Confirm diff
-          const active = allHeadlines.find(h => h.headline === e.headline);
-          const current = active ? active.text : '';
-          const w = window.open('', '_blank');
-          w.document.body.innerHTML = diffText(current, e.text);
-        });
         div.appendChild(btn);
-        div.appendChild(diffBtn);
         archiveList.appendChild(div);
       });
     }
 
-    function diffText(a, b) {
-      try {
-        console.log('Computing diff...'); // Debug: Confirm diff computation
-        const dmp = new diff_match_patch();
-        const diffs = dmp.diff_main(a, b);
-        dmp.diff_cleanupSemantic(diffs);
-        return diffs.map(d => {
-          if (d[0] === 0) return d[1];
-          if (d[0] === -1) return '<del>' + d[1] + '</del>';
-          return '<ins>' + d[1] + '</ins>';
-        }).join('');
-      } catch (e) {
-        console.error('Failed to compute diff:', e);
-        return 'Diff computation failed';
-      }
-    }
-
-    console.log('Adding search and archive listeners...'); // Debug: Confirm listeners
+    console.log('Adding search and archive listeners...');
     searchEl.addEventListener('input', () => {
-      console.log('Search input changed, loading headlines...'); // Debug: Confirm search
+      console.log('Search input changed, loading headlines...');
       loadHeadlines();
     });
     archiveSearch.addEventListener('input', renderArchive);
     archiveSort.addEventListener('change', renderArchive);
 
-    console.log('Calling showEditor...'); // Debug: Confirm view switch
+    console.log('Calling showEditor...');
     showEditor();
-    console.log('Calling loadOpen...'); // Debug: Confirm loadOpen
+    console.log('Calling loadOpen...');
     loadOpen();
-    console.log('Calling loadHeadlines...'); // Debug: Confirm loadHeadlines
+    console.log('Calling loadHeadlines...');
     loadHeadlines();
   }
 });
