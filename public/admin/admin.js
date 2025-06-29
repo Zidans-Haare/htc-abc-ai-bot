@@ -217,6 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     tabAnswered.classList.remove('bg-blue-600', 'text-white');
     tabAnswered.classList.add('bg-gray-200');
     tabOpen.classList.remove('bg-gray-200');
+    loadOpen();
   }
 
   function showAnswered() {
@@ -227,6 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     tabOpen.classList.remove('bg-blue-600', 'text-white');
     tabOpen.classList.add('bg-gray-200');
     tabAnswered.classList.remove('bg-gray-200');
+    loadAnswered();
   }
 
   tabOpen.addEventListener('click', showOpen);
@@ -275,6 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (resp.ok) {
               div.remove();
               updateOpenCount(Math.max(0, parseInt(openCountSpan.textContent) - 1));
+              loadAnswered();
             } else {
               console.error('Answer submission failed:', await resp.json());
             }
