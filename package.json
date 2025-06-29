@@ -10,8 +10,12 @@
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "body-parser": "^1.20.3",
+    "diff-match-patch": "^1.0.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "highlight.js": "^11.9.0",
+    "quill": "^2.0.3",
+    "quill-better-table": "^1.2.10",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7"
   },

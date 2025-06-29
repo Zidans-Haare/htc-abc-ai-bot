@@ -5,11 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - Hochschuhl ABC Management</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/quill-table-ui@1.0.2/dist/index.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/diff-match-patch@1.0.5/index.js"></script>
-  <script defer src="admin.js"></script>
+  <link href="/admin/quill/quill.snow.css" rel="stylesheet">
+ <script src="/admin/quill/highlight.default.min.js"></script>
+  <script>
+    // Configure highlight.js
+   // hljs.configure({ languages: ['javascript'] });
+  </script>
+  <script src="/admin/quill/quill.js"></script>
+
+  <script src="/admin/quill/diff-match-patch.js"></script>
+  <script defer src="/admin/admin.js"></script>
+  <link rel="icon" href="/favicon.ico">
 </head>
 <body class="bg-gray-100 flex flex-col h-screen">
   <div id="login-screen" class="absolute inset-0 flex items-center justify-center bg-gray-100">
@@ -22,15 +28,12 @@
   <!-- Top navigation -->
   <div class="p-4 bg-white border-b flex space-x-2">
     <button id="btn-editor" class="px-4 py-2 bg-blue-600 text-white rounded">Editor</button>
-
     <button id="btn-questions" class="px-4 py-2 bg-gray-200 rounded">Fragen
       <span id="open-count" class="ml-1 text-sm bg-red-500 text-white rounded-full px-2">0</span>
     </button>
-
     <button id="btn-archive" class="px-4 py-2 bg-gray-200 rounded">Archiv</button>
     <button id="btn-export" class="px-4 py-2 bg-gray-200 rounded">Export</button>
   </div>
-
   <!-- Editor View -->
   <div id="editor-view" class="flex flex-1 overflow-hidden">
     <!-- Left Sidebar: Headlines (20%) -->
@@ -46,7 +49,6 @@
       </div>
       <!-- Headlines List -->
       <div class="flex-1 overflow-y-auto p-4">
-        <!-- Headlines will be populated here -->
         <ul id="headline-list" class="space-y-2"></ul>
       </div>
       <!-- Add Heading Button -->
@@ -56,7 +58,6 @@
         </button>
       </div>
     </div>
-
     <!-- Right Content Area: Text Editor (80%) -->
     <div id="editor-pane" class="w-4/5 flex flex-col">
       <div id="quill-toolbar" class="p-2 bg-white border-b border-gray-200">
@@ -71,7 +72,9 @@
           <button class="ql-list" value="bullet"></button>
           <button class="ql-image"></button>
           <button class="ql-code-block"></button>
-          <button class="ql-table"></button>
+          <button class="ql-table" value="new-table">Insert Table</button>
+          <button class="ql-table" value="insert-row">Add Row</button>
+          <button class="ql-table" value="insert-column">Add Column</button>
         </span>
       </div>
       <!-- Editor name and headline -->
@@ -91,8 +94,6 @@
       </div>
     </div>
   </div>
-
-
   <!-- Question Management View -->
   <div id="questions-view" class="flex flex-col flex-1 hidden p-4 space-y-4 overflow-y-auto">
     <input id="question-search" class="p-2 border rounded mb-2" placeholder="Suche...">
@@ -103,9 +104,7 @@
     <div id="open-list" class="space-y-4"></div>
     <div id="answered-list" class="space-y-4 hidden"></div>
   </div>
-
   <!-- Archive View -->
-
   <div id="archive-view" class="flex flex-col flex-1 hidden p-4 space-y-4 overflow-y-auto">
     <div class="flex mb-2">
       <input id="archive-search" class="flex-1 p-2 border rounded mr-2" placeholder="Suche...">
@@ -117,21 +116,15 @@
     </div>
     <div id="archive-list" class="space-y-4"></div>
   </div>
-
   <div id="user-admin" class="hidden p-4 space-y-2">
     <h2 class="font-semibold">Benutzer anlegen</h2>
     <input id="new-user" class="border p-2" placeholder="Username">
     <input id="new-pass" type="password" class="border p-2" placeholder="Password">
-    <select id="new-role" class="border p-2">
+    <select id="new-role" class="p-2 border rounded">
       <option value="editor">Editor</option>
       <option value="admin">Admin</option>
     </select>
     <button id="create-user" class="px-2 py-1 bg-blue-500 text-white rounded">Anlegen</button>
   </div>
-
-
-  
-
-
 </body>
 </html>
