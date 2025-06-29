@@ -165,6 +165,56 @@ module.exports = (getSession, logAction) => {
     }
   });
 
+  router.post('/move', adminAuth(getSession, logAction), async (req, res) => {
+    const { question, answer, editor, headlineId, newHeadline } = req.body || {};
+    if (!question || !answer || (!headlineId && !newHeadline)) {
+      return res.status(400).json({ error: 'missing data' });
+    }
+    try {
+      const faqFile = path.resolve(__dirname, '../ai_input/faq.txt');
+      let lines = (await fs.readFile(faqFile, 'utf8')).split(/\n/);
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith('F:') && lines[i].slice(2).trim() === question) {
+          lines.splice(i, 1);
+          if (i < lines.length && lines[i].startsWith('A:')) lines.splice(i, 1);
+          if (i < lines.length && lines[i].startsWith('E:')) lines.splice(i, 1);
+          break;
+        }
+      }
+      await fs.writeFile(faqFile, lines.join('\n'), 'utf8');
+
+      let entry;
+      if (newHeadline) {
+        entry = await HochschuhlABC.create({
+          headline: newHeadline,
+          text: answer,
+          editor,
+          lastUpdated: new Date(),
+          active: true,
+          archived: null
+        });
+      } else {
+        const existing = await HochschuhlABC.findByPk(headlineId);
+        if (!existing) return res.status(404).json({ error: 'Entry not found' });
+        existing.active = false;
+        existing.archived = new Date();
+        await existing.save();
+        entry = await HochschuhlABC.create({
+          headline: existing.headline,
+          text: (existing.text || '') + '\n' + answer,
+          editor: editor || existing.editor,
+          lastUpdated: new Date(),
+          active: true,
+          archived: null
+        });
+      }
+      res.json({ success: true, id: entry.id });
+    } catch (err) {
+      console.error('Failed to move answer:', err);
+      res.status(500).json({ error: 'Failed to move answer' });
+    }
+  });
+
   router.get('/headlines', adminAuth(getSession, logAction), async (req, res) => {
     try {
       const where = { active: true };

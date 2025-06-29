@@ -93,6 +93,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const exportJsonBtn = document.getElementById('export-json');
   const exportPdfBtn = document.getElementById('export-pdf');
   const exportCancelBtn = document.getElementById('export-cancel');
+  const moveModal = document.getElementById('move-modal');
+  const moveSelect = document.getElementById('move-select');
+  const moveNew = document.getElementById('move-new');
+  const moveConfirm = document.getElementById('move-confirm');
+  const moveCancel = document.getElementById('move-cancel');
   const logoutBtn = document.getElementById('btn-logout');
   const openCountSpan = document.getElementById('open-count');
   const editorView = document.getElementById('editor-view');
@@ -315,7 +320,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           <input type="hidden" name="question" value="${p.question}">
           <input name="editor" class="border p-2 w-full mb-2" placeholder="Name" required>
           <input name="answer" class="border p-2 w-full mb-2" value="${p.answer}" required>
-          <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Aktualisieren</button>
+          <div class="flex space-x-2">
+            <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Aktualisieren</button>
+            <button type="button" class="bg-green-600 text-white px-4 py-2 rounded move-btn">In Wissen verschieben</button>
+          </div>
         `;
         form.addEventListener('submit', async e => {
           e.preventDefault();
@@ -334,6 +342,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           } catch (err) {
             console.error('Answer update error:', err);
           }
+        });
+        form.querySelector('.move-btn').addEventListener('click', () => {
+          openMoveModal(p.question, form.answer.value, form.editor.value);
         });
         div.appendChild(form);
         answeredList.appendChild(div);
@@ -377,6 +388,58 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentId = null;
   let allHeadlines = [];
   let archiveEntries = [];
+
+  let moveData = null;
+
+  async function openMoveModal(question, answer, editorName) {
+    moveData = { question, answer, editor: editorName };
+    await loadHeadlines();
+    moveSelect.innerHTML = '<option value="">Überschrift wählen...</option>';
+    allHeadlines.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h.id;
+      opt.textContent = h.headline;
+      moveSelect.appendChild(opt);
+    });
+    moveNew.value = '';
+    moveModal.classList.remove('hidden');
+  }
+
+  moveCancel.addEventListener('click', () => {
+    moveModal.classList.add('hidden');
+  });
+
+  moveConfirm.addEventListener('click', async () => {
+    if (!moveData) return;
+    const payload = {
+      question: moveData.question,
+      answer: moveData.answer,
+      editor: moveData.editor,
+      headlineId: moveSelect.value || null,
+      newHeadline: moveNew.value.trim()
+    };
+    if (!payload.headlineId && !payload.newHeadline) {
+      alert('Bitte Überschrift wählen oder neu eingeben');
+      return;
+    }
+    try {
+      const resp = await fetch('/api/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include'
+      });
+      if (resp.ok) {
+        moveModal.classList.add('hidden');
+        loadAnswered();
+        await loadHeadlines();
+      } else {
+        console.error('Move failed:', await resp.json());
+      }
+    } catch (err) {
+      console.error('Move error:', err);
+    }
+  });
 
   async function loadHeadlines() {
     console.log('Fetching headlines...');
