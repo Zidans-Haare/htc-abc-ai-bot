@@ -60,7 +60,6 @@ const adminAuth = (getSession, logAction) => (req, res, next) => {
 
 // Factory function to create router with dependencies
 module.exports = (getSession, logAction) => {
-  // Apply adminAuth middleware with dependencies
   router.get('/unanswered', adminAuth(getSession, logAction), async (req, res) => {
     try {
       const file = path.resolve(__dirname, '../ai_fragen/offene_fragen.txt');
