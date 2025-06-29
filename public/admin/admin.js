@@ -354,18 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
         previewStyle: 'vertical',
         toolbarItems: [
           ['heading', 'bold', 'italic', 'link', 'image'],
-          [{
-            name: 'underline',
-            tooltip: 'Underline',
-            action: (editor) => {
-              const range = editor.getCurrentRange();
-              const selectedText = editor.getSelectedText();
-              editor.replaceSelection('__' + selectedText + '__');
-            },
-            text: 'U',
-            className: 'toastui-editor-toolbar-icons',
-            style: { textDecoration: 'underline' }
-          }]
+
         ]
       });
       console.log('Toast UI Editor initialized');
