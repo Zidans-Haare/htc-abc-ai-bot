@@ -96,6 +96,19 @@
     <button id="create-user" class="px-2 py-1 bg-blue-500 text-white rounded">Anlegen</button>
   </div>
 
+  <!-- Move Answer Modal -->
+  <div id="move-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-4 rounded shadow w-80">
+      <p class="mb-2">Zu welcher Überschrift soll diese Antwort hinzugefügt werden?</p>
+      <select id="move-select" class="border p-2 w-full mb-2"></select>
+      <input id="move-new" class="border p-2 w-full mb-2" placeholder="Neue Überschrift (optional)">
+      <div class="flex justify-end space-x-2">
+        <button id="move-confirm" class="px-3 py-1 bg-blue-500 text-white rounded">Speichern</button>
+        <button id="move-cancel" class="px-3 py-1 bg-gray-300 rounded">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Export Modal -->
   <div id="export-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white p-4 rounded shadow">
