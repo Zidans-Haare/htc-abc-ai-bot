@@ -452,6 +452,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allHeadlines = [];
   let archiveEntries = [];
 
+  let selectedHeadlineEl = null;
+
   let moveData = null;
 
   async function openMoveModal(question, answer, editorName) {
@@ -510,6 +512,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const q = encodeURIComponent(searchEl.value.trim());
       allHeadlines = await fetchAndParse(`/api/headlines?q=${q}`);
       console.log('Headlines received:', allHeadlines);
+      selectedHeadlineEl = null;
       renderHeadlines(allHeadlines);
     } catch (err) {
       console.error('Failed to load headlines:', err);
@@ -529,8 +532,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       li.textContent = h.headline;
       li.className = 'p-2 hover:bg-gray-100 cursor-pointer rounded';
       li.dataset.id = h.id;
-      li.addEventListener('click', () => loadEntry(h.id));
+      li.addEventListener('click', () => {
+        if (selectedHeadlineEl) {
+          selectedHeadlineEl.classList.remove('bg-blue-600', 'text-white', 'font-bold');
+        }
+        li.classList.add('bg-blue-600', 'text-white', 'font-bold');
+        selectedHeadlineEl = li;
+        loadEntry(h.id);
+      });
       listEl.appendChild(li);
+      if (currentId && String(currentId) === String(h.id)) {
+        li.classList.add('bg-blue-600', 'text-white', 'font-bold');
+        selectedHeadlineEl = li;
+      }
     });
   }
 
