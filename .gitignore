@@ -4,3 +4,5 @@ server.pid
 ai_fragen/offene_fragen.txt
 cron/cron.log
 logs/audit.log
+hochschuhl-abc.db*
+chatbot.db*

@@ -1,118 +1,137 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Fragenverwaltung</title>
-  <script defer src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Hochschuhl ABC Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/quill-table-ui@1.0.2/dist/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/diff-match-patch@1.0.5/index.js"></script>
+  <script defer src="admin.js"></script>
 </head>
-<body class="p-6 font-sans">
-  <h1 class="text-2xl font-bold mb-4">Fragenverwaltung</h1>
-  <div class="mb-6 space-x-2">
-    <button id="tab-open" class="px-4 py-2 bg-blue-600 text-white rounded">Offene Fragen</button>
-    <button id="tab-answered" class="px-4 py-2 bg-gray-200 rounded">Bereits beantwortete Fragen</button>
+<body class="bg-gray-100 flex flex-col h-screen">
+  <div id="login-screen" class="absolute inset-0 flex items-center justify-center bg-gray-100">
+    <form id="login-form" class="bg-white p-4 rounded shadow space-y-2">
+      <input id="login-user" class="border p-2 w-64" placeholder="User">
+      <input id="login-pass" type="password" class="border p-2 w-64" placeholder="Password">
+      <button class="w-full bg-blue-600 text-white px-4 py-2 rounded" type="submit">Login</button>
+    </form>
   </div>
-  <div id="open-list" class="space-y-4"></div>
-  <div id="answered-list" class="space-y-4 hidden"></div>
+  <!-- Top navigation -->
+  <div class="p-4 bg-white border-b flex space-x-2">
+    <button id="btn-editor" class="px-4 py-2 bg-blue-600 text-white rounded">Editor</button>
 
-  <script>
-  const openTab = document.getElementById('tab-open');
-  const answeredTab = document.getElementById('tab-answered');
-  const openList = document.getElementById('open-list');
-  const answeredList = document.getElementById('answered-list');
+    <button id="btn-questions" class="px-4 py-2 bg-gray-200 rounded">Fragen
+      <span id="open-count" class="ml-1 text-sm bg-red-500 text-white rounded-full px-2">0</span>
+    </button>
 
-  function showOpen() {
-    openList.classList.remove('hidden');
-    answeredList.classList.add('hidden');
-    openTab.classList.add('bg-blue-600','text-white');
-    answeredTab.classList.remove('bg-blue-600','text-white');
-    answeredTab.classList.add('bg-gray-200');
-    openTab.classList.remove('bg-gray-200');
-  }
+    <button id="btn-archive" class="px-4 py-2 bg-gray-200 rounded">Archiv</button>
+    <button id="btn-export" class="px-4 py-2 bg-gray-200 rounded">Export</button>
+  </div>
 
-  function showAnswered() {
-    answeredList.classList.remove('hidden');
-    openList.classList.add('hidden');
-    answeredTab.classList.add('bg-blue-600','text-white');
-    openTab.classList.remove('bg-blue-600','text-white');
-    openTab.classList.add('bg-gray-200');
-    answeredTab.classList.remove('bg-gray-200');
-  }
+  <!-- Editor View -->
+  <div id="editor-view" class="flex flex-1 overflow-hidden">
+    <!-- Left Sidebar: Headlines (20%) -->
+    <div class="w-1/5 bg-white border-r border-gray-200 flex flex-col">
+      <!-- Search Field -->
+      <div class="p-4 border-b border-gray-200">
+        <input
+          id="search"
+          type="text"
+          placeholder="Search headlines..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+      </div>
+      <!-- Headlines List -->
+      <div class="flex-1 overflow-y-auto p-4">
+        <!-- Headlines will be populated here -->
+        <ul id="headline-list" class="space-y-2"></ul>
+      </div>
+      <!-- Add Heading Button -->
+      <div class="p-4 border-t border-gray-200">
+        <button id="add-heading" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          Add Heading
+        </button>
+      </div>
+    </div>
 
-  openTab.addEventListener('click', showOpen);
-  answeredTab.addEventListener('click', showAnswered);
+    <!-- Right Content Area: Text Editor (80%) -->
+    <div id="editor-pane" class="w-4/5 flex flex-col">
+      <div id="quill-toolbar" class="p-2 bg-white border-b border-gray-200">
+        <span class="ql-formats">
+          <select class="ql-header"></select>
+          <button class="ql-bold"></button>
+          <button class="ql-italic"></button>
+          <button class="ql-underline"></button>
+        </span>
+        <span class="ql-formats">
+          <button class="ql-list" value="ordered"></button>
+          <button class="ql-list" value="bullet"></button>
+          <button class="ql-image"></button>
+          <button class="ql-code-block"></button>
+          <button class="ql-table"></button>
+        </span>
+      </div>
+      <!-- Editor name and headline -->
+      <div class="p-4 bg-white border-b border-gray-200 flex space-x-2">
+        <input id="editor-name" class="p-2 border border-gray-300 rounded w-1/3" placeholder="Name">
+        <input id="headline-input" class="p-2 border border-gray-300 rounded flex-1" placeholder="\u00dcberschrift">
+      </div>
+      <!-- Editable Text Area -->
+      <div id="editor" class="h-96"></div>
+      <div class="p-4 bg-white border-t border-gray-200 flex justify-end space-x-2">
+        <label class="flex items-center space-x-2 mr-auto">
+          <input id="active-toggle" type="checkbox">
+          <span>Active</span>
+        </label>
+        <button id="delete-btn" class="px-3 py-2 bg-red-500 text-white rounded">Delete</button>
+        <button id="save-btn" class="px-3 py-2 bg-blue-500 text-white rounded">Save</button>
+      </div>
+    </div>
+  </div>
 
-  async function loadOpen() {
-    openList.innerHTML = '';
-    try {
-      const res = await fetch('/api/unanswered');
-      const questions = await res.json();
-      if (!Array.isArray(questions)) return;
-      questions.forEach(q => {
-        const div = document.createElement('div');
-        div.className = 'border p-4 rounded';
-        const form = document.createElement('form');
-        form.innerHTML = `
-          <p class="mb-2 font-medium">${q}</p>
-          <input type="hidden" name="question" value="${q}">
-          <input name="answer" class="border p-2 w-full mb-2" placeholder="Antwort" required>
-          <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Senden</button>
-        `;
-        form.addEventListener('submit', async e => {
-          e.preventDefault();
-          const data = { question: q, answer: form.answer.value };
-          const resp = await fetch('/api/answer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-          if (resp.ok) div.remove();
-        });
-        div.appendChild(form);
-        openList.appendChild(div);
-      });
-    } catch (err) {
-      openList.innerHTML = '<div>Fehler beim Laden</div>';
-      console.error(err);
-    }
-  }
 
-  async function loadAnswered() {
-    answeredList.innerHTML = '';
-    try {
-      const res = await fetch('/api/answered');
-      const pairs = await res.json();
-      if (!Array.isArray(pairs)) return;
-      pairs.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'border p-4 rounded';
-        const form = document.createElement('form');
-        form.innerHTML = `
-          <p class="mb-2 font-medium">${p.question}</p>
-          <input type="hidden" name="question" value="${p.question}">
-          <input name="answer" class="border p-2 w-full mb-2" value="${p.answer}" required>
-          <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Aktualisieren</button>
-        `;
-        form.addEventListener('submit', async e => {
-          e.preventDefault();
-          const data = { question: p.question, answer: form.answer.value };
-          await fetch('/api/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-        });
-        div.appendChild(form);
-        answeredList.appendChild(div);
-      });
-    } catch (err) {
-      answeredList.innerHTML = '<div>Fehler beim Laden</div>';
-      console.error(err);
-    }
-  }
+  <!-- Question Management View -->
+  <div id="questions-view" class="flex flex-col flex-1 hidden p-4 space-y-4 overflow-y-auto">
+    <input id="question-search" class="p-2 border rounded mb-2" placeholder="Suche...">
+    <div class="mb-4 space-x-2">
+      <button id="tab-open" class="px-4 py-2 bg-blue-600 text-white rounded">Offene Fragen</button>
+      <button id="tab-answered" class="px-4 py-2 bg-gray-200 rounded">Bereits beantwortete Fragen</button>
+    </div>
+    <div id="open-list" class="space-y-4"></div>
+    <div id="answered-list" class="space-y-4 hidden"></div>
+  </div>
 
-  loadOpen();
-  loadAnswered();
-  </script>
+  <!-- Archive View -->
+
+  <div id="archive-view" class="flex flex-col flex-1 hidden p-4 space-y-4 overflow-y-auto">
+    <div class="flex mb-2">
+      <input id="archive-search" class="flex-1 p-2 border rounded mr-2" placeholder="Suche...">
+      <select id="archive-sort" class="p-2 border rounded">
+        <option value="newest">Neueste</option>
+        <option value="oldest">Älteste</option>
+        <option value="editor">Geändert von</option>
+      </select>
+    </div>
+    <div id="archive-list" class="space-y-4"></div>
+  </div>
+
+  <div id="user-admin" class="hidden p-4 space-y-2">
+    <h2 class="font-semibold">Benutzer anlegen</h2>
+    <input id="new-user" class="border p-2" placeholder="Username">
+    <input id="new-pass" type="password" class="border p-2" placeholder="Password">
+    <select id="new-role" class="border p-2">
+      <option value="editor">Editor</option>
+      <option value="admin">Admin</option>
+    </select>
+    <button id="create-user" class="px-2 py-1 bg-blue-500 text-white rounded">Anlegen</button>
+  </div>
+
+
+  
+
+
 </body>
 </html>
