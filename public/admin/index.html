@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="/admin/toastui/toastui-editor.css" rel="stylesheet">
   <script src="/admin/toastui/toastui-editor.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script defer src="/admin/admin.js"></script>
   <link rel="icon" href="/favicon.ico">
 </head>
@@ -18,7 +19,7 @@
       <span id="open-count" class="ml-1 text-sm bg-red-500 text-white rounded-full px-2">0</span>
     </button>
     <button id="btn-archive" class="px-4 py-2 bg-gray-200 rounded">Archiv</button>
-    <button id="btn-export" class="px-4 py-2 bg-gray-200 rounded">Export</button>
+    <button id="btn-export" type="button" class="px-4 py-2 bg-gray-200 rounded">Export</button>
     <button id="btn-logout" class="px-4 py-2 bg-gray-200 rounded">Logout</button>
   </div>
   <!-- Editor View -->
@@ -93,6 +94,18 @@
       <option value="admin">Admin</option>
     </select>
     <button id="create-user" class="px-2 py-1 bg-blue-500 text-white rounded">Anlegen</button>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="export-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-4 rounded shadow">
+      <p class="mb-4">Welches Format möchten Sie exportieren?</p>
+      <div class="flex justify-end space-x-2">
+        <button id="export-json" type="button" class="px-3 py-1 bg-blue-500 text-white rounded">JSON</button>
+        <button id="export-pdf" type="button" class="px-3 py-1 bg-blue-500 text-white rounded">PDF</button>
+        <button id="export-cancel" type="button" class="px-3 py-1 bg-gray-300 rounded">Abbrechen</button>
+      </div>
+    </div>
   </div>
 </body>
 </html>

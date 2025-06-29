@@ -89,6 +89,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const questionsBtn = document.getElementById('btn-questions');
   const archiveBtn = document.getElementById('btn-archive');
   const exportBtn = document.getElementById('btn-export');
+  const exportModal = document.getElementById('export-modal');
+  const exportJsonBtn = document.getElementById('export-json');
+  const exportPdfBtn = document.getElementById('export-pdf');
+  const exportCancelBtn = document.getElementById('export-cancel');
   const logoutBtn = document.getElementById('btn-logout');
   const openCountSpan = document.getElementById('open-count');
   const editorView = document.getElementById('editor-view');
@@ -144,23 +148,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   editorBtn.addEventListener('click', showEditor);
   questionsBtn.addEventListener('click', showQuestions);
   archiveBtn.addEventListener('click', showArchive);
-  exportBtn.addEventListener('click', async () => {
+  exportBtn.addEventListener('click', () => {
+    exportModal.classList.remove('hidden');
+  });
+
+  exportCancelBtn.addEventListener('click', () => {
+    exportModal.classList.add('hidden');
+  });
+
+  exportJsonBtn.addEventListener('click', () => handleExport('json'));
+  exportPdfBtn.addEventListener('click', () => handleExport('pdf'));
+
+  async function handleExport(type) {
+    exportModal.classList.add('hidden');
     try {
-      console.log('Exporting data...');
+      console.log('Exporting data...', type);
       const data = await fetchAndParse('/api/export');
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'export.json';
-      a.click();
-      URL.revokeObjectURL(url);
+      if (type === 'pdf') {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+          alert('PDF Export nicht verf\u00fcgbar');
+          return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const text = JSON.stringify(data, null, 2);
+        const lines = doc.splitTextToSize(text, 180);
+        doc.text(lines, 10, 10);
+        doc.save('export.pdf');
+      } else {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'export.json';
+        document.body.appendChild(a);
+        setTimeout(() => {
+          a.click();
+          URL.revokeObjectURL(url);
+          a.remove();
+        });
+      }
       const stats = await fetchAndParse('/api/stats');
       alert('Gesamt: ' + stats.total);
     } catch (err) {
       console.error('Export error:', err);
     }
-  });
+  }
 
   logoutBtn.addEventListener('click', async () => {
     try {
