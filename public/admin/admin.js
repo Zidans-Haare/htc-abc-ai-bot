@@ -165,7 +165,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('Exporting data...', type);
       const data = await fetchAndParse('/api/export');
       if (type === 'pdf') {
+
         if (!window.jspdf || !window.jspdf.jsPDF) {
+=======
+        if (!window.jspdf) {
+
           alert('PDF Export nicht verf\u00fcgbar');
           return;
         }
@@ -181,12 +185,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const a = document.createElement('a');
         a.href = url;
         a.download = 'export.json';
+
         document.body.appendChild(a);
         setTimeout(() => {
           a.click();
           URL.revokeObjectURL(url);
           a.remove();
         });
+=======
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+=======
+        a.click();
+
+        URL.revokeObjectURL(url);
+
       }
       const stats = await fetchAndParse('/api/stats');
       alert('Gesamt: ' + stats.total);
