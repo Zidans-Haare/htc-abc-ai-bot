@@ -89,7 +89,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdn.tailwindcss.com"],
+      scriptSrc: [
+        "'self'",
+        "https://cdn.tailwindcss.com",
+        "https://cdnjs.cloudflare.com" // Add for jsPDF
+      ],
       styleSrc: [
         "'self'",
         "'unsafe-inline'",
@@ -102,7 +106,7 @@ app.use(helmet({
         "'self'",
         "https://fonts.googleapis.com",
         "https://fonts.gstatic.com",
-        "https://cdnjs.cloudflare.com" // Add Font Awesome font domain
+        "https://cdnjs.cloudflare.com"
       ],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
