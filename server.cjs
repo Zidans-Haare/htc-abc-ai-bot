@@ -90,16 +90,27 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "https://cdn.tailwindcss.com"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://cdnjs.cloudflare.com"
+      ],
       imgSrc: ["'self'", "data:"],
       connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
+      fontSrc: [
+        "'self'",
+        "https://fonts.googleapis.com",
+        "https://fonts.gstatic.com",
+        "https://cdnjs.cloudflare.com" // Add Font Awesome font domain
+      ],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"]
     }
   }
 }));
+
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(protectAdmin);
@@ -128,7 +139,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     }
     const token = createSession(user.username, user.role);
     logAction(username, 'Successful login');
-    res.cookie('sessionToken', token, { httpOnly: true, maxAge: SESSION_TTL }); // Entferne secure für Tests
+    res.cookie('sessionToken', token, { httpOnly: true, secure: true, maxAge: SESSION_TTL }); // Entferne secure für Tests
     res.json({ role: user.role });
   } catch (err) {
     console.error('Login failed:', err);
