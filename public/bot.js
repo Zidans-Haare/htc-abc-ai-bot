@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
       avatar.className = 'avatar';
       avatar.innerHTML = isUser
           ? `<i class="fas fa-user"></i>`
-          : `<img src="/image/Smoky_Mascot.png" alt="Bot" class="h-15 w-15" />`;
+          : `<img src="/image/Smoky_Mascot.png" alt="Bot" class="h-14 w-14" />`;
 
       m.appendChild(avatar);
 
