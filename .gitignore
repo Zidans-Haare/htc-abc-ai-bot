@@ -12,3 +12,5 @@ ai_input/faq.txt
 .env
 .vs/
 .vscode/
+.venv/
+grok/
