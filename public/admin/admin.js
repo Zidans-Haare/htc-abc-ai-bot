@@ -24,7 +24,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Validate session
   try {
-    await fetchAndParse('/api/validate');
+    const sessionData = await fetchAndParse('/api/validate');
+    document.getElementById('current-user').innerHTML = `last edit by:<br>`;
   } catch (err) {
     console.error('Validation error:', err);
     sessionStorage.removeItem('userRole');
@@ -171,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await fetchAndParse('/api/export');
       if (type === 'pdf') {
         if (!window.jspdf) {
-          alert('PDF Export nicht verf\u00fcgbar');
+          alert('PDF Export nicht verfügbar');
           return;
         }
         const { jsPDF } = window.jspdf;
@@ -302,13 +303,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const form = document.createElement('form');
         form.innerHTML = `
           <input type="hidden" name="question" value="${q}">
-          <input name="editor" class="border p-2 w-full mb-2" placeholder="Name" required>
           <input name="answer" class="border p-2 w-full mb-2" placeholder="Antwort" required>
           <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Senden</button>
         `;
         form.addEventListener('submit', async e => {
           e.preventDefault();
-          const data = { question: q, answer: form.answer.value, editor: form.editor.value };
+          const data = { question: q, answer: form.answer.value };
           try {
             console.log('Submitting answer:', data);
             const resp = await fetch('/api/answer', {
@@ -381,7 +381,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         form.innerHTML = `
           <p class="mb-2 font-medium">${p.question}</p>
           <input type="hidden" name="question" value="${p.question}">
-          <input name="editor" class="border p-2 w-full mb-2" placeholder="Name" required>
           <input name="answer" class="border p-2 w-full mb-2" value="${p.answer}" required>
           <div class="flex space-x-2">
             <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Aktualisieren</button>
@@ -390,7 +389,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
         form.addEventListener('submit', async e => {
           e.preventDefault();
-          const data = { question: p.question, answer: form.answer.value, editor: form.editor.value };
+          const data = { question: p.question, answer: form.answer.value };
           try {
             console.log('Updating answer:', data);
             const resp = await fetch('/api/update', {
@@ -407,7 +406,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
         });
         form.querySelector('.move-btn').addEventListener('click', () => {
-          openMoveModal(p.question, form.answer.value, form.editor.value);
+          openMoveModal(p.question, form.answer.value);
         });
         div.appendChild(form);
         answeredList.appendChild(div);
@@ -443,7 +442,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const archiveSearch = document.getElementById('archive-search');
   const archiveSort = document.getElementById('archive-sort');
   const headlineInput = document.getElementById('headline-input');
-  const editorNameInput = document.getElementById('editor-name');
   const activeCheckbox = document.getElementById('active-toggle');
   const saveBtn = document.getElementById('save-btn');
   const deleteBtn = document.getElementById('delete-btn');
@@ -456,8 +454,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let moveData = null;
 
-  async function openMoveModal(question, answer, editorName) {
-    moveData = { question, answer, editor: editorName };
+  async function openMoveModal(question, answer) {
+    moveData = { question, answer };
     await loadHeadlines();
     moveSelect.innerHTML = '<option value="">Überschrift wählen...</option>';
     allHeadlines.forEach(h => {
@@ -479,7 +477,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const payload = {
       question: moveData.question,
       answer: moveData.answer,
-      editor: moveData.editor,
       headlineId: moveSelect.value || null,
       newHeadline: moveNew.value.trim()
     };
@@ -555,9 +552,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('Entry received:', entry);
       currentId = entry.id;
       headlineInput.value = entry.headline;
-      editorNameInput.value = entry.editor || '';
       editor.setMarkdown(entry.text);
       activeCheckbox.checked = !!entry.active;
+      document.getElementById('current-user').innerHTML = `last edit by:<br>${entry.editor || ''}`;
     } catch (err) {
       console.error('Failed to load entry:', err);
     }
@@ -567,8 +564,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const payload = {
       headline: headlineInput.value.trim(),
       text: editor.getMarkdown().trim(),
-      active: activeCheckbox.checked,
-      editor: editorNameInput.value.trim()
+      active: activeCheckbox.checked
     };
     if (!payload.headline || !payload.text) return;
     try {
@@ -612,9 +608,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('Entry deleted');
       currentId = null;
       headlineInput.value = '';
-      editorNameInput.value = '';
       editor.setMarkdown('');
       activeCheckbox.checked = false;
+      document.getElementById('current-user').innerHTML = `last edit by:<br>`;
       await loadHeadlines();
       alert('Gelöscht');
     } catch (err) {
@@ -629,9 +625,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('Adding new heading...');
     currentId = null;
     headlineInput.value = '';
-    editorNameInput.value = '';
     editor.setMarkdown('');
     activeCheckbox.checked = true;
+    document.getElementById('current-user').innerHTML = `last edit by:<br>`;
   });
 
   async function loadArchive() {
@@ -680,14 +676,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       btn.className = 'px-2 py-1 bg-blue-500 text-white rounded mr-2';
       btn.textContent = 'Wiederherstellen';
       btn.addEventListener('click', async () => {
-        const name = prompt('Name des Editors?');
-        if (name === null) return;
         try {
           console.log('Restoring entry:', e.id);
           const resp = await fetch(`/api/restore/${e.id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ editor: name }),
             credentials: 'include'
           });
           if (resp.ok) {

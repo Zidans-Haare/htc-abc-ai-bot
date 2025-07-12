@@ -103,7 +103,7 @@ module.exports = (getSession, logAction) => {
   });
 
   router.post('/answer', adminAuth(getSession, logAction), async (req, res) => {
-    const { question, answer, editor } = req.body || {};
+    const { question, answer } = req.body || {};
     if (!question || !answer) {
       return res.status(400).json({ error: 'question and answer required' });
     }
@@ -112,7 +112,7 @@ module.exports = (getSession, logAction) => {
       const unansweredFile = path.resolve(__dirname, '../ai_fragen/offene_fragen.txt');
       await fs.appendFile(
         faqFile,
-        `F:${question}\nA:${answer}\nE:${editor || ''}\n`,
+        `F:${question}\nA:${answer}\nE:${req.user}\n`,
         'utf8'
       );
       const content = await fs.readFile(unansweredFile, 'utf8');
@@ -155,7 +155,7 @@ module.exports = (getSession, logAction) => {
   });
 
   router.post('/update', adminAuth(getSession, logAction), async (req, res) => {
-    const { question, answer, editor } = req.body || {};
+    const { question, answer } = req.body || {};
     if (!question || !answer) {
       return res.status(400).json({ error: 'question and answer required' });
     }
@@ -168,9 +168,9 @@ module.exports = (getSession, logAction) => {
           if (i + 1 < lines.length && lines[i + 1].startsWith('A:')) {
             lines[i + 1] = `A:${answer}`;
             if (i + 2 < lines.length && lines[i + 2].startsWith('E:')) {
-              lines[i + 2] = `E:${editor || ''}`;
+              lines[i + 2] = `E:${req.user}`;
             } else {
-              lines.splice(i + 2, 0, `E:${editor || ''}`);
+              lines.splice(i + 2, 0, `E:${req.user}`);
             }
             found = true;
             break;
@@ -189,7 +189,7 @@ module.exports = (getSession, logAction) => {
   });
 
   router.post('/move', adminAuth(getSession, logAction), async (req, res) => {
-    const { question, answer, editor, headlineId, newHeadline } = req.body || {};
+    const { question, answer, headlineId, newHeadline } = req.body || {};
     if (!question || !answer || (!headlineId && !newHeadline)) {
       return res.status(400).json({ error: 'missing data' });
     }
@@ -211,7 +211,7 @@ module.exports = (getSession, logAction) => {
         entry = await HochschuhlABC.create({
           headline: newHeadline,
           text: answer,
-          editor,
+          editor: req.user,
           lastUpdated: new Date(),
           active: true,
           archived: null
@@ -225,7 +225,7 @@ module.exports = (getSession, logAction) => {
         entry = await HochschuhlABC.create({
           headline: existing.headline,
           text: (existing.text || '') + '\n' + answer,
-          editor: editor || existing.editor,
+          editor: req.user,
           lastUpdated: new Date(),
           active: true,
           archived: null
@@ -273,7 +273,7 @@ module.exports = (getSession, logAction) => {
   });
 
   router.post('/entries', adminAuth(getSession, logAction), async (req, res) => {
-    const { headline, text, active, editor } = req.body;
+    const { headline, text, active } = req.body;
     if (!headline || !text) {
       return res.status(400).json({ error: 'Headline and text are required' });
     }
@@ -281,7 +281,7 @@ module.exports = (getSession, logAction) => {
       const entry = await HochschuhlABC.create({
         headline,
         text,
-        editor,
+        editor: req.user,
         lastUpdated: new Date(),
         active: active !== false,
         archived: null
@@ -294,7 +294,7 @@ module.exports = (getSession, logAction) => {
   });
 
   router.put('/entries/:id', adminAuth(getSession, logAction), async (req, res) => {
-    const { headline, text, active, editor } = req.body;
+    const { headline, text, active } = req.body;
     if (!headline || !text) {
       return res.status(400).json({ error: 'Headline and text are required' });
     }
@@ -307,7 +307,7 @@ module.exports = (getSession, logAction) => {
       const newEntry = await HochschuhlABC.create({
         headline,
         text,
-        editor,
+        editor: req.user,
         lastUpdated: new Date(),
         active: active !== false,
         archived: null
@@ -355,7 +355,6 @@ module.exports = (getSession, logAction) => {
       if (!archived || archived.active) {
         return res.status(404).json({ error: 'Archived entry not found' });
       }
-      const { editor } = req.body || {};
       const activeEntry = await HochschuhlABC.findOne({
         where: { headline: archived.headline, active: true }
       });
@@ -367,7 +366,7 @@ module.exports = (getSession, logAction) => {
       const newEntry = await HochschuhlABC.create({
         headline: archived.headline,
         text: archived.text,
-        editor: editor || archived.editor,
+        editor: req.user,
         lastUpdated: new Date(),
         active: true,
         archived: null
