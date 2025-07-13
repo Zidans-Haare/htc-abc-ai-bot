@@ -13,4 +13,4 @@ ai_input/faq.txt
 .vs/
 .vscode/
 .venv/
-grok/
+scripts/*.txt
