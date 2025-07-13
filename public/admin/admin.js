@@ -1,30 +1,14 @@
+import { fetchAndParse, overrideFetch } from './utils.js';
+import { initHeadlines, allHeadlines, loadHeadlines } from './headlines.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
 
-  // Helper function to handle fetch and parse responses
-  async function fetchAndParse(url, options = {}) {
-    const res = await fetch(url, {
-      ...options,
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-      credentials: 'include'
-    });
-    console.log(`Response for ${url}:`, res.status, res.statusText);
-    if (!res.ok) {
-      let errorMessage = 'Unknown error';
-      try {
-        const error = await res.json();
-        errorMessage = error.error || errorMessage;
-      } catch (e) {
-        errorMessage = await res.text() || errorMessage;
-      }
-      throw new Error(`HTTP error ${res.status}: ${errorMessage}`);
-    }
-    return res.json();
-  }
+  overrideFetch();
 
   // Validate session
   try {
-    const sessionData = await fetchAndParse('/api/validate');
+    await fetchAndParse('/api/validate');
     document.getElementById('current-user').innerHTML = `last edit by:<br>`;
   } catch (err) {
     console.error('Validation error:', err);
@@ -32,28 +16,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = '/login/login.html';
     return;
   }
-
-  // Override fetch to handle 401 errors
-  const originalFetch = window.fetch.bind(window);
-  window.fetch = async (input, init = {}) => {
-    init.headers = init.headers || {};
-    init.credentials = 'include';
-    console.log('Fetching:', input, 'with headers:', init.headers);
-    const res = await originalFetch(input, init);
-    if (res.status === 401) {
-      let errorMessage = 'Unknown error';
-      try {
-        errorMessage = await res.text();
-      } catch (e) {
-        console.error('Failed to read 401 response:', e);
-      }
-      console.error('Unauthorized request:', input, errorMessage);
-      sessionStorage.removeItem('userRole');
-      alert('Session abgelaufen, bitte erneut anmelden');
-      window.location.href = '/login/login.html';
-    }
-    return res;
-  };
 
   console.log('Setting up admin panel...');
   if (sessionStorage.getItem('userRole') === 'admin') {
@@ -69,7 +31,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: u, password: p, role: r }),
-          credentials: 'include'
         });
         if (res.ok) {
           alert('User created');
@@ -315,7 +276,6 @@ document.addEventListener('DOMContentLoaded', async () => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(data),
-              credentials: 'include'
             });
             if (resp.ok) {
               div.remove();
@@ -340,15 +300,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function handleDelete(questions) {
     if (!questions || questions.length === 0) return;
     const text = questions.length === 1
-      ? `Frage wirklich löschen?\n${questions[0]}`
-      : `Fragen wirklich löschen?\n${questions.join('\n')}`;
+      ? `Frage wirklich löschen?
+${questions[0]}`
+      : `Fragen wirklich löschen?
+${questions.join('\n')}`;
     if (!confirm(text)) return;
     try {
       const resp = await fetch('/api/unanswered', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questions }),
-        credentials: 'include'
       });
       if (resp.ok) {
         selectedQuestions.clear();
@@ -396,7 +357,6 @@ document.addEventListener('DOMContentLoaded', async () => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(data),
-              credentials: 'include'
             });
             if (!resp.ok) {
               console.error('Answer update failed:', await resp.json());
@@ -417,40 +377,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  console.log('Setting up editor...');
-  const listEl = document.getElementById('headline-list');
-  const searchEl = document.getElementById('search');
-  let editor;
-  try {
-    console.log('Initializing Toast UI Editor...');
-    editor = new toastui.Editor({
-      el: document.getElementById('editor'),
-      height: '100%',
-      initialEditType: 'wysiwyg',
-      previewStyle: 'vertical',
-      toolbarItems: [
-        ['heading', 'bold', 'italic', 'link', 'image']
-      ]
-    });
-    console.log('Toast UI Editor initialized');
-  } catch (e) {
-    console.error('Failed to initialize Toast UI Editor:', e);
-    alert('Editor initialization failed: ' + e.message);
-  }
-  const addBtn = document.getElementById('add-heading');
+  let archiveEntries = [];
   const archiveList = document.getElementById('archive-list');
   const archiveSearch = document.getElementById('archive-search');
   const archiveSort = document.getElementById('archive-sort');
-  const headlineInput = document.getElementById('headline-input');
-  const activeCheckbox = document.getElementById('active-toggle');
-  const saveBtn = document.getElementById('save-btn');
-  const deleteBtn = document.getElementById('delete-btn');
-
-  let currentId = null;
-  let allHeadlines = [];
-  let archiveEntries = [];
-
-  let selectedHeadlineEl = null;
 
   let moveData = null;
 
@@ -489,7 +419,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        credentials: 'include'
       });
       if (resp.ok) {
         moveModal.classList.add('hidden');
@@ -501,133 +430,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
       console.error('Move error:', err);
     }
-  });
-
-  async function loadHeadlines() {
-    console.log('Fetching headlines...');
-    try {
-      const q = encodeURIComponent(searchEl.value.trim());
-      allHeadlines = await fetchAndParse(`/api/headlines?q=${q}`);
-      console.log('Headlines received:', allHeadlines);
-      selectedHeadlineEl = null;
-      renderHeadlines(allHeadlines);
-    } catch (err) {
-      console.error('Failed to load headlines:', err);
-      listEl.innerHTML = '<div>Fehler beim Laden der Überschriften</div>';
-    }
-  }
-
-  function renderHeadlines(items) {
-    console.log('Rendering headlines:', items);
-    listEl.innerHTML = '';
-    if (items.length === 0) {
-      listEl.innerHTML = '<div>Keine Überschriften verfügbar</div>';
-      return;
-    }
-    items.forEach(h => {
-      const li = document.createElement('li');
-      li.textContent = h.headline;
-      li.className = 'p-2 hover:bg-gray-100 cursor-pointer rounded';
-      li.dataset.id = h.id;
-      li.addEventListener('click', () => {
-        if (selectedHeadlineEl) {
-          selectedHeadlineEl.classList.remove('bg-blue-600', 'text-white', 'font-bold');
-        }
-        li.classList.add('bg-blue-600', 'text-white', 'font-bold');
-        selectedHeadlineEl = li;
-        loadEntry(h.id);
-      });
-      listEl.appendChild(li);
-      if (currentId && String(currentId) === String(h.id)) {
-        li.classList.add('bg-blue-600', 'text-white', 'font-bold');
-        selectedHeadlineEl = li;
-      }
-    });
-  }
-
-  async function loadEntry(id) {
-    try {
-      console.log('Fetching entry:', id);
-      const entry = await fetchAndParse(`/api/entries/${id}`);
-      console.log('Entry received:', entry);
-      currentId = entry.id;
-      headlineInput.value = entry.headline;
-      editor.setMarkdown(entry.text);
-      activeCheckbox.checked = !!entry.active;
-      document.getElementById('current-user').innerHTML = `last edit by:<br>${entry.editor || ''}`;
-    } catch (err) {
-      console.error('Failed to load entry:', err);
-    }
-  }
-
-  async function saveEntry() {
-    const payload = {
-      headline: headlineInput.value.trim(),
-      text: editor.getMarkdown().trim(),
-      active: activeCheckbox.checked
-    };
-    if (!payload.headline || !payload.text) return;
-    try {
-      console.log('Saving entry:', payload);
-      let res;
-      if (currentId) {
-        res = await fetch(`/api/entries/${currentId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          credentials: 'include'
-        });
-      } else {
-        res = await fetch('/api/entries', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          credentials: 'include'
-        });
-      }
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(`HTTP error ${res.status}: ${error.error || 'Unknown error'}`);
-      }
-      const data = await res.json();
-      console.log('Entry saved:', data);
-      currentId = data.id;
-      await loadHeadlines();
-      alert('Gespeichert');
-    } catch (err) {
-      console.error('Failed to save entry:', err);
-      alert('Failed to save entry: ' + err.message);
-    }
-  }
-
-  async function deleteEntry() {
-    if (!currentId) return;
-    try {
-      console.log('Deleting entry:', currentId);
-      await fetchAndParse(`/api/entries/${currentId}`, { method: 'DELETE' });
-      console.log('Entry deleted');
-      currentId = null;
-      headlineInput.value = '';
-      editor.setMarkdown('');
-      activeCheckbox.checked = false;
-      document.getElementById('current-user').innerHTML = `last edit by:<br>`;
-      await loadHeadlines();
-      alert('Gelöscht');
-    } catch (err) {
-      console.error('Failed to delete entry:', err);
-      alert('Failed to delete entry: ' + err.message);
-    }
-  }
-
-  saveBtn.addEventListener('click', saveEntry);
-  deleteBtn.addEventListener('click', deleteEntry);
-  addBtn.addEventListener('click', () => {
-    console.log('Adding new heading...');
-    currentId = null;
-    headlineInput.value = '';
-    editor.setMarkdown('');
-    activeCheckbox.checked = true;
-    document.getElementById('current-user').innerHTML = `last edit by:<br>`;
   });
 
   async function loadArchive() {
@@ -681,7 +483,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           const resp = await fetch(`/api/restore/${e.id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include'
           });
           if (resp.ok) {
             await loadHeadlines();
@@ -699,11 +500,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  console.log('Adding search and archive listeners...');
-  searchEl.addEventListener('input', () => {
-    console.log('Search input changed, loading headlines...');
-    loadHeadlines();
-  });
   archiveSearch.addEventListener('input', renderArchive);
   archiveSort.addEventListener('change', renderArchive);
 
@@ -711,6 +507,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   showEditor();
   console.log('Calling loadOpen...');
   loadOpen();
-  console.log('Calling loadHeadlines...');
-  loadHeadlines();
+  console.log('Initializing headlines...');
+  initHeadlines();
 });
