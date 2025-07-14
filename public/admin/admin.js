@@ -1,5 +1,6 @@
 import { fetchAndParse, overrideFetch } from './utils.js';
 import { initHeadlines, allHeadlines, loadHeadlines } from './headlines.js';
+import { initQuestions } from './questions.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -90,8 +91,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     editorBtn.classList.add('bg-gray-200');
     archiveBtn.classList.remove('bg-blue-600', 'text-white');
     archiveBtn.classList.add('bg-gray-200');
-    loadOpen();
-    loadAnswered();
   }
 
   function updateOpenCount(num) {
@@ -169,214 +168,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  console.log('Setting up question tabs...');
-  const tabOpen = document.getElementById('tab-open');
-  const tabAnswered = document.getElementById('tab-answered');
-  const openList = document.getElementById('open-list');
-  const answeredList = document.getElementById('answered-list');
-  const questionSearch = document.getElementById('question-search');
-  const deleteSelectedBtn = document.getElementById('delete-selected');
-  let selectedQuestions = new Set();
-
-  function showOpen() {
-    console.log('Showing open questions...');
-    openList.classList.remove('hidden');
-    answeredList.classList.add('hidden');
-    tabOpen.classList.add('bg-blue-600', 'text-white');
-    tabAnswered.classList.remove('bg-blue-600', 'text-white');
-    tabAnswered.classList.add('bg-gray-200');
-    tabOpen.classList.remove('bg-gray-200');
-    selectedQuestions.clear();
-    deleteSelectedBtn.classList.add('hidden');
-    loadOpen();
-  }
-
-  function showAnswered() {
-    console.log('Showing answered questions...');
-    answeredList.classList.remove('hidden');
-    openList.classList.add('hidden');
-    tabAnswered.classList.add('bg-blue-600', 'text-white');
-    tabOpen.classList.remove('bg-blue-600', 'text-white');
-    tabOpen.classList.add('bg-gray-200');
-    tabAnswered.classList.remove('bg-gray-200');
-    loadAnswered();
-  }
-
-  tabOpen.addEventListener('click', showOpen);
-  tabAnswered.addEventListener('click', showAnswered);
-  questionSearch.addEventListener('input', () => {
-    console.log('Question search input changed...');
-    loadOpen();
-    loadAnswered();
-  });
-  deleteSelectedBtn.addEventListener('click', () => handleDelete(Array.from(selectedQuestions)));
-
-  async function loadOpen() {
-    openList.innerHTML = '';
-    selectedQuestions.clear();
-    deleteSelectedBtn.classList.add('hidden');
-    try {
-      console.log('Fetching unanswered questions...');
-      const questions = await fetchAndParse('/api/unanswered');
-      console.log('Unanswered questions received:', questions);
-      if (!Array.isArray(questions)) {
-        console.error('Expected array, got:', questions);
-        openList.innerHTML = '<div>Keine Fragen verfügbar</div>';
-        return;
-      }
-      const qFilter = questionSearch.value.toLowerCase();
-      updateOpenCount(questions.length);
-      questions.filter(q => !qFilter || q.toLowerCase().includes(qFilter)).forEach(q => {
-        const div = document.createElement('div');
-        div.className = 'border p-4 rounded';
-
-        const header = document.createElement('div');
-        header.className = 'flex justify-between items-start mb-2';
-
-        const left = document.createElement('div');
-        left.className = 'flex items-start space-x-2';
-
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.className = 'mt-1';
-        cb.addEventListener('change', () => {
-          if (cb.checked) selectedQuestions.add(q); else selectedQuestions.delete(q);
-          deleteSelectedBtn.classList.toggle('hidden', selectedQuestions.size === 0);
-        });
-
-        const p = document.createElement('p');
-        p.className = 'font-medium';
-        p.textContent = q;
-
-        left.appendChild(cb);
-        left.appendChild(p);
-
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.textContent = '🗑️';
-        del.addEventListener('click', () => handleDelete([q]));
-
-        header.appendChild(left);
-        header.appendChild(del);
-
-        div.appendChild(header);
-
-        const form = document.createElement('form');
-        form.innerHTML = `
-          <input type="hidden" name="question" value="${q}">
-          <input name="answer" class="border p-2 w-full mb-2" placeholder="Antwort" required>
-          <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Senden</button>
-        `;
-        form.addEventListener('submit', async e => {
-          e.preventDefault();
-          const data = { question: q, answer: form.answer.value };
-          try {
-            console.log('Submitting answer:', data);
-            const resp = await fetch('/api/answer', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data),
-            });
-            if (resp.ok) {
-              div.remove();
-              updateOpenCount(Math.max(0, parseInt(openCountSpan.textContent) - 1));
-              loadAnswered();
-            } else {
-              console.error('Answer submission failed:', await resp.json());
-            }
-          } catch (err) {
-            console.error('Answer submission error:', err);
-          }
-        });
-        div.appendChild(form);
-        openList.appendChild(div);
-      });
-    } catch (err) {
-      openList.innerHTML = '<div>Fehler beim Laden</div>';
-      console.error('Error loading unanswered questions:', err);
-    }
-  }
-
-  async function handleDelete(questions) {
-    if (!questions || questions.length === 0) return;
-    const text = questions.length === 1
-      ? `Frage wirklich löschen?
-${questions[0]}`
-      : `Fragen wirklich löschen?
-${questions.join('\n')}`;
-    if (!confirm(text)) return;
-    try {
-      const resp = await fetch('/api/unanswered', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions }),
-      });
-      if (resp.ok) {
-        selectedQuestions.clear();
-        deleteSelectedBtn.classList.add('hidden');
-        loadOpen();
-      } else {
-        console.error('Delete failed:', await resp.json());
-      }
-    } catch (err) {
-      console.error('Delete error:', err);
-    }
-  }
-
-  async function loadAnswered() {
-    answeredList.innerHTML = '';
-    try {
-      console.log('Fetching answered questions...');
-      const pairs = await fetchAndParse('/api/answered');
-      console.log('Answered questions received:', pairs);
-      if (!Array.isArray(pairs)) {
-        console.error('Expected array, got:', pairs);
-        answeredList.innerHTML = '<div>Keine Antworten verfügbar</div>';
-        return;
-      }
-      const qFilter = questionSearch.value.toLowerCase();
-      pairs.filter(p => !qFilter || p.question.toLowerCase().includes(qFilter)).forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'border p-4 rounded';
-        const form = document.createElement('form');
-        form.innerHTML = `
-          <p class="mb-2 font-medium">${p.question}</p>
-          <input type="hidden" name="question" value="${p.question}">
-          <input name="answer" class="border p-2 w-full mb-2" value="${p.answer}" required>
-          <div class="flex space-x-2">
-            <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Aktualisieren</button>
-            <button type="button" class="bg-green-600 text-white px-4 py-2 rounded move-btn">In Wissen verschieben</button>
-          </div>
-        `;
-        form.addEventListener('submit', async e => {
-          e.preventDefault();
-          const data = { question: p.question, answer: form.answer.value };
-          try {
-            console.log('Updating answer:', data);
-            const resp = await fetch('/api/update', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data),
-            });
-            if (!resp.ok) {
-              console.error('Answer update failed:', await resp.json());
-            }
-          } catch (err) {
-            console.error('Answer update error:', err);
-          }
-        });
-        form.querySelector('.move-btn').addEventListener('click', () => {
-          openMoveModal(p.question, form.answer.value);
-        });
-        div.appendChild(form);
-        answeredList.appendChild(div);
-      });
-    } catch (err) {
-      answeredList.innerHTML = '<div>Fehler beim Laden</div>';
-      console.error('Error loading answered questions:', err);
-    }
-  }
-
   let archiveEntries = [];
   const archiveList = document.getElementById('archive-list');
   const archiveSearch = document.getElementById('archive-search');
@@ -422,6 +213,7 @@ ${questions.join('\n')}`;
       });
       if (resp.ok) {
         moveModal.classList.add('hidden');
+        const { loadAnswered } = initQuestions({ openMoveModal, updateOpenCount });
         loadAnswered();
         await loadHeadlines();
       } else {
@@ -505,8 +297,8 @@ ${questions.join('\n')}`;
 
   console.log('Calling showEditor...');
   showEditor();
-  console.log('Calling loadOpen...');
-  loadOpen();
+  console.log('Initializing questions...');
+  initQuestions({ openMoveModal, updateOpenCount });
   console.log('Initializing headlines...');
   initHeadlines();
 });
