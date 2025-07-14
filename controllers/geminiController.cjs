@@ -1,59 +1,11 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { Sequelize, DataTypes } = require("sequelize");
+const { HochschuhlABC } = require("./db.cjs");
 const { getCached } = require("../utils/cache");
 const { estimateTokens, isWithinTokenLimit } = require("../utils/tokenizer");
 const { summarizeConversation } = require("../utils/summarizer");
 
 // In-memory conversation store
 const conversations = new Map();
-
-// Initialize Sequelize for SQLite database
-const path = require("path");
-const sequelize = new Sequelize({
-  dialect: "sqlite",
-  storage: path.join(__dirname, "../hochschuhl-abc.db"),
-  logging: false, // Disable logging for production; set to console.log for debugging
-});
-
-// Define HochschuhlABC model
-const HochschuhlABC = sequelize.define(
-  "HochschuhlABC",
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    headline: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    text: {
-      type: DataTypes.TEXT,
-      allowNull: false,
-    },
-    editor: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    lastUpdated: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    active: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
-    },
-    archived: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-  },
-  {
-    tableName: "hochschuhl_abc",
-    timestamps: false,
-  }
-);
 
 const apiKey = process.env.API_KEY;
 if (!apiKey) {

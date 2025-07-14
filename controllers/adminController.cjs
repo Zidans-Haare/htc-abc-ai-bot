@@ -1,49 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = require('./db.cjs');
+const { Sequelize } = require('sequelize');
+const { HochschuhlABC } = require('./db.cjs');
 const fs = require('fs').promises;
 const path = require('path');
-
-// Define HochschuhlABC model
-const HochschuhlABC = sequelize.define('HochschuhlABC', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true
-  },
-  headline: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  text: {
-    type: DataTypes.TEXT,
-    allowNull: false
-  },
-  editor: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  lastUpdated: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  },
-  active: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
-  },
-  archived: {
-    type: DataTypes.DATE,
-    allowNull: true
-  }
-}, {
-  tableName: 'hochschuhl_abc',
-  timestamps: false
-});
-
-// Sync database
-sequelize.sync({ alter: true })
-  .catch(err => console.error('SQLite sync error:', err.message));
 
 // Admin auth middleware factory
 const adminAuth = (getSession, logAction) => (req, res, next) => {
