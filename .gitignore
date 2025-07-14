@@ -14,3 +14,4 @@ ai_input/faq.txt
 .vscode/
 .venv/
 scripts/*.txt
+server.log

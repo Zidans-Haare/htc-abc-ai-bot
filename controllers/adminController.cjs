@@ -1,49 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = require('./db.cjs');
+const { Sequelize } = require('sequelize');
+const { HochschuhlABC } = require('./db.cjs');
 const fs = require('fs').promises;
 const path = require('path');
-
-// Define HochschuhlABC model
-const HochschuhlABC = sequelize.define('HochschuhlABC', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true
-  },
-  headline: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  text: {
-    type: DataTypes.TEXT,
-    allowNull: false
-  },
-  editor: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  lastUpdated: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  },
-  active: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
-  },
-  archived: {
-    type: DataTypes.DATE,
-    allowNull: true
-  }
-}, {
-  tableName: 'hochschuhl_abc',
-  timestamps: false
-});
-
-// Sync database
-sequelize.sync({ alter: true })
-  .catch(err => console.error('SQLite sync error:', err.message));
 
 // Admin auth middleware factory
 const adminAuth = (getSession, logAction) => (req, res, next) => {
@@ -395,6 +355,37 @@ module.exports = (getSession, logAction) => {
       res.status(201).json({ id: user.id, username: user.username, role: user.role });
     } catch (err) {
       console.error('Failed to create user', err);
+      res.status(500).json({ error: 'failed' });
+    }
+  });
+
+  router.put('/users/:username/password', adminAuth(getSession, logAction), async (req, res) => {
+    if (req.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+    const { username } = req.params;
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: 'missing password' });
+    try {
+      const auth = require('./authController.cjs');
+      await auth.updateUserPassword(username, password);
+      res.json({ success: true });
+    } catch (err) {
+      console.error(`Failed to update password for ${username}`, err);
+      res.status(500).json({ error: 'failed' });
+    }
+  });
+
+  router.delete('/users/:username', adminAuth(getSession, logAction), async (req, res) => {
+    if (req.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+    const { username } = req.params;
+    if (req.user === username) {
+        return res.status(400).json({ error: 'cannot delete self' });
+    }
+    try {
+      const auth = require('./authController.cjs');
+      await auth.deleteUser(username);
+      res.json({ success: true });
+    } catch (err) {
+      console.error(`Failed to delete user ${username}`, err);
       res.status(500).json({ error: 'failed' });
     }
   });

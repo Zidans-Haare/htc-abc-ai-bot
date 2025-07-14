@@ -1,34 +1,37 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const bcrypt = require('bcrypt');
-const sequelize = require('./db.cjs');
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { User } = require('./db.cjs');
 
-const User = sequelize.define('User', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true
-  },
-  username: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  role: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    defaultValue: 'editor'
+const SESSION_TTL = 1000 * 60 * 60; // 1 hour
+const sessions = {};
+
+function createSession(username, role) {
+  const token = crypto.randomBytes(32).toString('hex');
+  sessions[token] = { username, role, created: Date.now(), expires: Date.now() + SESSION_TTL };
+  console.log('Created session:', { token, username, role, expires: new Date(sessions[token].expires).toISOString() });
+  return token;
+}
+
+function destroySession(token) {
+  console.log('Destroying session:', token);
+  delete sessions[token];
+}
+
+function getSession(token) {
+  const s = sessions[token];
+  if (!s) {
+    console.log('Session not found for token:', token);
+    return null;
   }
-}, {
-  tableName: 'users',
-  timestamps: false
-});
-
-async function init() {
-  await sequelize.sync({ alter: true });
+  if (Date.now() > s.expires) {
+    console.log('Session expired for token:', token);
+    delete sessions[token];
+    return null;
+  }
+  console.log('Session retrieved:', { token, username: s.username, role: s.role });
+  return s;
 }
 
 async function verifyUser(username, password) {
@@ -65,4 +68,69 @@ async function listUsers() {
   }
 }
 
-module.exports = { init, verifyUser, createUser, listUsers };
+async function updateUserPassword(username, newPassword) {
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.update({ password: hashedPassword }, { where: { username } });
+  } catch (err) {
+    console.error('Update user password error:', err);
+    throw err;
+  }
+}
+
+async function deleteUser(username) {
+  try {
+    await User.destroy({ where: { username } });
+  } catch (err) {
+    console.error('Delete user error:', err);
+    throw err;
+  }
+}
+
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Missing credentials' });
+  }
+  try {
+    const user = await verifyUser(username, password);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    const token = createSession(user.username, user.role);
+    res.cookie('sessionToken', token, { httpOnly: true, secure: true, maxAge: SESSION_TTL });
+    res.json({ role: user.role });
+  } catch (err) {
+    console.error('Login failed:', err);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+router.get('/validate', (req, res) => {
+  const token = req.cookies.sessionToken;
+  const session = token && getSession(token);
+  if (session) {
+    res.json({ valid: true, username: session.username, role: session.role });
+  } else {
+    res.status(401).json({ valid: false, error: 'Invalid or expired token' });
+  }
+});
+
+router.post('/logout', (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (token) {
+    destroySession(token);
+  }
+  res.clearCookie('sessionToken');
+  res.json({ success: true });
+});
+
+module.exports = { 
+    router, 
+    getSession, 
+    verifyUser, 
+    createUser, 
+    listUsers, 
+    updateUserPassword, 
+    deleteUser 
+};

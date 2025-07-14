@@ -1,5 +1,9 @@
 import { fetchAndParse, overrideFetch } from './utils.js';
 import { initHeadlines, allHeadlines, loadHeadlines } from './headlines.js';
+import { initQuestions } from './questions.js';
+import { initUsers, loadUsers } from './users.js';
+import { initArchive, loadArchive } from './archive.js';
+import { initExport } from './export.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -17,44 +21,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  console.log('Setting up admin panel...');
-  if (sessionStorage.getItem('userRole') === 'admin') {
-    console.log('Admin role detected, showing user admin panel');
-    document.getElementById('user-admin').classList.remove('hidden');
-    document.getElementById('create-user').addEventListener('click', async () => {
-      const u = document.getElementById('new-user').value.trim();
-      const p = document.getElementById('new-pass').value.trim();
-      const r = document.getElementById('new-role').value;
-      if (!u || !p) return;
-      try {
-        const res = await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: u, password: p, role: r }),
-        });
-        if (res.ok) {
-          alert('User created');
-        } else {
-          const error = await res.json();
-          console.error('User creation failed:', error);
-          alert('User creation failed: ' + (error.error || 'Unknown error'));
-        }
-      } catch (err) {
-        console.error('User creation error:', err);
-        alert('User creation error');
-      }
-    });
-  }
-
   console.log('Adding event listeners for navigation...');
   const editorBtn = document.getElementById('btn-editor');
   const questionsBtn = document.getElementById('btn-questions');
   const archiveBtn = document.getElementById('btn-archive');
-  const exportBtn = document.getElementById('btn-export');
-  const exportModal = document.getElementById('export-modal');
-  const exportJsonBtn = document.getElementById('export-json');
-  const exportPdfBtn = document.getElementById('export-pdf');
-  const exportCancelBtn = document.getElementById('export-cancel');
+  const userBtn = document.getElementById('btn-user');
   const moveModal = document.getElementById('move-modal');
   const moveSelect = document.getElementById('move-select');
   const moveNew = document.getElementById('move-new');
@@ -65,18 +36,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const editorView = document.getElementById('editor-view');
   const questionsView = document.getElementById('questions-view');
   const archiveView = document.getElementById('archive-view');
+  const userView = document.getElementById('user-view');
 
   function showEditor() {
     console.log('Showing editor view...');
     editorView.classList.remove('hidden');
     questionsView.classList.add('hidden');
     archiveView.classList.add('hidden');
+    userView.classList.add('hidden');
     editorBtn.classList.add('bg-blue-600', 'text-white');
     editorBtn.classList.remove('bg-gray-200');
     questionsBtn.classList.remove('bg-blue-600', 'text-white');
     questionsBtn.classList.add('bg-gray-200');
     archiveBtn.classList.remove('bg-blue-600', 'text-white');
     archiveBtn.classList.add('bg-gray-200');
+    userBtn.classList.remove('bg-blue-600', 'text-white');
+    userBtn.classList.add('bg-gray-200');
   }
 
   function showQuestions() {
@@ -84,14 +59,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     questionsView.classList.remove('hidden');
     editorView.classList.add('hidden');
     archiveView.classList.add('hidden');
+    userView.classList.add('hidden');
     questionsBtn.classList.add('bg-blue-600', 'text-white');
     questionsBtn.classList.remove('bg-gray-200');
     editorBtn.classList.remove('bg-blue-600', 'text-white');
     editorBtn.classList.add('bg-gray-200');
     archiveBtn.classList.remove('bg-blue-600', 'text-white');
     archiveBtn.classList.add('bg-gray-200');
-    loadOpen();
-    loadAnswered();
+    userBtn.classList.remove('bg-blue-600', 'text-white');
+    userBtn.classList.add('bg-gray-200');
   }
 
   function updateOpenCount(num) {
@@ -103,60 +79,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.remove('hidden');
     editorView.classList.add('hidden');
     questionsView.classList.add('hidden');
+    userView.classList.add('hidden');
     archiveBtn.classList.add('bg-blue-600', 'text-white');
     archiveBtn.classList.remove('bg-gray-200');
     editorBtn.classList.remove('bg-blue-600', 'text-white');
     editorBtn.classList.add('bg-gray-200');
     questionsBtn.classList.remove('bg-blue-600', 'text-white');
     questionsBtn.classList.add('bg-gray-200');
+    userBtn.classList.remove('bg-blue-600', 'text-white');
+    userBtn.classList.add('bg-gray-200');
     loadArchive();
+  }
+
+  function showUserAdmin() {
+    console.log('Showing user admin view...');
+    userView.classList.remove('hidden');
+    editorView.classList.add('hidden');
+    questionsView.classList.add('hidden');
+    archiveView.classList.add('hidden');
+    userBtn.classList.add('bg-blue-600', 'text-white');
+    userBtn.classList.remove('bg-gray-200');
+    editorBtn.classList.remove('bg-blue-600', 'text-white');
+    editorBtn.classList.add('bg-gray-200');
+    questionsBtn.classList.remove('bg-blue-600', 'text-white');
+    questionsBtn.classList.add('bg-gray-200');
+    archiveBtn.classList.remove('bg-blue-600', 'text-white');
+    archiveBtn.classList.add('bg-gray-200');
+    loadUsers();
+  }
+
+  if (sessionStorage.getItem('userRole') === 'admin') {
+    console.log('Admin role detected, enabling admin features.');
+    userBtn.classList.remove('hidden');
+    userBtn.addEventListener('click', showUserAdmin);
+    initUsers();
   }
 
   editorBtn.addEventListener('click', showEditor);
   questionsBtn.addEventListener('click', showQuestions);
   archiveBtn.addEventListener('click', showArchive);
-  exportBtn.addEventListener('click', () => {
-    exportModal.classList.remove('hidden');
-  });
-
-  exportCancelBtn.addEventListener('click', () => {
-    exportModal.classList.add('hidden');
-  });
-
-  exportJsonBtn.addEventListener('click', () => handleExport('json'));
-  exportPdfBtn.addEventListener('click', () => handleExport('pdf'));
-
-  async function handleExport(type) {
-    exportModal.classList.add('hidden');
-    try {
-      console.log('Exporting data...', type);
-      const data = await fetchAndParse('/api/export');
-      if (type === 'pdf') {
-        if (!window.jspdf) {
-          alert('PDF Export nicht verfügbar');
-          return;
-        }
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const text = JSON.stringify(data, null, 2);
-        const lines = doc.splitTextToSize(text, 180);
-        doc.text(lines, 10, 10);
-        doc.save('export.pdf');
-      } else {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'export.json';
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-      const stats = await fetchAndParse('/api/stats');
-      alert('Gesamt: ' + stats.total);
-    } catch (err) {
-      console.error('Export error:', err);
-    }
-  }
 
   logoutBtn.addEventListener('click', async () => {
     try {
@@ -168,219 +129,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('Logout error:', err);
     }
   });
-
-  console.log('Setting up question tabs...');
-  const tabOpen = document.getElementById('tab-open');
-  const tabAnswered = document.getElementById('tab-answered');
-  const openList = document.getElementById('open-list');
-  const answeredList = document.getElementById('answered-list');
-  const questionSearch = document.getElementById('question-search');
-  const deleteSelectedBtn = document.getElementById('delete-selected');
-  let selectedQuestions = new Set();
-
-  function showOpen() {
-    console.log('Showing open questions...');
-    openList.classList.remove('hidden');
-    answeredList.classList.add('hidden');
-    tabOpen.classList.add('bg-blue-600', 'text-white');
-    tabAnswered.classList.remove('bg-blue-600', 'text-white');
-    tabAnswered.classList.add('bg-gray-200');
-    tabOpen.classList.remove('bg-gray-200');
-    selectedQuestions.clear();
-    deleteSelectedBtn.classList.add('hidden');
-    loadOpen();
-  }
-
-  function showAnswered() {
-    console.log('Showing answered questions...');
-    answeredList.classList.remove('hidden');
-    openList.classList.add('hidden');
-    tabAnswered.classList.add('bg-blue-600', 'text-white');
-    tabOpen.classList.remove('bg-blue-600', 'text-white');
-    tabOpen.classList.add('bg-gray-200');
-    tabAnswered.classList.remove('bg-gray-200');
-    loadAnswered();
-  }
-
-  tabOpen.addEventListener('click', showOpen);
-  tabAnswered.addEventListener('click', showAnswered);
-  questionSearch.addEventListener('input', () => {
-    console.log('Question search input changed...');
-    loadOpen();
-    loadAnswered();
-  });
-  deleteSelectedBtn.addEventListener('click', () => handleDelete(Array.from(selectedQuestions)));
-
-  async function loadOpen() {
-    openList.innerHTML = '';
-    selectedQuestions.clear();
-    deleteSelectedBtn.classList.add('hidden');
-    try {
-      console.log('Fetching unanswered questions...');
-      const questions = await fetchAndParse('/api/unanswered');
-      console.log('Unanswered questions received:', questions);
-      if (!Array.isArray(questions)) {
-        console.error('Expected array, got:', questions);
-        openList.innerHTML = '<div>Keine Fragen verfügbar</div>';
-        return;
-      }
-      const qFilter = questionSearch.value.toLowerCase();
-      updateOpenCount(questions.length);
-      questions.filter(q => !qFilter || q.toLowerCase().includes(qFilter)).forEach(q => {
-        const div = document.createElement('div');
-        div.className = 'border p-4 rounded';
-
-        const header = document.createElement('div');
-        header.className = 'flex justify-between items-start mb-2';
-
-        const left = document.createElement('div');
-        left.className = 'flex items-start space-x-2';
-
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.className = 'mt-1';
-        cb.addEventListener('change', () => {
-          if (cb.checked) selectedQuestions.add(q); else selectedQuestions.delete(q);
-          deleteSelectedBtn.classList.toggle('hidden', selectedQuestions.size === 0);
-        });
-
-        const p = document.createElement('p');
-        p.className = 'font-medium';
-        p.textContent = q;
-
-        left.appendChild(cb);
-        left.appendChild(p);
-
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.textContent = '🗑️';
-        del.addEventListener('click', () => handleDelete([q]));
-
-        header.appendChild(left);
-        header.appendChild(del);
-
-        div.appendChild(header);
-
-        const form = document.createElement('form');
-        form.innerHTML = `
-          <input type="hidden" name="question" value="${q}">
-          <input name="answer" class="border p-2 w-full mb-2" placeholder="Antwort" required>
-          <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Senden</button>
-        `;
-        form.addEventListener('submit', async e => {
-          e.preventDefault();
-          const data = { question: q, answer: form.answer.value };
-          try {
-            console.log('Submitting answer:', data);
-            const resp = await fetch('/api/answer', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data),
-            });
-            if (resp.ok) {
-              div.remove();
-              updateOpenCount(Math.max(0, parseInt(openCountSpan.textContent) - 1));
-              loadAnswered();
-            } else {
-              console.error('Answer submission failed:', await resp.json());
-            }
-          } catch (err) {
-            console.error('Answer submission error:', err);
-          }
-        });
-        div.appendChild(form);
-        openList.appendChild(div);
-      });
-    } catch (err) {
-      openList.innerHTML = '<div>Fehler beim Laden</div>';
-      console.error('Error loading unanswered questions:', err);
-    }
-  }
-
-  async function handleDelete(questions) {
-    if (!questions || questions.length === 0) return;
-    const text = questions.length === 1
-      ? `Frage wirklich löschen?
-${questions[0]}`
-      : `Fragen wirklich löschen?
-${questions.join('\n')}`;
-    if (!confirm(text)) return;
-    try {
-      const resp = await fetch('/api/unanswered', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions }),
-      });
-      if (resp.ok) {
-        selectedQuestions.clear();
-        deleteSelectedBtn.classList.add('hidden');
-        loadOpen();
-      } else {
-        console.error('Delete failed:', await resp.json());
-      }
-    } catch (err) {
-      console.error('Delete error:', err);
-    }
-  }
-
-  async function loadAnswered() {
-    answeredList.innerHTML = '';
-    try {
-      console.log('Fetching answered questions...');
-      const pairs = await fetchAndParse('/api/answered');
-      console.log('Answered questions received:', pairs);
-      if (!Array.isArray(pairs)) {
-        console.error('Expected array, got:', pairs);
-        answeredList.innerHTML = '<div>Keine Antworten verfügbar</div>';
-        return;
-      }
-      const qFilter = questionSearch.value.toLowerCase();
-      pairs.filter(p => !qFilter || p.question.toLowerCase().includes(qFilter)).forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'border p-4 rounded';
-        const form = document.createElement('form');
-        form.innerHTML = `
-          <p class="mb-2 font-medium">${p.question}</p>
-          <input type="hidden" name="question" value="${p.question}">
-          <input name="answer" class="border p-2 w-full mb-2" value="${p.answer}" required>
-          <div class="flex space-x-2">
-            <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Aktualisieren</button>
-            <button type="button" class="bg-green-600 text-white px-4 py-2 rounded move-btn">In Wissen verschieben</button>
-          </div>
-        `;
-        form.addEventListener('submit', async e => {
-          e.preventDefault();
-          const data = { question: p.question, answer: form.answer.value };
-          try {
-            console.log('Updating answer:', data);
-            const resp = await fetch('/api/update', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data),
-            });
-            if (!resp.ok) {
-              console.error('Answer update failed:', await resp.json());
-            }
-          } catch (err) {
-            console.error('Answer update error:', err);
-          }
-        });
-        form.querySelector('.move-btn').addEventListener('click', () => {
-          openMoveModal(p.question, form.answer.value);
-        });
-        div.appendChild(form);
-        answeredList.appendChild(div);
-      });
-    } catch (err) {
-      answeredList.innerHTML = '<div>Fehler beim Laden</div>';
-      console.error('Error loading answered questions:', err);
-    }
-  }
-
-  let archiveEntries = [];
-  const archiveList = document.getElementById('archive-list');
-  const archiveSearch = document.getElementById('archive-search');
-  const archiveSort = document.getElementById('archive-sort');
 
   let moveData = null;
 
@@ -422,6 +170,7 @@ ${questions.join('\n')}`;
       });
       if (resp.ok) {
         moveModal.classList.add('hidden');
+        const { loadAnswered } = initQuestions({ openMoveModal, updateOpenCount });
         loadAnswered();
         await loadHeadlines();
       } else {
@@ -432,81 +181,14 @@ ${questions.join('\n')}`;
     }
   });
 
-  async function loadArchive() {
-    archiveEntries = [];
-    archiveList.innerHTML = '';
-    try {
-      console.log('Fetching archive...');
-      archiveEntries = await fetchAndParse('/api/archive');
-      console.log('Archive received:', archiveEntries);
-      if (!Array.isArray(archiveEntries)) archiveEntries = [];
-      renderArchive();
-    } catch (err) {
-      archiveList.innerHTML = '<div>Fehler beim Laden</div>';
-      console.error('Failed to load archive:', err);
-    }
-  }
-
-  function renderArchive() {
-    console.log('Rendering archive:', archiveEntries);
-    let items = archiveEntries.slice();
-    const q = archiveSearch.value.toLowerCase();
-    if (q) {
-      items = items.filter(e =>
-        e.headline.toLowerCase().includes(q) ||
-        (e.text && e.text.toLowerCase().includes(q)) ||
-        (e.editor && e.editor.toLowerCase().includes(q))
-      );
-    }
-    const sort = archiveSort.value;
-    if (sort === 'oldest') {
-      items.sort((a, b) => new Date(a.archived) - new Date(b.archived));
-    } else if (sort === 'editor') {
-      items.sort((a, b) => (a.editor || '').localeCompare(b.editor || ''));
-    } else {
-      items.sort((a, b) => new Date(b.archived) - new Date(a.archived));
-    }
-    archiveList.innerHTML = '';
-    items.forEach(e => {
-      const div = document.createElement('div');
-      div.className = 'border p-4 rounded';
-      const date = e.archived ? new Date(e.archived).toLocaleString() : '';
-      div.innerHTML = `<h3 class="font-semibold mb-1">${e.headline}</h3>
-        <p class="text-sm text-gray-500 mb-2">${date} - ${e.editor || ''}</p>
-        <div class="text-sm mb-2">${e.text}</div>`;
-      const btn = document.createElement('button');
-      btn.className = 'px-2 py-1 bg-blue-500 text-white rounded mr-2';
-      btn.textContent = 'Wiederherstellen';
-      btn.addEventListener('click', async () => {
-        try {
-          console.log('Restoring entry:', e.id);
-          const resp = await fetch(`/api/restore/${e.id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          if (resp.ok) {
-            await loadHeadlines();
-            await loadArchive();
-            alert('Wiederhergestellt');
-          } else {
-            console.error('Restore failed:', await resp.json());
-          }
-        } catch (err) {
-          console.error('Restore failed:', err);
-        }
-      });
-      div.appendChild(btn);
-      archiveList.appendChild(div);
-    });
-  }
-
-  archiveSearch.addEventListener('input', renderArchive);
-  archiveSort.addEventListener('change', renderArchive);
-
   console.log('Calling showEditor...');
   showEditor();
-  console.log('Calling loadOpen...');
-  loadOpen();
+  console.log('Initializing questions...');
+  initQuestions({ openMoveModal, updateOpenCount });
   console.log('Initializing headlines...');
   initHeadlines();
+  console.log('Initializing archive...');
+  initArchive();
+  console.log('Initializing export...');
+  initExport();
 });
