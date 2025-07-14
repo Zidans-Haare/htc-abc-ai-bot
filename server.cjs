@@ -1,4 +1,6 @@
 const fs = require('fs');
+const https = require('https');
+const os = require('os');
 const express = require("express");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
@@ -102,9 +104,26 @@ app.use((req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  fs.writeFile('server.pid', pid.toString(), err => {
-    if (err) console.error('Error writing PID to server.pid:', err);
+const useHttps = process.argv.includes('-https');
+
+if (useHttps) {
+  const homeDir = os.homedir();
+  const httpsOptions = {
+    key: fs.readFileSync(path.join(homeDir, '.ssh', 'key.pem')),
+    cert: fs.readFileSync(path.join(homeDir, '.ssh', 'cert.pem'))
+  };
+
+  https.createServer(httpsOptions, app).listen(PORT, () => {
+    console.log(`Server is running with HTTPS on port ${PORT}`);
+    fs.writeFile('server.pid', pid.toString(), err => {
+      if (err) console.error('Error writing PID to server.pid:', err);
+    });
   });
-});
+} else {
+  app.listen(PORT, () => {
+    console.log(`Server is running with HTTP on port ${PORT}`);
+    fs.writeFile('server.pid', pid.toString(), err => {
+      if (err) console.error('Error writing PID to server.pid:', err);
+    });
+  });
+}
