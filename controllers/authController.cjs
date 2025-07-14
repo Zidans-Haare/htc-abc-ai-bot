@@ -65,4 +65,23 @@ async function listUsers() {
   }
 }
 
-module.exports = { init, verifyUser, createUser, listUsers };
+async function updateUserPassword(username, newPassword) {
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.update({ password: hashedPassword }, { where: { username } });
+  } catch (err) {
+    console.error('Update user password error:', err);
+    throw err;
+  }
+}
+
+async function deleteUser(username) {
+  try {
+    await User.destroy({ where: { username } });
+  } catch (err) {
+    console.error('Delete user error:', err);
+    throw err;
+  }
+}
+
+module.exports = { init, verifyUser, createUser, listUsers, updateUserPassword, deleteUser };

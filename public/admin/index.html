@@ -13,13 +13,14 @@
 </head>
 <body class="bg-gray-100 flex flex-col h-screen">
   <!-- Top navigation -->
-  <div class="p-4 bg-white border-b flex space-x-2">
+  <div id="main-menu" class="p-4 bg-white border-b flex space-x-2">
     <button id="btn-editor" class="px-4 py-2 bg-blue-600 text-white rounded">Editor</button>
     <button id="btn-questions" class="px-4 py-2 bg-gray-200 rounded">Fragen
       <span id="open-count" class="ml-1 text-sm bg-red-500 text-white rounded-full px-2">0</span>
     </button>
     <button id="btn-archive" class="px-4 py-2 bg-gray-200 rounded">Archiv</button>
     <button id="btn-export" class="px-4 py-2 bg-gray-200 rounded">Export</button>
+    <button id="btn-user" class="px-4 py-2 bg-gray-200 rounded hidden">Benutzer</button>
     <button id="btn-logout" class="px-4 py-2 bg-gray-200 rounded">Logout</button>
   </div>
   <!-- Editor View -->
@@ -88,15 +89,22 @@
     </div>
     <div id="archive-list" class="space-y-4"></div>
   </div>
-  <div id="user-admin" class="hidden p-4 space-y-2">
-    <h2 class="font-semibold">Benutzer anlegen</h2>
-    <input id="new-user" class="border p-2" placeholder="Username">
-    <input id="new-pass" type="password" class="border p-2" placeholder="Password">
-    <select id="new-role" class="p-2 border rounded">
-      <option value="editor">Editor</option>
-      <option value="admin">Admin</option>
-    </select>
-    <button id="create-user" class="px-2 py-1 bg-blue-500 text-white rounded">Anlegen</button>
+  <!-- User Management View -->
+  <div id="user-view" class="flex flex-col flex-1 hidden p-4 space-y-4 overflow-y-auto">
+    <div id="user-admin" class="p-4 space-y-2 border rounded">
+      <h2 class="font-semibold">Benutzer anlegen</h2>
+      <input id="new-user" class="border p-2" placeholder="Username">
+      <input id="new-pass" type="password" class="border p-2" placeholder="Password">
+      <select id="new-role" class="p-2 border rounded">
+        <option value="editor">Editor</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button id="create-user" class="px-2 py-1 bg-blue-500 text-white rounded">Anlegen</button>
+    </div>
+    <div class="p-4 space-y-2 border rounded">
+        <h2 class="font-semibold">Benutzerliste</h2>
+        <div id="user-list" class="space-y-2"></div>
+    </div>
   </div>
 
   <!-- Move Answer Modal -->
