@@ -13,36 +13,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeSettings = document.getElementById("close-settings");
     const accentColorInput = document.getElementById("accent-color");
 
+    // --- NEU: Hier definieren wir die beiden Bilder für den Avatar-Wechsel ---
+    const botAvatarImage1 = '/image/smoky_klein.png'; // Ersetze dies bei Bedarf
+    const botAvatarImage2 = '/image/stu_klein.png'; // Ersetze dies bei Bedarf
+    let useFirstAvatar = true; // Dieser "Schalter" entscheidet, welches Bild als nächstes kommt
+
     // Uhrzeit aktualisieren
     function updateClock() {
-      currentTimeEl.textContent = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        if (currentTimeEl) {
+            currentTimeEl.textContent = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        }
     }
     setInterval(updateClock, 1000);
     updateClock();
     
-    // --- KORREKTUR BEGINNT HIER ---
-    // Die folgende Logik, die eine gespeicherte Farbe beim Start geladen hat, wurde entfernt.
-    /*
-    const savedAccent = localStorage.getItem("accent");
-    if (savedAccent) {
-        root.style.setProperty("--accent", savedAccent);
-        accentColorInput.value = savedAccent;
-    }
-    */
-    // Der Standardwert wird jetzt aus der CSS-Datei bezogen.
     // Wir setzen den Startwert des Color-Pickers auf den CSS-Standard.
-    const initialAccent = getComputedStyle(root).getPropertyValue('--accent').trim();
+    const initialAccent = getComputedStyle(root).getPropertyValue('--accent-color').trim();
     accentColorInput.value = initialAccent;
-    // --- KORREKTUR ENDET HIER ---
-
 
     // Einstellungen-Modal & Akzentfarbe
     settingsBtn.addEventListener("click", () => settingsModal.classList.add("open"));
     closeSettings.addEventListener("click", () => settingsModal.classList.remove("open"));
     settingsModal.addEventListener("click", e => { if (e.target === settingsModal) settingsModal.classList.remove("open"); });
     accentColorInput.addEventListener("input", () => {
-        document.documentElement.style.setProperty("--accent", accentColorInput.value);
-        localStorage.setItem("accent", accentColorInput.value);
+        document.documentElement.style.setProperty("--accent-color", accentColorInput.value);
+        localStorage.setItem("accent-color", accentColorInput.value);
     });
 
     // Scroll-Logik
@@ -69,9 +64,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
-        avatar.innerHTML = isUser
-            ? `<i class="fas fa-user"></i>`
-            : `<img src="/image/Smoky_Mascot.png" alt="Bot" />`;
+        
+        // --- KORREKTUR: Logik für den Avatar-Wechsel ---
+        if (isUser) {
+            // Avatar für den Nutzer
+            avatar.innerHTML = `<i class="fas fa-user"></i>`;
+        } else {
+            // Avatar für den Bot (wechselt bei jeder Nachricht)
+            const avatarSrc = useFirstAvatar ? botAvatarImage1 : botAvatarImage2;
+            avatar.innerHTML = `<img src="${avatarSrc}" alt="Bot Avatar" />`;
+            
+            // Den Schalter für die nächste Nachricht umlegen
+            useFirstAvatar = !useFirstAvatar;
+        }
         m.appendChild(avatar);
 
         const bubble = document.createElement('div');
@@ -102,6 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('new-chat').addEventListener('click', () => {
         messagesEl.innerHTML = '';
         conversationId = null;
+        // Setzt den Avatar-Schalter zurück, damit jeder neue Chat mit dem ersten Bild beginnt
+        useFirstAvatar = true; 
         addMsg('Neues Gespräch gestartet. Wie kann ich helfen?', false, new Date());
     });
 
