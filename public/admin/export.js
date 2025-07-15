@@ -10,7 +10,7 @@ async function handleExport(type) {
   exportModal.classList.add('hidden');
   try {
     console.log('Exporting data...', type);
-    const data = await fetchAndParse('/api/export');
+    const data = await fetchAndParse('/api/admin/export');
     if (type === 'pdf') {
       if (!window.jspdf) {
         alert('PDF Export nicht verfügbar');
@@ -31,7 +31,7 @@ async function handleExport(type) {
       a.click();
       URL.revokeObjectURL(url);
     }
-    const stats = await fetchAndParse('/api/stats');
+    const stats = await fetchAndParse('/api/admin/stats');
     alert('Gesamt: ' + stats.total);
   } catch (err) {
     console.error('Export error:', err);
