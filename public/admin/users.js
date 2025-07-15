@@ -2,7 +2,7 @@ import { fetchAndParse } from './utils.js';
 
 async function loadUsers() {
   try {
-    const users = await fetchAndParse('/api/users');
+    const users = await fetchAndParse('/api/admin/users');
     renderUsers(users);
   } catch (error) {
     console.error('Failed to load users:', error);
@@ -39,7 +39,7 @@ async function handleChangePassword(event) {
   const newPassword = prompt(`Neues Passwort für ${username}:`);
   if (newPassword && newPassword.trim() !== '') {
     try {
-      const response = await fetch(`/api/users/${username}/password`, {
+      const response = await fetch(`/api/admin/users/${username}/password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: newPassword })
@@ -61,7 +61,7 @@ async function handleRemoveUser(event) {
   const username = event.target.dataset.username;
   if (confirm(`Benutzer ${username} wirklich löschen?`)) {
     try {
-      const response = await fetch(`/api/users/${username}`, {
+      const response = await fetch(`/api/admin/users/${username}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -85,7 +85,7 @@ function initUsers() {
         const r = document.getElementById('new-role').value;
         if (!u || !p) return;
         try {
-          const res = await fetch('/api/users', {
+          const res = await fetch('/api/admin/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: u, password: p, role: r }),

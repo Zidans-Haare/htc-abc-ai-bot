@@ -17,7 +17,7 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
     deleteSelectedBtn.classList.add('hidden');
     try {
       console.log('Fetching unanswered questions...');
-      const questions = await fetchAndParse('/api/unanswered');
+      const questions = await fetchAndParse('/api/admin/unanswered');
       console.log('Unanswered questions received:', questions);
       if (!Array.isArray(questions)) {
         console.error('Expected array, got:', questions);
@@ -72,7 +72,7 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
           const data = { question: q, answer: form.answer.value };
           try {
             console.log('Submitting answer:', data);
-            const resp = await fetch('/api/answer', {
+            const resp = await fetch('/api/admin/answer', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(data),
@@ -104,7 +104,7 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
       : `Fragen wirklich löschen?\n${questions.join('\n')}`;
     if (!confirm(text)) return;
     try {
-      const resp = await fetch('/api/unanswered', {
+      const resp = await fetch('/api/admin/unanswered', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questions }),
@@ -126,7 +126,7 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
     answeredList.innerHTML = '';
     try {
       console.log('Fetching answered questions...');
-      const pairs = await fetchAndParse('/api/answered');
+      const pairs = await fetchAndParse('/api/admin/answered');
       console.log('Answered questions received:', pairs);
       if (!Array.isArray(pairs)) {
         console.error('Expected array, got:', pairs);
@@ -152,7 +152,7 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
           const data = { question: p.question, answer: form.answer.value };
           try {
             console.log('Updating answer:', data);
-            const resp = await fetch('/api/update', {
+            const resp = await fetch('/api/admin/update', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(data),

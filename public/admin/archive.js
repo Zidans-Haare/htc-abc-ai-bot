@@ -11,7 +11,7 @@ async function loadArchive() {
   archiveList.innerHTML = '';
   try {
     console.log('Fetching archive...');
-    archiveEntries = await fetchAndParse('/api/archive');
+    archiveEntries = await fetchAndParse('/api/admin/archive');
     console.log('Archive received:', archiveEntries);
     if (!Array.isArray(archiveEntries)) archiveEntries = [];
     renderArchive();
@@ -54,7 +54,7 @@ function renderArchive() {
     btn.addEventListener('click', async () => {
       try {
         console.log('Restoring entry:', e.id);
-        const resp = await fetch(`/api/restore/${e.id}`, {
+        const resp = await fetch(`/api/admin/restore/${e.id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });

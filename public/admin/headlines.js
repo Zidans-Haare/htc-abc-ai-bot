@@ -25,7 +25,7 @@ async function loadHeadlines() {
   console.log('Fetching headlines...');
   try {
     const q = encodeURIComponent(searchEl.value.trim());
-    allHeadlines = await fetchAndParse(`/api/headlines?q=${q}`);
+    allHeadlines = await fetchAndParse(`/api/admin/headlines?q=${q}`);
     console.log('Headlines received:', allHeadlines);
     selectedHeadlineEl = null;
     renderHeadlines(allHeadlines);
@@ -66,7 +66,7 @@ function renderHeadlines(items) {
 async function loadEntry(id) {
   try {
     console.log('Fetching entry:', id);
-    const entry = await fetchAndParse(`/api/entries/${id}`);
+    const entry = await fetchAndParse(`/api/admin/entries/${id}`);
     console.log('Entry received:', entry);
     currentId = entry.id;
     headlineInput.value = entry.headline;
@@ -89,13 +89,13 @@ async function saveEntry() {
     console.log('Saving entry:', payload);
     let res;
     if (currentId) {
-      res = await fetch(`/api/entries/${currentId}`, {
+      res = await fetch(`/api/admin/entries/${currentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
     } else {
-      res = await fetch('/api/entries', {
+      res = await fetch('/api/admin/entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -120,7 +120,7 @@ async function deleteEntry() {
   if (!currentId) return;
   try {
     console.log('Deleting entry:', currentId);
-    await fetchAndParse(`/api/entries/${currentId}`, { method: 'DELETE' });
+    await fetchAndParse(`/api/admin/entries/${currentId}`, { method: 'DELETE' });
     console.log('Entry deleted');
     currentId = null;
     headlineInput.value = '';
