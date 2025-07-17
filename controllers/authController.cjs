@@ -125,12 +125,13 @@ router.post('/logout', (req, res) => {
   res.json({ success: true });
 });
 
-module.exports = { 
-    router, 
-    getSession, 
-    verifyUser, 
-    createUser, 
-    listUsers, 
-    updateUserPassword, 
-    deleteUser 
+module.exports = {
+    router,
+    getSession,
+    createSession,
+    verifyUser,
+    createUser,
+    listUsers,
+    updateUserPassword,
+    deleteUser
 };

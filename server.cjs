@@ -26,6 +26,12 @@ function logAction(user, action) {
   });
 }
 
+const useAdmin = process.argv.includes('-admin');
+
+if (useAdmin) {
+  console.log('ADMIN mode: Bypassing login and creating session for debug_admin');
+}
+
 // Middleware für geschützte Admin-Ressourcen
 const protectAdmin = (req, res, next) => {
   // Erlaube /login/* ohne Sitzungsprüfung
@@ -34,6 +40,12 @@ const protectAdmin = (req, res, next) => {
   }
   // Prüfe Sitzung für /admin/*
   if (req.url.startsWith('/admin/')) {
+    if (useAdmin) {
+      const token = auth.createSession('debug_admin', 'admin');
+      res.cookie('sessionToken', token, { httpOnly: true, secure: useHttps, maxAge: 1000 * 60 * 60 });
+      req.session = auth.getSession(token);
+      return next();
+    }
     const token = req.cookies.sessionToken;
     const session = token && auth.getSession(token);
     if (session) {
