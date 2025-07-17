@@ -15,3 +15,4 @@ ai_input/faq.txt
 .venv/
 scripts/*.txt
 server.log
+.venv_htc/

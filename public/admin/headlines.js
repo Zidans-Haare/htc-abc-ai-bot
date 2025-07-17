@@ -72,7 +72,11 @@ async function loadEntry(id) {
     headlineInput.value = entry.headline;
     editor.setMarkdown(entry.text);
     activeCheckbox.checked = !!entry.active;
-    document.getElementById('current-user').innerHTML = `last edit by:<br>${entry.editor || ''}`;
+    const timestamp = entry.lastUpdated ? new Date(entry.lastUpdated) : null;
+    const formattedDate = timestamp
+      ? `${timestamp.getDate()}.${timestamp.getMonth() + 1}.'${String(timestamp.getFullYear()).slice(-2)} ${timestamp.getHours()}:${String(timestamp.getMinutes()).padStart(2, '0')}`
+      : '';
+    document.getElementById('current-user').innerHTML = `last edit by:<br>${entry.editor || ''}<br>${formattedDate}`;
   } catch (err) {
     console.error('Failed to load entry:', err);
   }
@@ -109,7 +113,7 @@ async function saveEntry() {
     console.log('Entry saved:', data);
     currentId = data.id;
     await loadHeadlines();
-    alert('Gespeichert');
+    await loadEntry(currentId);
   } catch (err) {
     console.error('Failed to save entry:', err);
     alert('Failed to save entry: ' + err.message);
