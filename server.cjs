@@ -18,6 +18,12 @@ dotenv.config();
 
 const app = express();
 
+// Ensure log directory exists
+const logDir = path.resolve(__dirname, 'logs');
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+}
+
 const auditLog = path.resolve(__dirname, 'logs/audit.log');
 function logAction(user, action) {
   const line = `[${new Date().toISOString()}] ${user} ${action}\n`;
