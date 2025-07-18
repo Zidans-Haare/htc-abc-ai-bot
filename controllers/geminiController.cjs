@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { HochschuhlABC } = require("./db.cjs");
+const { HochschuhlABC, Questions } = require("./db.cjs");
 const { getCached } = require("../utils/cache");
 const { estimateTokens, isWithinTokenLimit } = require("../utils/tokenizer");
 const { summarizeConversation } = require("../utils/summarizer");
@@ -19,15 +19,14 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 async function logUnansweredQuestion(question) {
   try {
-    const fs = require("fs").promises;
-    const path = require("path");
-    const logFile = path.resolve(__dirname, "../ai_fragen/offene_fragen.txt");
-    const timestamp = new Date().toLocaleString("de-DE", {
-      timeZone: "Europe/Berlin",
+    await Questions.create({
+      question: question,
+      answered: false,
+      archived: false,
+      deleted: false,
+      spam: false,
     });
-    const logEntry = `[${timestamp}] Frage: ${question}\n`;
-    await fs.appendFile(logFile, logEntry, "utf8");
-    console.log(`Unanswered question logged to ${logFile}`);
+    console.log(`Unanswered question logged to database`);
   } catch (error) {
     console.error(
       "Fehler beim Protokollieren der offenen Frage:",
@@ -113,11 +112,13 @@ async function generateResponse(req, res) {
 
     // Create the full prompt
     const fullPrompt = `
+      --system prompt--
       You are a customer support agent dedicated to answering questions, resolving issues, 
       and providing helpful solutions promptly. Maintain a friendly and professional tone in all interactions. 
       
       Ensure responses are concise, clear, and directly address the user's concerns. Try to answer to the point and be super helpful and positive.
       Escalate complex issues to human agents when necessary to ensure customer satisfaction.
+    
 
       Contact data includes Name, Responsibility, Email, Phone number, Room, and talking hours. 
       Whenever you recommend a contact or advise to contact someone, provide complete contact data 
@@ -125,15 +126,26 @@ async function generateResponse(req, res) {
       
       If multiple persons are responsible, briefly explain the difference between them and provide full contact data for each.
       
-      **Inhalt des Hochschul ABC (2025)**:
+      Answer in the language of the user prompt, or the language the user wishes.
+
+
+      **Knowledgebase of the HTW Desden**:
       ${hochschulContent}
+
+      --
+
+      If you can not answer a question about the HTW Dresden from the Knowledgebase, 
+      add the chars "<+>" at the end of the answer.
+
+      --
       
       **Gesprächsverlauf**:
       ${messagesToUse
         .map((m) => `${m.isUser ? "User" : "Assistant"}: ${m.text}`)
         .join("\n")}
       
-      Benutzerfrage: ${prompt}
+      --user prompt--
+      ${prompt}
     `;
 
     // Generate response
@@ -154,7 +166,7 @@ async function generateResponse(req, res) {
     // Log unanswered questions
     if (
       text.includes(
-        "Diese Frage kann basierend auf den bereitgestellten Informationen nicht beantwortet werden"
+        "<+>"
       )
     ) {
       await logUnansweredQuestion(prompt);

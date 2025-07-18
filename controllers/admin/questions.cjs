@@ -1,1 +1,64 @@
-const express = require('express');const router = express.Router();const fs = require('fs').promises;const path = require('path');module.exports = (adminAuth) => {  router.get('/unanswered', adminAuth, async (req, res) => {    try {      const file = path.resolve(__dirname, '../../ai_fragen/offene_fragen.txt');      const data = await fs.readFile(file, 'utf8');      const questions = data        .split(/\n+/)        .filter(Boolean)        .map(line => {          const match = line.match(/Frage:\s*(.*)$/);          return match ? match[1].trim() : null;        })        .filter(Boolean);      res.json(questions);    } catch (err) {      console.error('Failed to read unanswered questions:', err);      res.status(500).json({ error: 'Failed to read unanswered questions' });    }  });  router.delete('/unanswered', adminAuth, async (req, res) => {    const { questions } = req.body || {};    if (!Array.isArray(questions) || questions.length === 0) {      return res.status(400).json({ error: 'questions required' });    }    try {      const file = path.resolve(__dirname, '../../ai_fragen/offene_fragen.txt');      const data = await fs.readFile(file, 'utf8');      const lines = data.split(/\n+/).filter(Boolean);      const filtered = lines.filter(line => {        const match = line.match(/Frage:\s*(.*)$/);        if (!match) return true;        const q = match[1].trim();        return !questions.includes(q);      });      await fs.writeFile(file, filtered.join('\n') + (filtered.length ? '\n' : ''), 'utf8');      res.json({ success: true });    } catch (err) {      console.error('Failed to delete unanswered questions:', err);      res.status(500).json({ error: 'Failed to delete unanswered questions' });    }  });  router.post('/answer', adminAuth, async (req, res) => {    const { question, answer } = req.body || {};    if (!question || !answer) {      return res.status(400).json({ error: 'question and answer required' });    }    try {      const faqFile = path.resolve(__dirname, '../../ai_input/faq.txt');      const unansweredFile = path.resolve(__dirname, '../../ai_fragen/offene_fragen.txt');      await fs.appendFile(        faqFile,        `F:${question}\nA:${answer}\nE:${req.user}\n`,        'utf8'      );      const content = await fs.readFile(unansweredFile, 'utf8');      const updated = content        .split(/\n+/)        .filter(line => !line.includes(`Frage: ${question}`))        .join('\n');      await fs.writeFile(unansweredFile, updated + (updated.endsWith('\n') ? '' : '\n'), 'utf8');      res.json({ success: true });    } catch (err) {      console.error('Failed to store answer:', err);      res.status(500).json({ error: 'Failed to store answer' });    }  });  router.get('/answered', adminAuth, async (req, res) => {    try {      const faqFile = path.resolve(__dirname, '../../ai_input/faq.txt');      const data = await fs.readFile(faqFile, 'utf8');      const lines = data.split(/\n+/).filter(Boolean);      const result = [];      for (let i = 0; i < lines.length; i++) {        const qMatch = lines[i].match(/^F:(.*)/);        const aMatch = lines[i + 1] && lines[i + 1].match(/^A:(.*)/);        if (qMatch && aMatch) {          const eMatch = lines[i + 2] && lines[i + 2].match(/^E:(.*)/);          result.push({            question: qMatch[1].trim(),            answer: aMatch[1].trim(),            editor: eMatch ? eMatch[1].trim() : ''          });          i += eMatch ? 2 : 1;        }      }      res.json(result);    } catch (err) {      console.error('Failed to read answered questions:', err);      res.status(500).json({ error: 'Failed to read answered questions' });    }  });  router.post('/update', adminAuth, async (req, res) => {    const { question, answer } = req.body || {};    if (!question || !answer) {      return res.status(400).json({ error: 'question and answer required' });    }    try {      const faqFile = path.resolve(__dirname, '../../ai_input/faq.txt');      const lines = (await fs.readFile(faqFile, 'utf8')).split(/\n/);      let found = false;      for (let i = 0; i < lines.length; i++) {        if (lines[i].startsWith('F:') && lines[i].slice(2).trim() === question) {          if (i + 1 < lines.length && lines[i + 1].startsWith('A:')) {            lines[i + 1] = `A:${answer}`;            if (i + 2 < lines.length && lines[i + 2].startsWith('E:')) {              lines[i + 2] = `E:${req.user}`;            } else {              lines.splice(i + 2, 0, `E:${req.user}`);            }            found = true;            break;          }        }      }      if (!found) {        return res.status(404).json({ error: 'Question not found' });      }      await fs.writeFile(faqFile, lines.join('\n'), 'utf8');      res.json({ success: true });    } catch (err) {      console.error('Failed to update answer:', err);      res.status(500).json({ error: 'Failed to update answer' });    }  });  router.post('/move', adminAuth, async (req, res) => {    const { question, answer, headlineId, newHeadline } = req.body || {};    if (!question || !answer || (!headlineId && !newHeadline)) {      return res.status(400).json({ error: 'missing data' });    }    try {      const faqFile = path.resolve(__dirname, '../../ai_input/faq.txt');      let lines = (await fs.readFile(faqFile, 'utf8')).split(/\n/);      for (let i = 0; i < lines.length; i++) {        if (lines[i].startsWith('F:') && lines[i].slice(2).trim() === question) {          lines.splice(i, 1);          if (i < lines.length && lines[i].startsWith('A:')) lines.splice(i, 1);          if (i < lines.length && lines[i].startsWith('E:')) lines.splice(i, 1);          break;        }      }      await fs.writeFile(faqFile, lines.join('\n'), 'utf8');      const { HochschuhlABC } = require('../db.cjs');      let entry;      if (newHeadline) {        entry = await HochschuhlABC.create({          headline: newHeadline,          text: answer,          editor: req.user,          lastUpdated: new Date(),          active: true,          archived: null        });      } else {        const existing = await HochschuhlABC.findByPk(headlineId);        if (!existing) return res.status(404).json({ error: 'Entry not found' });        existing.active = false;        existing.archived = new Date();        await existing.save();        entry = await HochschuhlABC.create({          headline: existing.headline,          text: (existing.text || '') + '\n' + answer,          editor: req.user,          lastUpdated: new Date(),          active: true,          archived: null        });      }      res.json({ success: true, id: entry.id });    } catch (err) {      console.error('Failed to move answer:', err);      res.status(500).json({ error: 'Failed to move answer' });    }  });  return router;};
+const express = require('express');
+const router = express.Router();
+const { Questions } = require('../db.cjs');
+const { Op } = require('sequelize');
+
+module.exports = (adminAuth) => {
+  router.get('/unanswered', adminAuth, async (req, res) => {
+    try {
+      const questions = await Questions.findAll({
+        where: {
+          answered: false,
+          archived: false,
+          deleted: false,
+          spam: false
+        },
+        order: [['lastUpdated', 'DESC']]
+      });
+      res.json(questions.map(q => q.question));
+    } catch (err) {
+      console.error('Failed to read unanswered questions:', err);
+      res.status(500).json({ error: 'Failed to read unanswered questions' });
+    }
+  });
+
+  router.delete('/unanswered', adminAuth, async (req, res) => {
+    const { questions } = req.body || {};
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'questions required' });
+    }
+    try {
+      await Questions.update(
+        { deleted: true },
+        { where: { question: { [Op.in]: questions } } }
+      );
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Failed to delete unanswered questions:', err);
+      res.status(500).json({ error: 'Failed to delete unanswered questions' });
+    }
+  });
+
+  router.post('/answer', adminAuth, async (req, res) => {
+    const { question, answer } = req.body || {};
+    if (!question || !answer) {
+      return res.status(400).json({ error: 'question and answer required' });
+    }
+    try {
+      await Questions.update(
+        {
+          answer: answer,
+          answered: true,
+          user: req.user.username
+        },
+        { where: { question: question } }
+      );
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Failed to save answer:', err);
+      res.status(500).json({ error: 'Failed to save answer' });
+    }
+  });
+
+  return router;
+};
