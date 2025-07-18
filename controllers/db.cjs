@@ -67,7 +67,46 @@ const HochschuhlABC = sequelize.define('HochschuhlABC', {
   timestamps: false
 });
 
+const Questions = sequelize.define('Questions', {
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
+  },
+  question: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  answer: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  user: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  lastUpdated: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+  archived: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  linked_article_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'hochschuhl_abc',
+      key: 'id'
+    }
+  }
+}, {
+  tableName: 'questions',
+  timestamps: false
+});
+
 sequelize.sync({ alter: true })
   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC };
+module.exports = { sequelize, User, HochschuhlABC, Questions };
