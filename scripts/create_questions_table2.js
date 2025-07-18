@@ -11,15 +11,15 @@ const queryInterface = sequelize.getQueryInterface();
 
 async function addColumns() {
   try {
-    await queryInterface.addColumn('questions', 'answered', {
+    await queryInterface.addColumn('Questions', 'answered', {
       type: DataTypes.BOOLEAN,
       defaultValue: false
     });
-    await queryInterface.addColumn('questions', 'spam', {
+    await queryInterface.addColumn('Questions', 'spam', {
       type: DataTypes.BOOLEAN,
       defaultValue: false
     });
-    await queryInterface.addColumn('questions', 'deleted', {
+    await queryInterface.addColumn('Questions', 'deleted', {
       type: DataTypes.BOOLEAN,
       defaultValue: false
     });

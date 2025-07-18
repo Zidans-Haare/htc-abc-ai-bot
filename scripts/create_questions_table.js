@@ -3,7 +3,7 @@ const path = require('path');
 
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: path.join(__dirname, './hochschuhl-abc.db'),
+  storage: path.join(__dirname, '../hochschuhl-abc.db'),
   logging: console.log
 });
 
