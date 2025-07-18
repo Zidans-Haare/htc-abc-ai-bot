@@ -13,10 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeSettings = document.getElementById("close-settings");
     const accentColorInput = document.getElementById("accent-color");
 
-    // --- NEU: Hier definieren wir die beiden Bilder für den Avatar-Wechsel ---
-    const botAvatarImage1 = '/image/smoky_klein.png'; // Ersetze dies bei Bedarf
-    const botAvatarImage2 = '/image/stu_klein.png'; // Ersetze dies bei Bedarf
-    let useFirstAvatar = true; // Dieser "Schalter" entscheidet, welches Bild als nächstes kommt
+    const botAvatarImage1 = '/image/smoky_klein.png'; 
+    const botAvatarImage2 = '/image/stu_klein.png'; 
+    let useFirstAvatar = true; 
 
     // Uhrzeit aktualisieren
     function updateClock() {
@@ -27,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateClock, 1000);
     updateClock();
     
-    // Wir setzen den Startwert des Color-Pickers auf den CSS-Standard.
     const initialAccent = getComputedStyle(root).getPropertyValue('--accent-color').trim();
     accentColorInput.value = initialAccent;
 
@@ -65,16 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
         
-        // --- KORREKTUR: Logik für den Avatar-Wechsel ---
         if (isUser) {
-            // Avatar für den Nutzer
             avatar.innerHTML = `<i class="fas fa-user"></i>`;
         } else {
-            // Avatar für den Bot (wechselt bei jeder Nachricht)
             const avatarSrc = useFirstAvatar ? botAvatarImage1 : botAvatarImage2;
             avatar.innerHTML = `<img src="${avatarSrc}" alt="Bot Avatar" />`;
-            
-            // Den Schalter für die nächste Nachricht umlegen
             useFirstAvatar = !useFirstAvatar;
         }
         m.appendChild(avatar);
@@ -82,7 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
     
-        let formattedText = text.replace(/\n/g, '<br>');
+        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        formattedText = formattedText.replace(/\n/g, '<br>');
+        formattedText = formattedText.replace(/📋/g, '');
+
         bubble.innerHTML = formattedText;
 
         if (!isUser && copyable) {
@@ -103,11 +99,31 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
     }
 
+    // --- NEU: Funktion, um ein Bild (den Lageplan) im Chat anzuzeigen ---
+    function addImageMessage(src) {
+        const m = document.createElement('div');
+        m.className = 'message ai'; // Wird als Bot-Nachricht angezeigt
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        const avatarSrc = useFirstAvatar ? botAvatarImage1 : botAvatarImage2;
+        avatar.innerHTML = `<img src="${avatarSrc}" alt="Bot Avatar" />`;
+        useFirstAvatar = !useFirstAvatar; // Wichtig, damit der Avatar-Wechsel konsistent bleibt
+        m.appendChild(avatar);
+
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'image-bubble'; // Eigene CSS-Klasse für das Bild
+        imageContainer.innerHTML = `<img src="${src}" alt="Lageplan" />`;
+        m.appendChild(imageContainer);
+        
+        messagesEl.appendChild(m);
+        scrollToBottom();
+    }
+
     // Neuer Chat
     document.getElementById('new-chat').addEventListener('click', () => {
         messagesEl.innerHTML = '';
         conversationId = null;
-        // Setzt den Avatar-Schalter zurück, damit jeder neue Chat mit dem ersten Bild beginnt
         useFirstAvatar = true; 
         addMsg('Neues Gespräch gestartet. Wie kann ich helfen?', false, new Date());
     });
@@ -117,6 +133,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const txt = prefilled || chatInput.value.trim();
         if (!txt) return;
         addMsg(txt, true, new Date());
+
+        // --- NEU: Prüfen, ob die Nutzeranfrage Schlüsselwörter für den Lageplan enthält ---
+        const locationKeywords = ['lageplan', 'wo ist', 'gebäude', 'campusplan', 'karte von', 'finde ich'];
+        const isLocationQuery = locationKeywords.some(keyword => txt.toLowerCase().includes(keyword));
+
         chatInput.value = '';
         chatInput.style.height = 'auto';
         chatInput.disabled = true;
@@ -131,6 +152,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             conversationId = data.conversationId;
             addMsg(data.response, false, new Date(), true);
+
+            // --- NEU: Wenn es eine Standortfrage war, füge den Lageplan hinzu ---
+            // Wichtig: Stelle sicher, dass das Bild unter diesem Pfad existiert!
+            if (isLocationQuery) {
+                addImageMessage('/image/lageplan.png'); 
+            }
+
         } catch (e) {
             addMsg('Fehler bei der Verbindung zum Server.', false, new Date());
             console.error(e);

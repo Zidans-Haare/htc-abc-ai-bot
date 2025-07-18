@@ -1,15 +1,21 @@
 {
-  "name": "HTW WebApp",
-  "short_name": "HTW",
-  "start_url": "/index.html",
+  "name": "HTW Dresden AI Chat",
+  "short_name": "HTW AI",
+  "description": "Dein intelligenter Helfer für alle Fragen rund um die HTW Dresden.",
+  "start_url": "https://dev.olomek.com/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#e9ecef",
+  "theme_color": "#EC6608",
   "icons": [
     {
-      "src": "/image/favicon_192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "/image/icons/WebApp_icon_192px.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/image/icons/WebApp_icon_512px.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ]
 }
