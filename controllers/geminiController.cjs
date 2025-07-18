@@ -74,6 +74,7 @@ async function logUnansweredQuestion(newQuestion) {
       error.message
     );
   }
+  // console.log(`logUnansweredQuestion finished at: ${new Date().toISOString()}`);
 }
 
 async function generateResponse(req, res) {
@@ -210,8 +211,10 @@ async function generateResponse(req, res) {
         "<+>"
       )
     ) {
-      await logUnansweredQuestion(prompt);
+      logUnansweredQuestion(prompt);
     }
+
+    // console.log(`answer finished at: ${new Date().toISOString()}`);
 
     res.json({ response: text, conversationId: convoId });
   } catch (error) {
