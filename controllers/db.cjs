@@ -112,6 +112,10 @@ const Questions = sequelize.define('Questions', {
   deleted: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  translation: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'questions',

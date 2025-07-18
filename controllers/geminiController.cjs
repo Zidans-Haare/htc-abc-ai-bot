@@ -17,10 +17,51 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-async function logUnansweredQuestion(question) {
+async function logUnansweredQuestion(newQuestion) {
   try {
+
+    const unansweredQuestions = await Questions.findAll({
+      where: { answered: false, spam: false, deleted: false },
+      attributes: ['question'],
+    });
+
+    if (unansweredQuestions.length > 0) {
+      const questionList = unansweredQuestions.map(q => q.question).join('\n - ');
+      const duplicatePrompt = `
+        Here is a list of unanswered questions:
+        - ${questionList}
+
+        Is the following new question a duplicate of any in the list above?
+        New question: "${newQuestion}"
+
+        Answer with only "yes" or "no".
+      `;
+      let result = await model.generateContent(duplicatePrompt);
+      let response = await result.response;
+      const text = response.text().trim().toLowerCase();
+
+      if (text === 'yes') {
+        console.log(`Duplicate question not logged: "${newQuestion}"`);
+        return;
+      }
+    }
+
+    // Translate the question to German
+    const translatePrompt = `Translate the following text to German. If it is already in German, answer with "no".
+    Text: "${newQuestion}"`;
+    result = await model.generateContent(translatePrompt);
+    response = await result.response;
+    let translatedQuestion = response.text().trim();
+
+    let translationToStore = null;
+
+    if (translatedQuestion.toLowerCase() !== 'no') {
+      translationToStore = translatedQuestion;
+    }
+      
     await Questions.create({
-      question: question,
+      question: newQuestion,
+      translation: translationToStore,
       answered: false,
       archived: false,
       deleted: false,
