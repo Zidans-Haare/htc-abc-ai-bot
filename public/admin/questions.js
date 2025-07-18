@@ -26,7 +26,7 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
       }
       const qFilter = questionSearch.value.toLowerCase();
       updateOpenCount(questions.length);
-      questions.filter(q => !qFilter || q.toLowerCase().includes(qFilter)).forEach(q => {
+      questions.filter(q => !qFilter || q.question.toLowerCase().includes(qFilter)).forEach(q => {
         const div = document.createElement('div');
         div.className = 'border p-4 rounded';
 
@@ -40,21 +40,28 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
         cb.type = 'checkbox';
         cb.className = 'mt-1';
         cb.addEventListener('change', () => {
-          if (cb.checked) selectedQuestions.add(q); else selectedQuestions.delete(q);
+          if (cb.checked) selectedQuestions.add(q.question); else selectedQuestions.delete(q.question);
           deleteSelectedBtn.classList.toggle('hidden', selectedQuestions.size === 0);
         });
 
         const p = document.createElement('p');
         p.className = 'font-medium';
-        p.textContent = q;
+        p.textContent = q.question;
 
         left.appendChild(cb);
         left.appendChild(p);
 
+        if (q.translation) {
+          const t = document.createElement('p');
+          t.className = 'text-sm text-gray-500';
+          t.textContent = `Translation: ${q.translation}`;
+          left.appendChild(t);
+        }
+
         const del = document.createElement('button');
         del.type = 'button';
         del.textContent = '🗑️';
-        del.addEventListener('click', () => handleDelete([q]));
+        del.addEventListener('click', () => handleDelete([q.question]));
 
         header.appendChild(left);
         header.appendChild(del);
@@ -63,13 +70,13 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
 
         const form = document.createElement('form');
         form.innerHTML = `
-          <input type="hidden" name="question" value="${q}">
+          <input type="hidden" name="question" value="${q.question}">
           <input name="answer" class="border p-2 w-full mb-2" placeholder="Antwort" required>
           <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Senden</button>
         `;
         form.addEventListener('submit', async e => {
           e.preventDefault();
-          const data = { question: q, answer: form.answer.value };
+          const data = { question: q.question, answer: form.answer.value };
           try {
             console.log('Submitting answer:', data);
             const resp = await fetch('/api/admin/answer', {

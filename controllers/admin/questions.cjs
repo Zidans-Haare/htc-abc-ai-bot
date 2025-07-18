@@ -15,7 +15,7 @@ module.exports = (adminAuth) => {
         },
         order: [['lastUpdated', 'DESC']]
       });
-      res.json(questions.map(q => q.question));
+      res.json(questions);
     } catch (err) {
       console.error('Failed to read unanswered questions:', err);
       res.status(500).json({ error: 'Failed to read unanswered questions' });
