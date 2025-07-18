@@ -18,12 +18,24 @@ dotenv.config();
 
 const app = express();
 
+// Ensure log directory exists
+const logDir = path.resolve(__dirname, 'logs');
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+}
+
 const auditLog = path.resolve(__dirname, 'logs/audit.log');
 function logAction(user, action) {
   const line = `[${new Date().toISOString()}] ${user} ${action}\n`;
   fs.appendFile(auditLog, line, (err) => {
     if (err) console.error('Audit log error:', err);
   });
+}
+
+const useAdmin = process.argv.includes('-admin');
+
+if (useAdmin) {
+  console.log('ADMIN mode: Bypassing login and creating session for debug_admin');
 }
 
 // Middleware für geschützte Admin-Ressourcen
@@ -34,6 +46,12 @@ const protectAdmin = (req, res, next) => {
   }
   // Prüfe Sitzung für /admin/*
   if (req.url.startsWith('/admin/')) {
+    if (useAdmin) {
+      const token = auth.createSession('debug_admin', 'admin');
+      res.cookie('sessionToken', token, { httpOnly: true, secure: useHttps, maxAge: 1000 * 60 * 60 });
+      req.session = auth.getSession(token);
+      return next();
+    }
     const token = req.cookies.sessionToken;
     const session = token && auth.getSession(token);
     if (session) {

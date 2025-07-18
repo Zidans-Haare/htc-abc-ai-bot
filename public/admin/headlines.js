@@ -3,6 +3,8 @@ import { fetchAndParse } from './utils.js';
 let currentId = null;
 let allHeadlines = [];
 let selectedHeadlineEl = null;
+let originalHeadline = '';
+let originalText = '';
 
 const listEl = document.getElementById('headline-list');
 const searchEl = document.getElementById('search');
@@ -20,6 +22,28 @@ const editor = new toastui.Editor({
     ['heading', 'bold', 'italic', 'link', 'image']
   ]
 });
+
+function setSaveButtonState(enabled) {
+  if (enabled) {
+    saveBtn.disabled = false;
+    saveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+    saveBtn.classList.add('bg-blue-500');
+  } else {
+    saveBtn.disabled = true;
+    saveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+    saveBtn.classList.remove('bg-blue-500');
+  }
+}
+
+function checkForChanges() {
+  const currentHeadline = headlineInput.value;
+  const currentText = editor.getMarkdown();
+  if (currentHeadline !== originalHeadline || currentText !== originalText) {
+    setSaveButtonState(true);
+  } else {
+    setSaveButtonState(false);
+  }
+}
 
 async function loadHeadlines() {
   console.log('Fetching headlines...');
@@ -71,8 +95,15 @@ async function loadEntry(id) {
     currentId = entry.id;
     headlineInput.value = entry.headline;
     editor.setMarkdown(entry.text);
+    originalHeadline = entry.headline;
+    originalText = entry.text;
     activeCheckbox.checked = !!entry.active;
-    document.getElementById('current-user').innerHTML = `last edit by:<br>${entry.editor || ''}`;
+    const timestamp = entry.lastUpdated ? new Date(entry.lastUpdated) : null;
+    const formattedDate = timestamp
+      ? `${timestamp.getDate()}.${timestamp.getMonth() + 1}.'${String(timestamp.getFullYear()).slice(-2)} ${timestamp.getHours()}:${String(timestamp.getMinutes()).padStart(2, '0')}`
+      : '';
+    document.getElementById('current-user').innerHTML = `last edit by:<br>${entry.editor || ''}<br>${formattedDate}`;
+    setSaveButtonState(false);
   } catch (err) {
     console.error('Failed to load entry:', err);
   }
@@ -109,7 +140,7 @@ async function saveEntry() {
     console.log('Entry saved:', data);
     currentId = data.id;
     await loadHeadlines();
-    alert('Gespeichert');
+    await loadEntry(currentId);
   } catch (err) {
     console.error('Failed to save entry:', err);
     alert('Failed to save entry: ' + err.message);
@@ -143,13 +174,19 @@ export function initHeadlines() {
     currentId = null;
     headlineInput.value = '';
     editor.setMarkdown('');
+    originalHeadline = '';
+    originalText = '';
     activeCheckbox.checked = true;
     document.getElementById('current-user').innerHTML = `last edit by:<br>`;
+    checkForChanges();
   });
   searchEl.addEventListener('input', () => {
     console.log('Search input changed, loading headlines...');
     loadHeadlines();
   });
+
+  headlineInput.addEventListener('input', checkForChanges);
+  editor.addHook('change', checkForChanges);
 
   loadHeadlines();
 }
