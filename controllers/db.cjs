@@ -100,6 +100,18 @@ const Questions = sequelize.define('Questions', {
       model: 'hochschuhl_abc',
       key: 'id'
     }
+  },
+  answered: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  spam: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  deleted: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   tableName: 'questions',
