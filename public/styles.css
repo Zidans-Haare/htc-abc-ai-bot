@@ -141,6 +141,16 @@ body {
     font-weight: 700; /* Hebt den aktiven Chat hervor */
 }
 
+/* NEU: Container für Aktionen in der Sidebar */
+.sidebar-actions {
+    margin-top: auto; /* Schiebt den Container nach unten */
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
 /* --- 2. Haupt-Chatbereich --- */
 .chat-container {
     flex: 1;
@@ -160,9 +170,23 @@ body {
     border-bottom: none;
     top: 5px;
     display: flex;
-    justify-content: flex-end; /* Standard-Ausrichtung für große Bildschirme */
+    justify-content: space-between;
     align-items: center;
     padding: 0 1.5rem;
+    height: 110px;
+}
+
+.header-left {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+.header-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 /* Das Logo, das nur auf kleinen Bildschirmen in der Kopfzeile erscheint */
@@ -187,16 +211,6 @@ body {
     pointer-events: none;
 }
 
-/* Inhalt der rechten Kopfzeile (Uhrzeit, Zahnrad) */
-.header-content {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 1.5rem;
-    height: 110px;
-    margin-bottom: 1rem;
-}
-
 /* Wrapper für den weißen Inhaltsbereich */
 .content-wrapper {
     flex: 1;
@@ -208,7 +222,13 @@ body {
     overflow: hidden;
 }
 
-#current-time { font-size: 1.1rem; font-weight: 500; color: var(--secondary-text); }
+#current-time { 
+    font-size: 1.1rem; 
+    font-weight: 500; 
+    color: var(--secondary-text);
+    margin-right: 1.5rem; /* Verschiebt die Uhrzeit nach links */
+}
+
 #settings-btn { background: transparent; border: none; color: var(--secondary-text); font-size: 1.5rem; cursor: pointer; transition: transform 0.2s, color 0.2s; }
 #settings-btn:hover { transform: scale(1.1); color: var(--primary-text); }
 .chat-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; position: relative; width: 100%; max-width: 1350px; margin: 0 auto; }
