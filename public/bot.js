@@ -13,9 +13,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeSettings = document.getElementById("close-settings");
     const accentColorInput = document.getElementById("accent-color");
 
+    const feedbackBtn = document.getElementById("feedback-btn");
+    const feedbackModal = document.getElementById("feedback-modal");
+    const closeFeedbackBtn = document.getElementById("close-feedback");
+    const sendFeedbackBtn = document.getElementById("send-feedback");
+    const feedbackInput = document.getElementById("feedback-input");
+    const captchaQuestionEl = document.getElementById('captcha-question');
+    const captchaInput = document.getElementById('captcha-input');
+    let captchaAnswer = null;
+
     const botAvatarImage1 = '/image/smoky_klein.png'; 
     const botAvatarImage2 = '/image/stu_klein.png'; 
     let useFirstAvatar = true; 
+
+    // Toast-Funktion
+    function showToast(message) {
+        const template = document.getElementById('toast-template');
+        if (!template) return;
+        const toast = template.content.cloneNode(true).firstElementChild;
+        toast.querySelector('.toast-message').textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(20px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+        toast.querySelector('.toast-close').addEventListener('click', () => toast.remove());
+    }
 
     // Uhrzeit aktualisieren
     function updateClock() {
@@ -36,6 +64,73 @@ document.addEventListener('DOMContentLoaded', () => {
     accentColorInput.addEventListener("input", () => {
         document.documentElement.style.setProperty("--accent-color", accentColorInput.value);
         localStorage.setItem("accent-color", accentColorInput.value);
+    });
+
+    // Captcha generieren
+    function generateCaptcha() {
+        const num1 = Math.floor(Math.random() * 10) + 1;
+        const num2 = Math.floor(Math.random() * 10) + 1;
+        captchaAnswer = num1 + num2;
+        captchaQuestionEl.textContent = `${num1} + ${num2} = ?`;
+        captchaInput.value = '';
+    }
+
+    // Feedback-Modal
+    feedbackBtn.addEventListener("click", () => {
+        feedbackModal.classList.add("open");
+        generateCaptcha();
+    });
+    closeFeedbackBtn.addEventListener("click", () => feedbackModal.classList.remove("open"));
+    feedbackModal.addEventListener("click", e => { if (e.target === feedbackModal) feedbackModal.classList.remove("open"); });
+    sendFeedbackBtn.addEventListener("click", async () => {
+        const feedbackText = feedbackInput.value.trim();
+        const email = document.getElementById('feedback-email').value.trim();
+        const userAnswer = captchaInput.value.trim();
+
+        if (!feedbackText) {
+            showToast("Bitte geben Sie Ihr Feedback ein.");
+            return;
+        }
+        if (!userAnswer) {
+            showToast("Bitte lösen Sie das Captcha.");
+            return;
+        }
+
+        sendFeedbackBtn.disabled = true;
+        sendFeedbackBtn.textContent = 'Senden...';
+
+        try {
+            const response = await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    feedback_text: feedbackText, 
+                    email: email, 
+                    conversation_id: conversationId,
+                    captcha: userAnswer,
+                    expected_captcha: captchaAnswer
+                })
+            });
+
+            if (response.ok) {
+                showToast("Vielen Dank für Ihr Feedback!");
+                feedbackInput.value = '';
+                document.getElementById('feedback-email').value = '';
+                captchaInput.value = '';
+                feedbackModal.classList.remove("open");
+            } else {
+                const errorData = await response.json().catch(() => ({ message: 'Unbekannter Fehler' }));
+                showToast(`Fehler: ${errorData.message || 'Beim Senden ist ein Problem aufgetreten.'}`);
+                generateCaptcha(); // Generate a new captcha after a failed attempt
+            }
+        } catch (error) {
+            console.error("Feedback error:", error);
+            showToast("Ein Netzwerkfehler ist aufgetreten. Bitte prüfen Sie Ihre Verbindung.");
+            generateCaptcha();
+        } finally {
+            sendFeedbackBtn.disabled = false;
+            sendFeedbackBtn.textContent = 'Senden';
+        }
     });
 
     // Scroll-Logik

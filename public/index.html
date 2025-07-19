@@ -40,6 +40,7 @@
                 <div class="header-content">
                     <span id="current-time"></span>
                     <button id="settings-btn" title="Einstellungen"><i class="fas fa-cog"></i></button>
+                    <button id="feedback-btn" title="Feedback geben"><i class="fas fa-comment-alt"></i></button>
                 </div>
             </header>
 
@@ -62,6 +63,7 @@
     </div>
 
     <button id="scroll-btn" title="Zum neuesten springen"><i class="fas fa-arrow-down"></i></button>
+    
     <div id="settings-modal">
         <div class="modal-content">
             <h3 class="modal-title">Einstellungen</h3>
@@ -69,6 +71,43 @@
             <button id="close-settings" class="send mt-2">Schließen</button>
         </div>
     </div>
+
+    <div id="feedback-modal">
+        <div class="modal-content">
+            <h3 class="modal-title">Feedback geben</h3>
+            <p class="modal-description">Ist Ihnen ein Fehler aufgefallen oder haben Sie einen Verbesserungsvorschlag? Wir freuen uns über Ihre Rückmeldung!</p>
+            
+            <div class="feedback-form">
+                <div class="form-group">
+                    <label for="feedback-input">Ihre Nachricht</label>
+                    <textarea id="feedback-input" placeholder="Beschreiben Sie hier Ihr Anliegen..." rows="5"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="feedback-email">E-Mail (optional)</label>
+                    <input type="email" id="feedback-email" placeholder="max.mustermann@beispiel.de">
+                </div>
+                <div class="form-group captcha-group">
+                    <label for="captcha-input">Sicherheitsfrage</label>
+                    <div class="captcha-wrapper">
+                        <span id="captcha-question"></span>
+                        <input type="text" id="captcha-input" placeholder="Antwort">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="close-feedback" class="cancel">Schließen</button>
+                <button id="send-feedback" class="send">Senden</button>
+            </div>
+        </div>
+    </div>
+
+    <template id="toast-template">
+        <div class="toast">
+            <span class="toast-message"></span>
+            <button class="toast-close">&times;</button>
+        </div>
+    </template>
 
 </body>
 </html>

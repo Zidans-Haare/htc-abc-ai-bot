@@ -116,13 +116,44 @@ const Questions = sequelize.define('Questions', {
   translation: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  feedback: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'questions',
   timestamps: false
 });
 
+const Feedback = sequelize.define('Feedback', {
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
+  },
+  feedback_text: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  conversation_id: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  timestamp: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  }
+}, {
+  tableName: 'feedback',
+  timestamps: false
+});
+
 sequelize.sync({ alter: true })
   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions };
+module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback };

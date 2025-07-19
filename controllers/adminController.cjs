@@ -26,6 +26,7 @@ module.exports = (getSession, logAction) => {
   adminRouter.use(require('./admin/users.cjs')(authMiddleware));
   adminRouter.use(require('./admin/export.cjs')(authMiddleware));
   adminRouter.use(require('./admin/stats.cjs')(authMiddleware));
+  adminRouter.use(require('./admin/feedback.cjs')(authMiddleware));
 
   router.use('/admin', adminRouter);
 

@@ -8,13 +8,16 @@ const rateLimit = require("express-rate-limit");
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const { generateResponse } = require("./controllers/geminiController.cjs");
+const feedbackController = require("./controllers/feedbackController.cjs");
 const adminController = require("./controllers/adminController.cjs");
 const auth = require('./controllers/authController.cjs');
 const path = require('path');
+const { sequelize, Feedback } = require('./controllers/db.cjs');
 
 const pid = process.pid;
 
 dotenv.config();
+
 
 const app = express();
 
@@ -109,6 +112,8 @@ app.use((req, res, next) => {
 app.use('/api', auth.router);
 app.post("/api/chat", generateResponse);
 
+app.use('/api/feedback', feedbackController);
+
 // Mount admin routes
 app.use('/api', adminController(auth.getSession, logAction));
 
@@ -121,7 +126,7 @@ app.use((req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
 const useHttps = process.argv.includes('-https');
 
 if (useHttps) {

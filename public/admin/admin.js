@@ -4,6 +4,7 @@ import { initQuestions } from './questions.js';
 import { initUsers, loadUsers } from './users.js';
 import { initArchive, loadArchive } from './archive.js';
 import { initExport } from './export.js';
+import { setupFeedback } from './feedback.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const questionsBtn = document.getElementById('btn-questions');
   const archiveBtn = document.getElementById('btn-archive');
   const userBtn = document.getElementById('btn-user');
+  const feedbackBtn = document.getElementById('btn-feedback');
   const moveModal = document.getElementById('move-modal');
   const moveSelect = document.getElementById('move-select');
   const moveNew = document.getElementById('move-new');
@@ -37,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const questionsView = document.getElementById('questions-view');
   const archiveView = document.getElementById('archive-view');
   const userView = document.getElementById('user-view');
+  const feedbackView = document.getElementById('feedback-view');
 
   function showEditor() {
     console.log('Showing editor view...');
@@ -44,6 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     questionsView.classList.add('hidden');
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
+    feedbackView.classList.add('hidden');
     editorBtn.classList.add('bg-blue-600', 'text-white');
     editorBtn.classList.remove('bg-gray-200');
     questionsBtn.classList.remove('bg-blue-600', 'text-white');
@@ -52,6 +56,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveBtn.classList.add('bg-gray-200');
     userBtn.classList.remove('bg-blue-600', 'text-white');
     userBtn.classList.add('bg-gray-200');
+    feedbackBtn.classList.remove('bg-blue-600', 'text-white');
+    feedbackBtn.classList.add('bg-gray-200');
   }
 
   function showQuestions() {
@@ -60,6 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     editorView.classList.add('hidden');
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
+    feedbackView.classList.add('hidden');
     questionsBtn.classList.add('bg-blue-600', 'text-white');
     questionsBtn.classList.remove('bg-gray-200');
     editorBtn.classList.remove('bg-blue-600', 'text-white');
@@ -68,6 +75,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveBtn.classList.add('bg-gray-200');
     userBtn.classList.remove('bg-blue-600', 'text-white');
     userBtn.classList.add('bg-gray-200');
+    feedbackBtn.classList.remove('bg-blue-600', 'text-white');
+    feedbackBtn.classList.add('bg-gray-200');
   }
 
   function updateOpenCount(num) {
@@ -80,6 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     editorView.classList.add('hidden');
     questionsView.classList.add('hidden');
     userView.classList.add('hidden');
+    feedbackView.classList.add('hidden');
     archiveBtn.classList.add('bg-blue-600', 'text-white');
     archiveBtn.classList.remove('bg-gray-200');
     editorBtn.classList.remove('bg-blue-600', 'text-white');
@@ -88,6 +98,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     questionsBtn.classList.add('bg-gray-200');
     userBtn.classList.remove('bg-blue-600', 'text-white');
     userBtn.classList.add('bg-gray-200');
+    feedbackBtn.classList.remove('bg-blue-600', 'text-white');
+    feedbackBtn.classList.add('bg-gray-200');
     loadArchive();
   }
 
@@ -97,6 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     editorView.classList.add('hidden');
     questionsView.classList.add('hidden');
     archiveView.classList.add('hidden');
+    feedbackView.classList.add('hidden');
     userBtn.classList.add('bg-blue-600', 'text-white');
     userBtn.classList.remove('bg-gray-200');
     editorBtn.classList.remove('bg-blue-600', 'text-white');
@@ -105,7 +118,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     questionsBtn.classList.add('bg-gray-200');
     archiveBtn.classList.remove('bg-blue-600', 'text-white');
     archiveBtn.classList.add('bg-gray-200');
+    feedbackBtn.classList.remove('bg-blue-600', 'text-white');
+    feedbackBtn.classList.add('bg-gray-200');
     loadUsers();
+  }
+
+  function showFeedback() {
+    console.log('Showing feedback view...');
+    feedbackView.classList.remove('hidden');
+    editorView.classList.add('hidden');
+    questionsView.classList.add('hidden');
+    archiveView.classList.add('hidden');
+    userView.classList.add('hidden');
+    feedbackBtn.classList.add('bg-blue-600', 'text-white');
+    feedbackBtn.classList.remove('bg-gray-200');
+    editorBtn.classList.remove('bg-blue-600', 'text-white');
+    editorBtn.classList.add('bg-gray-200');
+    questionsBtn.classList.remove('bg-blue-600', 'text-white');
+    questionsBtn.classList.add('bg-gray-200');
+    archiveBtn.classList.remove('bg-blue-600', 'text-white');
+    archiveBtn.classList.add('bg-gray-200');
+    userBtn.classList.remove('bg-blue-600', 'text-white');
+    userBtn.classList.add('bg-gray-200');
+    setupFeedback();
   }
 
   if (sessionStorage.getItem('userRole') === 'admin') {
@@ -118,6 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   editorBtn.addEventListener('click', showEditor);
   questionsBtn.addEventListener('click', showQuestions);
   archiveBtn.addEventListener('click', showArchive);
+  feedbackBtn.addEventListener('click', showFeedback);
 
   logoutBtn.addEventListener('click', async () => {
     try {

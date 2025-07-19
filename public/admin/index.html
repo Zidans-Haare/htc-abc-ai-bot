@@ -19,6 +19,7 @@
       <span id="open-count" class="ml-1 text-sm bg-red-500 text-white rounded-full px-2">0</span>
     </button>
     <button id="btn-archive" class="px-4 py-2 bg-gray-200 rounded">Archiv</button>
+    <button id="btn-feedback" class="px-4 py-2 bg-gray-200 rounded">Feedback</button>
     <button id="btn-export" class="px-4 py-2 bg-gray-200 rounded">Export</button>
     <button id="btn-user" class="px-4 py-2 bg-gray-200 rounded hidden">Benutzer</button>
     <button id="btn-logout" class="px-4 py-2 bg-gray-200 rounded">Logout</button>
@@ -88,6 +89,10 @@
       </select>
     </div>
     <div id="archive-list" class="space-y-4"></div>
+  </div>
+  <!-- Feedback View -->
+  <div id="feedback-view" class="flex flex-col flex-1 hidden p-4 space-y-4 overflow-y-auto">
+    <div id="feedback-list" class="space-y-4"></div>
   </div>
   <!-- User Management View -->
   <div id="user-view" class="flex flex-col flex-1 hidden p-4 space-y-4 overflow-y-auto">

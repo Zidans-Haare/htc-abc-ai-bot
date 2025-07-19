@@ -229,6 +229,106 @@ button.send:hover { background-color: var(--accent-dark); }
 .modal-content { background: #fff; color: var(--primary-text); padding: 2rem; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); min-width: 300px; }
 .modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; }
 #close-settings { margin-top: 1.5rem; width: 100%; padding: 0.75rem; }
+
+/* --- Feedback Modal --- */
+#feedback-btn { background: transparent; border: none; color: var(--secondary-text); font-size: 1.4rem; cursor: pointer; transition: transform 0.2s, color 0.2s; }
+#feedback-btn:hover { transform: scale(1.1); color: var(--primary-text); }
+#feedback-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: none; opacity: 0; transition: opacity 0.2s ease-in-out; align-items: center; justify-content: center; z-index: 1000; }
+#feedback-modal.open { display: flex; opacity: 1; }
+.modal-description { font-size: 0.9rem; color: var(--secondary-text); margin-bottom: 1rem; line-height: 1.4; }
+#feedback-input { width: 100%; padding: 0.75rem; border: 1px solid var(--input-border); border-radius: 8px; resize: vertical; font-family: 'Roboto', sans-serif; font-size: 1rem; margin-bottom: 1rem; }
+
+/* --- NEU: Überarbeitete Stile für das Feedback-Formular --- */
+.feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem; /* Mehr Abstand zwischen den Formulargruppen */
+    margin: 1.5rem 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary-text);
+    margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--input-border);
+    border-radius: 12px; /* Abgerundete Ecken, passend zum Design */
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    background-color: #f9fafb; /* Leichter Hintergrund für die Felder */
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(236, 102, 8, 0.2); /* Leichter Schein bei Fokus */
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.captcha-group .captcha-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.captcha-group #captcha-question {
+    font-weight: 500;
+    color: var(--secondary-text);
+    padding: 0.85rem 1rem;
+    background-color: #f0f2f5;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.captcha-group input {
+    flex-grow: 1;
+}
+
+/* Captcha Container */
+.captcha-container {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f0f2f5;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.captcha-container p {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+}
+
+.captcha-container input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; }
+.modal-actions .send { width: auto; padding: 0.6rem 1.2rem; height: auto; font-size: 0.9rem; }
+.modal-actions .cancel { background: #f0f2f5; color: var(--primary-text); border: 1px solid var(--border-color); width: auto; padding: 0.6rem 1.2rem; height: auto; font-size: 0.9rem; cursor: pointer; border-radius: 28px; transition: background-color 0.2s; }
+.modal-actions .cancel:hover { background-color: #e5e7eb; }
+
 #typing { display: none; align-items: center; padding: 0.75rem 1.5rem; }
 .dot { width: 8px; height: 8px; background: var(--secondary-text); border-radius: 50%; margin: 0 4px; animation: bounce 1.2s infinite; }
 .dot:nth-child(2) { animation-delay: 0.2s; }
@@ -340,4 +440,34 @@ button.send:hover { background-color: var(--accent-dark); }
     #chat-input {
         font-size: 16px;
     }
+}
+
+/* --- Toast-Benachrichtigungen --- */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background-color: #333;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
 }
