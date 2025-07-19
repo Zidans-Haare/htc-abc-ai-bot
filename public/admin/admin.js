@@ -13,8 +13,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Validate session
   try {
-    await fetchAndParse('/api/validate');
+    const session = await fetchAndParse('/api/validate');
     document.getElementById('current-user').innerHTML = `last edit by:<br>`;
+    if (!sessionStorage.getItem('userRole')) {
+        sessionStorage.setItem('userRole', session.role);
+    }
   } catch (err) {
     console.error('Validation error:', err);
     sessionStorage.removeItem('userRole');
@@ -22,142 +25,150 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  console.log('Adding event listeners for navigation...');
+  // --- Get DOM Elements ---
   const editorBtn = document.getElementById('btn-editor');
   const questionsBtn = document.getElementById('btn-questions');
   const archiveBtn = document.getElementById('btn-archive');
   const userBtn = document.getElementById('btn-user');
   const feedbackBtn = document.getElementById('btn-feedback');
-  const moveModal = document.getElementById('move-modal');
-  const moveSelect = document.getElementById('move-select');
-  const moveNew = document.getElementById('move-new');
-  const moveConfirm = document.getElementById('move-confirm');
-  const moveCancel = document.getElementById('move-cancel');
+  const exportBtn = document.getElementById('btn-export');
   const logoutBtn = document.getElementById('btn-logout');
-  const openCountSpan = document.getElementById('open-count');
+
   const editorView = document.getElementById('editor-view');
   const questionsView = document.getElementById('questions-view');
   const archiveView = document.getElementById('archive-view');
   const userView = document.getElementById('user-view');
   const feedbackView = document.getElementById('feedback-view');
+  
+  const openCountSpan = document.getElementById('open-count');
+  
+  const moveModal = document.getElementById('move-modal');
+  const moveSelect = document.getElementById('move-select');
+  const moveNew = document.getElementById('move-new');
+  const moveConfirm = document.getElementById('move-confirm');
+  const moveCancel = document.getElementById('move-cancel');
 
+  // --- View Switching Logic ---
   function showEditor() {
-    console.log('Showing editor view...');
     editorView.classList.remove('hidden');
     questionsView.classList.add('hidden');
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
-    editorBtn.classList.add('bg-blue-600', 'text-white');
-    editorBtn.classList.remove('bg-gray-200');
-    questionsBtn.classList.remove('bg-blue-600', 'text-white');
-    questionsBtn.classList.add('bg-gray-200');
-    archiveBtn.classList.remove('bg-blue-600', 'text-white');
-    archiveBtn.classList.add('bg-gray-200');
-    userBtn.classList.remove('bg-blue-600', 'text-white');
-    userBtn.classList.add('bg-gray-200');
-    feedbackBtn.classList.remove('bg-blue-600', 'text-white');
-    feedbackBtn.classList.add('bg-gray-200');
+    updateButtonStyles(editorBtn);
   }
 
   function showQuestions() {
-    console.log('Showing questions view...');
     questionsView.classList.remove('hidden');
     editorView.classList.add('hidden');
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
-    questionsBtn.classList.add('bg-blue-600', 'text-white');
-    questionsBtn.classList.remove('bg-gray-200');
-    editorBtn.classList.remove('bg-blue-600', 'text-white');
-    editorBtn.classList.add('bg-gray-200');
-    archiveBtn.classList.remove('bg-blue-600', 'text-white');
-    archiveBtn.classList.add('bg-gray-200');
-    userBtn.classList.remove('bg-blue-600', 'text-white');
-    userBtn.classList.add('bg-gray-200');
-    feedbackBtn.classList.remove('bg-blue-600', 'text-white');
-    feedbackBtn.classList.add('bg-gray-200');
+    updateButtonStyles(questionsBtn);
   }
-
+  
   function updateOpenCount(num) {
     if (openCountSpan) openCountSpan.textContent = num;
   }
 
   function showArchive() {
-    console.log('Showing archive view...');
     archiveView.classList.remove('hidden');
     editorView.classList.add('hidden');
     questionsView.classList.add('hidden');
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
-    archiveBtn.classList.add('bg-blue-600', 'text-white');
-    archiveBtn.classList.remove('bg-gray-200');
-    editorBtn.classList.remove('bg-blue-600', 'text-white');
-    editorBtn.classList.add('bg-gray-200');
-    questionsBtn.classList.remove('bg-blue-600', 'text-white');
-    questionsBtn.classList.add('bg-gray-200');
-    userBtn.classList.remove('bg-blue-600', 'text-white');
-    userBtn.classList.add('bg-gray-200');
-    feedbackBtn.classList.remove('bg-blue-600', 'text-white');
-    feedbackBtn.classList.add('bg-gray-200');
+    updateButtonStyles(archiveBtn);
     loadArchive();
   }
 
   function showUserAdmin() {
-    console.log('Showing user admin view...');
     userView.classList.remove('hidden');
     editorView.classList.add('hidden');
     questionsView.classList.add('hidden');
     archiveView.classList.add('hidden');
     feedbackView.classList.add('hidden');
-    userBtn.classList.add('bg-blue-600', 'text-white');
-    userBtn.classList.remove('bg-gray-200');
-    editorBtn.classList.remove('bg-blue-600', 'text-white');
-    editorBtn.classList.add('bg-gray-200');
-    questionsBtn.classList.remove('bg-blue-600', 'text-white');
-    questionsBtn.classList.add('bg-gray-200');
-    archiveBtn.classList.remove('bg-blue-600', 'text-white');
-    archiveBtn.classList.add('bg-gray-200');
-    feedbackBtn.classList.remove('bg-blue-600', 'text-white');
-    feedbackBtn.classList.add('bg-gray-200');
+    updateButtonStyles(userBtn);
     loadUsers();
   }
 
   function showFeedback() {
-    console.log('Showing feedback view...');
     feedbackView.classList.remove('hidden');
     editorView.classList.add('hidden');
     questionsView.classList.add('hidden');
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
-    feedbackBtn.classList.add('bg-blue-600', 'text-white');
-    feedbackBtn.classList.remove('bg-gray-200');
-    editorBtn.classList.remove('bg-blue-600', 'text-white');
-    editorBtn.classList.add('bg-gray-200');
-    questionsBtn.classList.remove('bg-blue-600', 'text-white');
-    questionsBtn.classList.add('bg-gray-200');
-    archiveBtn.classList.remove('bg-blue-600', 'text-white');
-    archiveBtn.classList.add('bg-gray-200');
-    userBtn.classList.remove('bg-blue-600', 'text-white');
-    userBtn.classList.add('bg-gray-200');
-    setupFeedback();
+    updateButtonStyles(feedbackBtn);
   }
 
-  if (sessionStorage.getItem('userRole') === 'admin') {
-    console.log('Admin role detected, enabling admin features.');
-    userBtn.classList.remove('hidden');
-    userBtn.addEventListener('click', showUserAdmin);
-    initUsers();
+  function updateButtonStyles(activeButton) {
+    const buttons = [editorBtn, questionsBtn, archiveBtn, userBtn, feedbackBtn, exportBtn];
+    buttons.forEach(btn => {
+      btn.classList.remove('bg-blue-600', 'text-white');
+      btn.classList.add('bg-gray-200');
+    });
+    activeButton.classList.add('bg-blue-600', 'text-white');
+    activeButton.classList.remove('bg-gray-200');
   }
 
-  editorBtn.addEventListener('click', showEditor);
-  questionsBtn.addEventListener('click', showQuestions);
-  archiveBtn.addEventListener('click', showArchive);
-  feedbackBtn.addEventListener('click', showFeedback);
+  // --- Role-based UI Setup ---
+  const userRole = sessionStorage.getItem('userRole');
 
+  // Hide all role-dependent buttons by default
+  editorBtn.classList.add('hidden');
+  questionsBtn.classList.add('hidden');
+  archiveBtn.classList.add('hidden');
+  userBtn.classList.add('hidden');
+  feedbackBtn.classList.add('hidden');
+
+  switch (userRole) {
+    case 'admin':
+      editorBtn.classList.remove('hidden');
+      questionsBtn.classList.remove('hidden');
+      archiveBtn.classList.remove('hidden');
+      userBtn.classList.remove('hidden');
+      feedbackBtn.classList.remove('hidden');
+      
+      editorBtn.addEventListener('click', showEditor);
+      questionsBtn.addEventListener('click', showQuestions);
+      archiveBtn.addEventListener('click', showArchive);
+      userBtn.addEventListener('click', showUserAdmin);
+      feedbackBtn.addEventListener('click', showFeedback);
+      
+      initUsers();
+      showEditor();
+      break;
+    case 'editor':
+      editorBtn.classList.remove('hidden');
+      questionsBtn.classList.remove('hidden');
+      archiveBtn.classList.remove('hidden');
+
+      editorBtn.addEventListener('click', showEditor);
+      questionsBtn.addEventListener('click', showQuestions);
+      archiveBtn.addEventListener('click', showArchive);
+
+      showEditor();
+      break;
+    case 'entwickler':
+      feedbackBtn.classList.remove('hidden');
+      exportBtn.classList.remove('hidden');
+
+      feedbackBtn.addEventListener('click', showFeedback);
+      
+      showFeedback();
+      break;
+    default:
+      // Fallback for unknown roles
+      editorView.classList.add('hidden');
+      questionsView.classList.add('hidden');
+      archiveView.classList.add('hidden');
+      userView.classList.add('hidden');
+      feedbackView.classList.add('hidden');
+      break;
+  }
+
+  // --- Always-on Event Listeners & Initializations ---
   logoutBtn.addEventListener('click', async () => {
     try {
-      console.log('Logging out...');
       await fetchAndParse('/api/logout', { method: 'POST' });
       sessionStorage.removeItem('userRole');
       window.location.href = '/login/login.html';
@@ -166,8 +177,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  let moveData = null;
+  // Initialize all modules
+  initHeadlines();
+  initQuestions({ openMoveModal, updateOpenCount });
+  initArchive();
+  initExport();
+  setupFeedback();
 
+  // --- Modal Logic ---
+  let moveData = null;
   async function openMoveModal(question, answer) {
     moveData = { question, answer };
     await loadHeadlines();
@@ -182,9 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     moveModal.classList.remove('hidden');
   }
 
-  moveCancel.addEventListener('click', () => {
-    moveModal.classList.add('hidden');
-  });
+  moveCancel.addEventListener('click', () => moveModal.classList.add('hidden'));
 
   moveConfirm.addEventListener('click', async () => {
     if (!moveData) return;
@@ -216,15 +232,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('Move error:', err);
     }
   });
-
-  console.log('Calling showEditor...');
-  showEditor();
-  console.log('Initializing questions...');
-  initQuestions({ openMoveModal, updateOpenCount });
-  console.log('Initializing headlines...');
-  initHeadlines();
-  console.log('Initializing archive...');
-  initArchive();
-  console.log('Initializing export...');
-  initExport();
+  
+  document.addEventListener('update-username', (e) => {
+    const currentUserSpan = document.getElementById('current-user');
+    if (currentUserSpan) {
+      currentUserSpan.innerHTML = `last edit by:<br>${e.detail.username}`;
+    }
+  });
 });
