@@ -6,7 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendBtnEl = document.getElementById('send-btn');
     const typingEl = document.getElementById('typing');
     const scrollBtnEl = document.getElementById('scroll-btn');
+    const historyContainer = document.getElementById('history-items-container');
     let conversationId = null;
+    let currentMessages = [];
 
     const settingsBtn = document.getElementById("settings-btn");
     const settingsModal = document.getElementById("settings-modal");
@@ -22,9 +24,79 @@ document.addEventListener('DOMContentLoaded', () => {
     const captchaInput = document.getElementById('captcha-input');
     let captchaAnswer = null;
 
-    const botAvatarImage1 = '/image/smoky_klein.png'; 
-    const botAvatarImage2 = '/image/stu_klein.png'; 
-    let useFirstAvatar = true; 
+    const botAvatarImage1 = '/image/smoky_klein.png';
+    const botAvatarImage2 = '/image/stu_klein.png';
+    let useFirstAvatar = true;
+
+    const CHAT_HISTORY_KEY = 'htw-chat-history';
+
+    // --- Chat History Management ---
+
+    function getChatHistory() {
+        try {
+            const history = sessionStorage.getItem(CHAT_HISTORY_KEY);
+            return history ? JSON.parse(history) : [];
+        } catch (e) {
+            console.error("Could not parse chat history:", e);
+            return [];
+        }
+    }
+
+    function saveChatHistory(history) {
+        sessionStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function renderChatHistory() {
+        const history = getChatHistory();
+        historyContainer.innerHTML = '';
+        history.forEach(chat => {
+            const historyItem = document.createElement('a');
+            historyItem.href = '#';
+            historyItem.className = 'history-item';
+            historyItem.textContent = chat.title;
+            historyItem.setAttribute('data-id', chat.id);
+            if (chat.id === conversationId) {
+                historyItem.classList.add('active');
+            }
+            historyItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                loadChat(chat.id);
+            });
+            historyContainer.appendChild(historyItem);
+        });
+    }
+
+    function loadChat(id) {
+        const history = getChatHistory();
+        const chat = history.find(c => c.id === id);
+        if (!chat) return;
+
+        conversationId = chat.id;
+        currentMessages = chat.messages;
+        messagesEl.innerHTML = '';
+        useFirstAvatar = true;
+
+        chat.messages.forEach(msg => {
+            if (msg.type === 'image') {
+                addImageMessage(msg.src, false);
+            } else {
+                addMsg(msg.text, msg.isUser, msg.timestamp, !msg.isUser, false);
+            }
+        });
+        
+        document.querySelectorAll('.history-item').forEach(item => {
+            item.classList.toggle('active', item.getAttribute('data-id') === id);
+        });
+    }
+
+    function saveMessageToHistory(message) {
+        const history = getChatHistory();
+        const chat = history.find(c => c.id === conversationId);
+        if (chat) {
+            chat.messages.push(message);
+            saveChatHistory(history);
+        }
+    }
 
     // Toast-Funktion
     function showToast(message) {
@@ -53,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     setInterval(updateClock, 1000);
     updateClock();
-    
+
     const initialAccent = getComputedStyle(root).getPropertyValue('--accent-color').trim();
     accentColorInput.value = initialAccent;
 
@@ -103,9 +175,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/feedback', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    feedback_text: feedbackText, 
-                    email: email, 
+                body: JSON.stringify({
+                    feedback_text: feedbackText,
+                    email: email,
                     conversation_id: conversationId,
                     captcha: userAnswer,
                     expected_captcha: captchaAnswer
@@ -121,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 const errorData = await response.json().catch(() => ({ message: 'Unbekannter Fehler' }));
                 showToast(`Fehler: ${errorData.message || 'Beim Senden ist ein Problem aufgetreten.'}`);
-                generateCaptcha(); // Generate a new captcha after a failed attempt
+                generateCaptcha();
             }
         } catch (error) {
             console.error("Feedback error:", error);
@@ -151,13 +223,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Nachricht zum Chat hinzufügen
-    function addMsg(text, isUser, timestamp, copyable = false) {
+    function addMsg(text, isUser, timestamp, copyable = false, save = true) {
         const m = document.createElement('div');
         m.className = `message ${isUser ? 'user' : 'ai'}`;
 
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
-        
+
         if (isUser) {
             avatar.innerHTML = `<i class="fas fa-user"></i>`;
         } else {
@@ -169,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
-    
+
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         formattedText = formattedText.replace(/\n/g, '<br>');
         formattedText = formattedText.replace(/📋/g, '');
@@ -192,44 +264,54 @@ document.addEventListener('DOMContentLoaded', () => {
         m.appendChild(bubble);
         messagesEl.appendChild(m);
         scrollToBottom();
+
+        if (save) {
+            saveMessageToHistory({ text, isUser, timestamp: timestamp.toISOString(), type: 'text' });
+        }
     }
 
-    // --- NEU: Funktion, um ein Bild (den Lageplan) im Chat anzuzeigen ---
-    function addImageMessage(src) {
+    function addImageMessage(src, save = true) {
         const m = document.createElement('div');
-        m.className = 'message ai'; // Wird als Bot-Nachricht angezeigt
+        m.className = 'message ai';
 
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
         const avatarSrc = useFirstAvatar ? botAvatarImage1 : botAvatarImage2;
         avatar.innerHTML = `<img src="${avatarSrc}" alt="Bot Avatar" />`;
-        useFirstAvatar = !useFirstAvatar; // Wichtig, damit der Avatar-Wechsel konsistent bleibt
+        useFirstAvatar = !useFirstAvatar;
         m.appendChild(avatar);
 
         const imageContainer = document.createElement('div');
-        imageContainer.className = 'image-bubble'; // Eigene CSS-Klasse für das Bild
+        imageContainer.className = 'image-bubble';
         imageContainer.innerHTML = `<img src="${src}" alt="Lageplan" />`;
         m.appendChild(imageContainer);
-        
+
         messagesEl.appendChild(m);
         scrollToBottom();
+
+        if (save) {
+            saveMessageToHistory({ src, type: 'image', isUser: false, timestamp: new Date().toISOString() });
+        }
     }
 
     // Neuer Chat
     document.getElementById('new-chat').addEventListener('click', () => {
         messagesEl.innerHTML = '';
         conversationId = null;
-        useFirstAvatar = true; 
-        addMsg('Neues Gespräch gestartet. Wie kann ich helfen?', false, new Date());
+        currentMessages = [];
+        useFirstAvatar = true;
+        addMsg('Neues Gespräch gestartet. Wie kann ich helfen?', false, new Date(), false, false);
+        renderChatHistory(); // Update active state
     });
 
     // Nachricht senden
     async function sendMsg(prefilled) {
         const txt = prefilled || chatInput.value.trim();
         if (!txt) return;
+
+        const isNewChat = !conversationId;
         addMsg(txt, true, new Date());
 
-        // --- NEU: Prüfen, ob die Nutzeranfrage Schlüsselwörter für den Lageplan enthält ---
         const locationKeywords = ['lageplan', 'wo ist', 'gebäude', 'campusplan', 'karte von', 'finde ich'];
         const isLocationQuery = locationKeywords.some(keyword => txt.toLowerCase().includes(keyword));
 
@@ -242,16 +324,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: txt, conversationId })
+                body: JSON.stringify({
+                    prompt: txt,
+                    conversationId
+                })
             });
             const data = await res.json();
-            conversationId = data.conversationId;
+            
+            if (isNewChat) {
+                conversationId = data.conversationId;
+                const history = getChatHistory();
+                history.push({
+                    id: conversationId,
+                    title: txt.substring(0, 40) + (txt.length > 40 ? '...' : ''),
+                    messages: currentMessages
+                });
+                saveChatHistory(history);
+                renderChatHistory();
+            }
+            
             addMsg(data.response, false, new Date(), true);
 
-            // --- NEU: Wenn es eine Standortfrage war, füge den Lageplan hinzu ---
-            // Wichtig: Stelle sicher, dass das Bild unter diesem Pfad existiert!
             if (isLocationQuery) {
-                addImageMessage('/image/lageplan.png'); 
+                addImageMessage('/image/lageplan.png');
             }
 
         } catch (e) {
@@ -274,6 +369,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Startnachricht
-    addMsg('Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?', false, new Date());
+    // Initialisierung
+    function init() {
+        renderChatHistory();
+        const history = getChatHistory();
+        if (history.length > 0) {
+            loadChat(history[history.length - 1].id); // Load the last chat
+        } else {
+            addMsg('Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?', false, new Date(), false, false);
+        }
+    }
+
+    init();
 });

@@ -135,6 +135,12 @@ body {
     background-color: #fff;               /* Heller Hintergrund beim Darüberfahren */
 }
 
+/* NEU: Stil für den aktiven Chat-Verlauf-Eintrag */
+.history-item.active {
+    background-color: #fff;
+    font-weight: 700; /* Hebt den aktiven Chat hervor */
+}
+
 /* --- 2. Haupt-Chatbereich --- */
 .chat-container {
     flex: 1;
