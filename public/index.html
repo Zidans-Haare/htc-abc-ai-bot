@@ -67,38 +67,156 @@
     
     <div id="settings-modal">
         <div class="modal-content">
-            <h3 class="modal-title">Einstellungen</h3>
-            <label class="block mb-2">Akzentfarbe: <input type="color" id="accent-color"></label>
-            <button id="close-settings" class="send mt-2">Schließen</button>
+            <div class="modal-header">
+                <h3 class="modal-title" data-i18n="settings_title">Einstellungen</h3>
+                <button id="close-settings" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- General Settings -->
+                <div class="settings-section">
+                     <div class="form-group">
+                        <label for="setting-ui-language" data-i18n="settings_ui_language">Sprache der Einstellungen</label>
+                        <select id="setting-ui-language">
+                            <option value="de">Deutsch</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Design & Darstellung -->
+                <div class="settings-section">
+                    <h4 class="section-title" data-i18n="section_design_title">Design & Darstellung</h4>
+                    <div class="form-group">
+                        <label for="setting-theme" data-i18n="setting_theme">Design-Modus</label>
+                        <select id="setting-theme">
+                            <option value="system" data-i18n="theme_system">System</option>
+                            <option value="light" data-i18n="theme_light">Hell</option>
+                            <option value="dark" data-i18n="theme_dark">Dunkel</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="accent-color" data-i18n="setting_accent_color">Akzentfarbe</label>
+                        <input type="color" id="accent-color">
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-font-size" data-i18n="setting_font_size">Schriftgröße</label>
+                        <select id="setting-font-size">
+                            <option value="small" data-i18n="font_size_small">Klein</option>
+                            <option value="medium" selected data-i18n="font_size_medium">Mittel</option>
+                            <option value="large" data-i18n="font_size_large">Groß</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-layout-density" data-i18n="setting_layout_density">Layoutdichte</label>
+                        <select id="setting-layout-density">
+                            <option value="compact" data-i18n="layout_density_compact">Kompakt</option>
+                            <option value="standard" selected data-i18n="layout_density_standard">Standard</option>
+                            <option value="spacious" data-i18n="layout_density_spacious">Großzügig</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-animation-speed" data-i18n="setting_animation_speed">Animationsdauer</label>
+                        <select id="setting-animation-speed">
+                            <option value="normal" data-i18n="animation_speed_normal">Normal</option>
+                            <option value="reduced" data-i18n="animation_speed_reduced">Reduziert</option>
+                            <option value="none" data-i18n="animation_speed_none">Keine</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Barrierefreiheit -->
+                <div class="settings-section">
+                    <h4 class="section-title" data-i18n="section_accessibility_title">Barrierefreiheit</h4>
+                    <div class="form-group switch-group">
+                        <label for="setting-tts" data-i18n="setting_tts">Vorlesefunktion aktivieren</label>
+                        <label class="switch">
+                            <input type="checkbox" id="setting-tts">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="form-group switch-group">
+                        <label for="setting-contrast-mode" data-i18n="setting_contrast_mode">Kontrastmodus aktivieren</label>
+                        <label class="switch">
+                            <input type="checkbox" id="setting-contrast-mode">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="form-group switch-group">
+                        <label for="setting-keyboard-nav" data-i18n="setting_keyboard_nav">Tastaturnavigation verbessern</label>
+                        <label class="switch">
+                            <input type="checkbox" id="setting-keyboard-nav">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                 <!-- Datenschutz & Daten -->
+                <div class="settings-section">
+                    <h4 class="section-title" data-i18n="section_privacy_title">Datenschutz & Daten</h4>
+                    <div class="form-group switch-group">
+                        <label for="setting-save-history" data-i18n="setting_save_history">Verlauf speichern</label>
+                        <label class="switch">
+                            <input type="checkbox" id="setting-save-history" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-auto-delete" data-i18n="setting_auto_delete">Automatisches Löschen nach</label>
+                        <select id="setting-auto-delete">
+                            <option value="0" data-i18n="auto_delete_never">Nie</option>
+                            <option value="1" data-i18n="auto_delete_1_day">1 Tag</option>
+                            <option value="7" data-i18n="auto_delete_7_days">7 Tagen</option>
+                            <option value="30" data-i18n="auto_delete_30_days">30 Tagen</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="delete_all_chats_label">Alle Chats löschen</label>
+                        <button id="delete-all-chats-btn" class="btn-danger" data-i18n="delete_all_chats_button">Jetzt löschen</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="reset-settings-btn" data-i18n="reset_settings_button">Auf Standard zurücksetzen</button>
+                <button id="save-settings-btn" class="btn-primary" data-i18n="save_settings_button">Speichern & Anwenden</button>
+            </div>
         </div>
     </div>
 
     <div id="feedback-modal">
         <div class="modal-content">
-            <h3 class="modal-title">Feedback geben</h3>
-            <p class="modal-description">Ist Ihnen ein Fehler aufgefallen oder haben Sie einen Verbesserungsvorschlag? Wir freuen uns über Ihre Rückmeldung!</p>
-            
-            <div class="feedback-form">
+            <div class="modal-header">
+                <h3 class="modal-title" data-lang-key="feedback_title">Feedback geben</h3>
+                <button id="close-feedback" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
                 <div class="form-group">
-                    <label for="feedback-input">Ihre Nachricht</label>
-                    <textarea id="feedback-input" placeholder="Beschreiben Sie hier Ihr Anliegen..." rows="5"></textarea>
+                    <label for="feedback-language-select" data-lang-key="feedback_language">Sprache des Formulars</label>
+                    <select id="feedback-language-select">
+                        <option value="de">Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
                 </div>
-                <div class="form-group">
-                    <label for="feedback-email">E-Mail (optional)</label>
-                    <input type="email" id="feedback-email" placeholder="max.mustermann@beispiel.de">
-                </div>
-                <div class="form-group captcha-group">
-                    <label for="captcha-input">Sicherheitsfrage</label>
-                    <div class="captcha-wrapper">
-                        <span id="captcha-question"></span>
-                        <input type="text" id="captcha-input" placeholder="Antwort">
+                <p class="modal-description" data-lang-key="feedback_description">Ist Ihnen ein Fehler aufgefallen oder haben Sie einen Verbesserungsvorschlag? Wir freuen uns über Ihre Rückmeldung!</p>
+                <div class="feedback-form">
+                    <div class="form-group">
+                        <label for="feedback-input" data-lang-key="feedback_message">Ihre Nachricht</label>
+                        <textarea id="feedback-input" data-lang-placeholder="feedback_message_placeholder" placeholder="Beschreiben Sie hier Ihr Anliegen..." rows="5"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="feedback-email" data-lang-key="feedback_email">E-Mail (optional)</label>
+                        <input type="email" id="feedback-email" placeholder="max.mustermann@beispiel.de">
+                    </div>
+                    <div class="form-group captcha-group">
+                        <label for="captcha-input" data-lang-key="feedback_captcha">Sicherheitsfrage</label>
+                        <div class="captcha-wrapper">
+                            <span id="captcha-question"></span>
+                            <input type="text" id="captcha-input" data-lang-placeholder="feedback_captcha_placeholder" placeholder="Antwort">
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="modal-actions">
-                <button id="close-feedback" class="cancel">Schließen</button>
-                <button id="send-feedback" class="send">Senden</button>
+            <div class="modal-footer">
+                <button id="send-feedback" class="btn-primary" data-lang-key="feedback_send">Senden</button>
             </div>
         </div>
     </div>
