@@ -565,13 +565,14 @@ input:checked + .slider:before { transform: translateX(22px); }
 
     /* NEU: Verkleinert Avatare auf dem Handy */
     .avatar {
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
     }
 
     /* NEU: Verringert den Abstand zwischen Avatar und Sprechblase */
     .message {
         gap: 0.5rem;
+        max-width: 90%;
     }
 
     /* NEU: Reduziert die Schriftgröße in den Nachrichten */
@@ -580,9 +581,27 @@ input:checked + .slider:before { transform: translateX(22px); }
         font-size: 0.9rem;    /* Kleinere Schriftgröße */
     }
 
+    #messages {
+        padding: 1rem;
+    }
+
+    #input-container {
+        padding: 0.5rem 1rem 1rem;
+    }
+
+    .input-area {
+        padding: 0.25rem;
+    }
+
+    button.send {
+        width: 45px;
+        height: 45px;
+    }
+
     /* Stellt sicher, dass die Eingabe-Schrift nicht vom iOS-Zoom betroffen ist */
     #chat-input {
         font-size: 16px;
+        padding: 0.5rem 0.75rem;
     }
 }
 

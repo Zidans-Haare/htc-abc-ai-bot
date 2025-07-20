@@ -24,6 +24,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const newChatBtn = document.getElementById('new-chat');
     const deleteAllChatsBtn = document.getElementById('delete-all-chats-btn');
 
+    // --- Mobile Menu Elements ---
+    const hamburgerBtn = document.getElementById('hamburger-menu');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const closeMobileMenuBtn = document.getElementById('close-mobile-menu');
+    const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+    const mobileNewChatBtn = document.getElementById('mobile-new-chat');
+    const mobileSettingsBtn = document.getElementById('mobile-settings-btn');
+    const mobileFeedbackBtn = document.getElementById('mobile-feedback-btn');
+    const mobileHistoryContainer = document.getElementById('mobile-history-items-container');
+
     // --- Global State ---
     let conversationId = null;
     let expectedCaptcha;
@@ -350,21 +360,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderChatHistory() {
         const history = getChatHistory();
-        historyContainer.innerHTML = '';
-        history.forEach(chat => {
-            const historyItem = document.createElement('a');
-            historyItem.href = '#';
-            historyItem.className = 'history-item';
-            historyItem.textContent = chat.title;
-            historyItem.setAttribute('data-id', chat.id);
-            if (chat.id === conversationId) {
-                historyItem.classList.add('active');
-            }
-            historyItem.addEventListener('click', (e) => {
-                e.preventDefault();
-                loadChat(chat.id);
+        const containers = [historyContainer, mobileHistoryContainer];
+        
+        containers.forEach(container => {
+            if (!container) return;
+            container.innerHTML = '';
+            history.forEach(chat => {
+                const historyItem = document.createElement('a');
+                historyItem.href = '#';
+                historyItem.className = 'history-item';
+                historyItem.textContent = chat.title;
+                historyItem.setAttribute('data-id', chat.id);
+                if (chat.id === conversationId) {
+                    historyItem.classList.add('active');
+                }
+                historyItem.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loadChat(chat.id);
+                    closeMobileMenu(); // Close menu on chat selection
+                });
+                container.appendChild(historyItem);
             });
-            historyContainer.appendChild(historyItem);
         });
     }
 
@@ -591,6 +607,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Mobile Menu Functions ---
+    function openMobileMenu() {
+        if (mobileMenu && mobileMenuOverlay) {
+            mobileMenu.classList.add('open');
+            mobileMenuOverlay.classList.add('open');
+        }
+    }
+
+    function closeMobileMenu() {
+        if (mobileMenu && mobileMenuOverlay) {
+            mobileMenu.classList.remove('open');
+            mobileMenuOverlay.classList.remove('open');
+        }
+    }
+
     // --- Event Listeners ---
     sendBtnEl.addEventListener('click', sendMsg);
     chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
@@ -617,6 +648,30 @@ document.addEventListener('DOMContentLoaded', () => {
     sendFeedbackBtn.addEventListener('click', sendFeedback);
     feedbackLanguageSelect.addEventListener('change', (e) => setFeedbackLanguage(e.target.value));
     
+    // --- Mobile Menu Listeners ---
+    if (hamburgerBtn) hamburgerBtn.addEventListener('click', openMobileMenu);
+    if (closeMobileMenuBtn) closeMobileMenuBtn.addEventListener('click', closeMobileMenu);
+    if (mobileMenuOverlay) mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+    
+    if (mobileNewChatBtn) {
+        mobileNewChatBtn.addEventListener('click', () => {
+            startNewChat();
+            closeMobileMenu();
+        });
+    }
+    if (mobileSettingsBtn) {
+        mobileSettingsBtn.addEventListener('click', () => {
+            settingsBtn.click(); // Trigger original settings button
+            closeMobileMenu();
+        });
+    }
+    if (mobileFeedbackBtn) {
+        mobileFeedbackBtn.addEventListener('click', () => {
+            feedbackBtn.click(); // Trigger original feedback button
+            closeMobileMenu();
+        });
+    }
+
     document.querySelector('#settings-modal .modal-body').addEventListener('input', handleSettingChange);
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
         if (settings.theme === 'system') {

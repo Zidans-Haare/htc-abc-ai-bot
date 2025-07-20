@@ -13,6 +13,7 @@
     <link rel="icon" href="/image/favicon_32.png" type="image/x-icon" sizes="32x32" />
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="mobile.css">
     <script src="bot.js"></script>
 </head>
 <body>
@@ -35,9 +36,31 @@
             </div>
         </aside>
 
+        <div id="mobile-menu" class="mobile-menu-container">
+            <div class="mobile-menu-header">
+                <img src="/image/HTW.svg" alt="HTWD Logo" class="logo">
+                <button id="close-mobile-menu" class="close-btn">&times;</button>
+            </div>
+            <div class="mobile-menu-content">
+                <button id="mobile-new-chat" class="new-chat-btn">
+                    <i class="fas fa-plus"></i> Neuer Chat
+                </button>
+                <div class="chat-history">
+                    <p class="history-title">Verlauf</p>
+                    <div id="mobile-history-items-container"></div>
+                </div>
+                <div class="mobile-menu-actions">
+                    <button id="mobile-settings-btn"><i class="fas fa-cog"></i> Einstellungen</button>
+                    <button id="mobile-feedback-btn"><i class="fas fa-comment-alt"></i> Feedback</button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu-overlay"></div>
+
         <main class="chat-container">
             <header class="app-header">
                 <div class="header-left">
+                    <button id="hamburger-menu" class="hamburger-btn"><i class="fas fa-bars"></i></button>
                     <img src="/image/HTW.svg" alt="HTWD Logo" class="header-logo">
                 </div>
                 <div class="header-right">

@@ -3,7 +3,7 @@
   "short_name": "HTW AI",
   "description": "Dein intelligenter Helfer für alle Fragen rund um die HTW Dresden.",
   "start_url": "https://dev.olomek.com/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#e9ecef",
   "theme_color": "#EC6608",
   "icons": [
