@@ -1,9 +1,49 @@
 const express = require('express');
 const router = express.Router();
 const { Sequelize } = require('sequelize');
-const { HochschuhlABC } = require('../db.cjs');
+const { HochschuhlABC, Questions } = require('../db.cjs');
 
 module.exports = (adminAuth) => {
+  router.post('/move', adminAuth, async (req, res) => {
+    const { question, answer, headlineId, newHeadline } = req.body;
+    if (!question || !answer || (!headlineId && !newHeadline)) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+      let entry;
+      if (newHeadline) {
+        entry = await HochschuhlABC.create({
+          headline: newHeadline,
+          text: `**${question}**\n${answer}`,
+          editor: req.user.username,
+          lastUpdated: new Date(),
+          active: true,
+          archived: null
+        });
+      } else {
+        entry = await HochschuhlABC.findByPk(headlineId);
+        if (!entry) {
+          return res.status(404).json({ error: 'Headline not found' });
+        }
+        entry.text += `\n\n**${question}**\n${answer}`;
+        entry.editor = req.user.username;
+        entry.lastUpdated = new Date();
+        await entry.save();
+      }
+
+      await Questions.update(
+        { archived: true },
+        { where: { question: question } }
+      );
+
+      res.json({ success: true, entryId: entry.id });
+    } catch (err) {
+      console.error('Failed to move question:', err);
+      res.status(500).json({ error: 'Failed to move question' });
+    }
+  });
+
   router.get('/headlines', adminAuth, async (req, res) => {
     try {
       const where = { active: true };

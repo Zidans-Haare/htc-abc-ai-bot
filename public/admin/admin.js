@@ -1,5 +1,5 @@
 import { fetchAndParse, overrideFetch } from './utils.js';
-import { initHeadlines, allHeadlines, loadHeadlines } from './headlines.js';
+import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline } from './headlines.js';
 import { initQuestions } from './questions.js';
 import { initUsers, loadUsers } from './users.js';
 import { initArchive, loadArchive } from './archive.js';
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize all modules
   initHeadlines();
-  initQuestions({ openMoveModal, updateOpenCount });
+  const questionsManager = initQuestions({ openMoveModal, updateOpenCount });
   initArchive();
   initExport();
   setupFeedback();
@@ -245,16 +245,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
     try {
-      const resp = await fetch('/api/move', {
+      const resp = await fetch('/api/admin/move', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       if (resp.ok) {
+        const result = await resp.json();
         moveModal.classList.add('hidden');
-        const { loadAnswered } = initQuestions({ openMoveModal, updateOpenCount });
-        loadAnswered();
+        questionsManager.loadAnswered();
         await loadHeadlines();
+        // Switch to editor and select the new/updated headline
+        showEditor();
+        selectHeadline(result.entryId);
       } else {
         console.error('Move failed:', await resp.json());
       }

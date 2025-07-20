@@ -60,5 +60,22 @@ module.exports = (adminAuth) => {
     }
   });
 
+  router.get('/answered', adminAuth, async (req, res) => {
+    try {
+      const questions = await Questions.findAll({
+        where: {
+          answered: true,
+          archived: false,
+          deleted: false
+        },
+        order: [['lastUpdated', 'DESC']]
+      });
+      res.json(questions);
+    } catch (err) {
+      console.error('Failed to read answered questions:', err);
+      res.status(500).json({ error: 'Failed to read answered questions' });
+    }
+  });
+
   return router;
 };

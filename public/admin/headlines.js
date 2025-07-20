@@ -166,6 +166,13 @@ async function deleteEntry() {
   }
 }
 
+export function selectHeadline(id) {
+  const headlineElement = listEl.querySelector(`li[data-id='${id}']`);
+  if (headlineElement) {
+    headlineElement.click();
+  }
+}
+
 export function initHeadlines() {
   saveBtn.addEventListener('click', saveEntry);
   deleteBtn.addEventListener('click', deleteEntry);
