@@ -144,7 +144,7 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
         form.innerHTML = `
           <p class="mb-2 font-medium">${p.question}</p>
           <input type="hidden" name="question" value="${p.question}">
-          <textarea name="answer" class="border border-[var(--input-border)] p-2 w-full mb-2 rounded-md" required rows="3">${p.answer}</textarea>
+          <input name="answer" class="border border-[var(--input-border)] p-2 w-full mb-2 rounded-md" value="${p.answer}" required>
           <div class="flex space-x-2">
             <button class="btn-primary px-4 py-2 rounded-md" type="submit">Aktualisieren</button>
             <button type="button" class="btn-secondary px-4 py-2 rounded-md move-btn">In Wissen verschieben</button>

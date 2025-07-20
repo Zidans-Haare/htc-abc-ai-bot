@@ -1,5 +1,20 @@
 import { fetchAndParse } from './utils.js';
 
+// --- Modal Elements ---
+const changePasswordModal = document.getElementById('change-password-modal');
+const changePasswordUsername = document.getElementById('change-password-username');
+const newPasswordInput = document.getElementById('new-password-input');
+const changePasswordCancelBtn = document.getElementById('change-password-cancel');
+const changePasswordConfirmBtn = document.getElementById('change-password-confirm');
+
+const removeUserModal = document.getElementById('remove-user-modal');
+const removeUserUsername = document.getElementById('remove-user-username');
+const removeUserCancelBtn = document.getElementById('remove-user-cancel');
+const removeUserConfirmBtn = document.getElementById('remove-user-confirm');
+const removeUserConfirmInput = document.getElementById('remove-user-confirm-input');
+
+let activeUsername = null;
+
 async function loadUsers() {
   try {
     const users = await fetchAndParse('/api/admin/users');
@@ -46,25 +61,49 @@ function renderUsers(users) {
   });
 
   document.querySelectorAll('.change-password-btn').forEach(button => {
-    button.addEventListener('click', handleChangePassword);
+    button.addEventListener('click', (e) => openChangePasswordModal(e.currentTarget.dataset.username));
   });
   document.querySelectorAll('.remove-user-btn').forEach(button => {
-    button.addEventListener('click', handleRemoveUser);
+    button.addEventListener('click', (e) => openRemoveUserModal(e.currentTarget.dataset.username));
   });
 }
 
-async function handleChangePassword(event) {
-  const username = event.target.dataset.username;
-  const newPassword = prompt(`Neues Passwort für ${username}:`);
+function openChangePasswordModal(username) {
+    activeUsername = username;
+    changePasswordUsername.textContent = username;
+    changePasswordModal.classList.remove('hidden');
+    newPasswordInput.focus();
+}
+
+function openRemoveUserModal(username) {
+    activeUsername = username;
+    removeUserUsername.textContent = username;
+    removeUserConfirmInput.value = '';
+    removeUserConfirmBtn.disabled = true;
+    removeUserModal.classList.remove('hidden');
+    removeUserConfirmInput.focus();
+}
+
+function closeModals() {
+    changePasswordModal.classList.add('hidden');
+    removeUserModal.classList.add('hidden');
+    newPasswordInput.value = '';
+    removeUserConfirmInput.value = '';
+    activeUsername = null;
+}
+
+async function confirmChangePassword() {
+  const newPassword = newPasswordInput.value;
   if (newPassword && newPassword.trim() !== '') {
     try {
-      const response = await fetch(`/api/admin/users/${username}/password`, {
+      const response = await fetch(`/api/admin/users/${activeUsername}/password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: newPassword })
       });
       if (response.ok) {
         alert('Passwort erfolgreich geändert.');
+        closeModals();
       } else {
         const error = await response.json();
         alert(`Fehler beim Ändern des Passworts: ${error.error || 'Unbekannter Fehler'}`);
@@ -76,15 +115,14 @@ async function handleChangePassword(event) {
   }
 }
 
-async function handleRemoveUser(event) {
-  const username = event.target.dataset.username;
-  if (confirm(`Benutzer ${username} wirklich löschen?`)) {
+async function confirmRemoveUser() {
     try {
-      const response = await fetch(`/api/admin/users/${username}`, {
+      const response = await fetch(`/api/admin/users/${activeUsername}`, {
         method: 'DELETE'
       });
       if (response.ok) {
         alert('Benutzer erfolgreich gelöscht.');
+        closeModals();
         loadUsers(); // Refresh the list
       } else {
         const error = await response.json();
@@ -94,7 +132,6 @@ async function handleRemoveUser(event) {
       console.error('Error removing user:', error);
       alert('Fehler beim Löschen des Benutzers.');
     }
-  }
 }
 
 function initUsers() {
@@ -124,6 +161,21 @@ function initUsers() {
           alert('User creation error');
         }
       });
+
+    // Add event listeners for modal buttons
+    changePasswordCancelBtn.addEventListener('click', closeModals);
+    changePasswordConfirmBtn.addEventListener('click', confirmChangePassword);
+    removeUserCancelBtn.addEventListener('click', closeModals);
+    removeUserConfirmBtn.addEventListener('click', confirmRemoveUser);
+
+    // Listener for the delete confirmation input
+    removeUserConfirmInput.addEventListener('input', () => {
+        if (removeUserConfirmInput.value === activeUsername) {
+            removeUserConfirmBtn.disabled = false;
+        } else {
+            removeUserConfirmBtn.disabled = true;
+        }
+    });
 }
 
 export { initUsers, loadUsers };
