@@ -1,0 +1,151 @@
+/* C:/Users/nicko/htc-abc-ai-bot/public/admin/admin.css */
+
+:root {
+    --bg-color: #e0e0e0;
+    --app-bg: #e9ecef;
+    --content-bg: #ffffff;
+    --primary-text: #1f2937;
+    --secondary-text: #6b7280;
+    --border-color: #e5e7eb;
+    --accent-color: #EC6608;
+    --accent-dark: #d95f07;
+    --input-border: #d1d5db;
+    --font-family: 'Roboto', sans-serif;
+}
+
+/* Dark Mode Styles */
+:root.dark-mode {
+    --bg-color: #1f2937;
+    --app-bg: #111827;
+    --content-bg: #374151;
+    --primary-text: #f9fafb;
+    --secondary-text: #9ca3af;
+    --border-color: #4b5563;
+    --input-border: #6b7280;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: var(--primary-text);
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.admin-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+nav {
+    width: 260px;
+    background-color: var(--app-bg);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-color);
+}
+
+.nav-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1rem 0;
+}
+
+.nav-header img {
+    height: 60px;
+}
+
+nav h1 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-text);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.nav-links li a {
+    display: block;
+    padding: 0.9rem 1.2rem;
+    color: var(--primary-text);
+    text-decoration: none;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.nav-links li a:hover {
+    background-color: var(--content-bg);
+}
+
+.nav-links li a.active {
+    background-color: var(--accent-color);
+    color: #fff;
+    font-weight: 700;
+}
+
+.nav-footer {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+}
+
+#logout-button {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--secondary-text);
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+#logout-button:hover {
+    background-color: var(--content-bg);
+    border-color: var(--secondary-text);
+}
+
+main {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    background-color: var(--content-bg);
+}
+
+.container {
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-text);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
