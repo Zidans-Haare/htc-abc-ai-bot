@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatInput = document.getElementById('chat-input');
     const sendBtnEl = document.getElementById('send-btn');
     const typingEl = document.getElementById('typing');
-    const scrollBtnEl = document.getElementById('scroll-btn');
     const historyContainer = document.getElementById('history-items-container');
     
     // --- Modals & Buttons ---
@@ -51,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fontSize: 'medium',
         layoutDensity: 'standard',
         animationSpeed: 'normal',
+        homeScreenIcon: 'image/smoky_klein.png',
         saveHistory: true,
         autoDelete: '0',
         tts: false,
@@ -84,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
             animation_speed_normal: "Normal",
             animation_speed_reduced: "Reduziert",
             animation_speed_none: "Keine",
+            setting_home_screen_icon: "Home-Bildschirm-Icon",
             section_accessibility_title: "Barrierefreiheit",
             setting_tts: "Vorlesefunktion aktivieren",
             setting_contrast_mode: "Kontrastmodus aktivieren",
@@ -121,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
             animation_speed_normal: "Normal",
             animation_speed_reduced: "Reduced",
             animation_speed_none: "None",
+            setting_home_screen_icon: "Home Screen Icon",
             section_accessibility_title: "Accessibility",
             setting_tts: "Enable Text-to-Speech",
             setting_contrast_mode: "Enable High Contrast Mode",
@@ -215,6 +217,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Keyboard Navigation
         root.classList.toggle('keyboard-nav-active', settings.keyboardNav);
+
+        // Home Screen Icon
+        const touchIcons = document.querySelectorAll('link[rel="apple-touch-icon"]');
+        touchIcons.forEach(icon => {
+            const sizes = icon.getAttribute('sizes');
+            if (sizes) {
+                icon.href = settings.homeScreenIcon.replace('.png', `_${sizes}.png`);
+            } else {
+                icon.href = settings.homeScreenIcon;
+            }
+        });
     }
 
     function updateSettingsUI() {
@@ -225,6 +238,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
             if (el.type === 'checkbox') {
                 el.checked = tempSettings[key];
+            } else if (el.classList.contains('image-picker')) {
+                const selectedRadio = el.querySelector(`input[value="${tempSettings[key]}"]`);
+                if (selectedRadio) {
+                    selectedRadio.checked = true;
+                }
             } else {
                 el.value = tempSettings[key];
             }
@@ -233,9 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function handleSettingChange(e) {
-        const { id, value, type, checked } = e.target;
+        const { id, value, type, checked, name } = e.target;
         let key = id.replace('setting-', '').replace(/-/g, '');
         if (id === 'accent-color') key = 'accentColor';
+        if (name === 'home-icon') key = 'homeScreenIcon';
         
         let finalValue = type === 'checkbox' ? checked : value;
         
@@ -246,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fontsize: 'fontSize',
             layoutdensity: 'layoutDensity',
             animationspeed: 'animationSpeed',
+            homescreenicon: 'homeScreenIcon',
             savehistory: 'saveHistory',
             autodelete: 'autoDelete',
             tts: 'tts',
@@ -427,7 +447,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function scrollToBottom() {
-        scrollBtnEl.style.display = 'none';
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 

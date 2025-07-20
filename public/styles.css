@@ -293,18 +293,18 @@ button.send:hover { background-color: var(--accent-dark); }
 
 #welcome-message .bubble {
     position: relative;
-    padding: 1rem 1.5rem;
+    padding: 0.8rem 1.2rem;
     border-radius: 28px;
     line-height: 1.5;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     background: var(--ai-bubble-bg);
     color: #fff;
-    font-size: 1.2rem;
+    font-size: 1rem;
     text-align: center;
     opacity: 0;
     transform: translateY(10px) scale(0.95);
     transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
-    max-width: 80%;
+    max-width: 70%;
 }
 
 #welcome-message .bubble.show {
@@ -359,6 +359,32 @@ button.send:hover { background-color: var(--accent-dark); }
 .form-group .btn-danger { background-color: #ef4444; color: #fff; }
 .form-group .btn-danger:hover { background-color: #dc2626; }
 
+.image-picker {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+.image-picker label {
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 0.5rem;
+    transition: border-color 0.2s;
+}
+.image-picker input[type="radio"] {
+    display: none;
+}
+.image-picker img {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+.image-picker input[type="radio"]:checked + img {
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
 .radio-group, .range-group { display: flex; align-items: center; gap: 1rem; }
 .radio-group label { display: flex; align-items: center; gap: 0.5rem; font-weight: normal; margin-bottom: 0; }
 .range-group { gap: 0.5rem; }
@@ -387,22 +413,31 @@ input:checked + .slider:before { transform: translateX(22px); }
     border-bottom-right-radius: 12px;
 }
 
+.modal-footer button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
 #reset-settings-btn {
-    background-color: var(--user-bubble-bg);
-    color: var(--primary-text);
-    border: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--secondary-text);
+    border: 2px solid var(--secondary-text);
+    padding: calc(0.75rem - 2px) calc(1.5rem - 2px); /* Padding adjusted for border width */
+}
+#reset-settings-btn:hover {
+    background-color: var(--secondary-text);
+    color: var(--content-bg); /* Inverts colors on hover */
+    border-color: var(--secondary-text);
 }
 
 .btn-primary {
     background-color: var(--accent-color);
     color: #fff;
     border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 500;
-    transition: background-color 0.2s;
 }
 
 .btn-primary:hover {
@@ -549,10 +584,10 @@ input:checked + .slider:before { transform: translateX(22px); }
         height: 50px;
     }
 
-    /* Maskottchen rückt in die Mitte und wird kleiner */
+    /* Maskottchen rückt etwas rechts von der Mitte */
     .app-header::after {
-        left: 50%;
-        transform: translateX(-50%); 
+        left: 60%;
+        transform: translateX(-50%);
         right: auto;
         width: 100px;
         height: 100px;
@@ -602,6 +637,10 @@ input:checked + .slider:before { transform: translateX(22px); }
     #chat-input {
         font-size: 16px;
         padding: 0.5rem 0.75rem;
+    }
+
+    #welcome-message .bubble {
+        max-width: 95%; /* Verbreitert die Willkommens-Bubble auf Mobilgeräten */
     }
 }
 

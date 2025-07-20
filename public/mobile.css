@@ -8,8 +8,7 @@
     color: var(--secondary-text);
     font-size: 1.6rem;
     cursor: pointer;
-    padding: 0.5rem;
-    margin-right: 0.5rem;
+    padding: 0.5rem 0 0.5rem 0.5rem; /* Entfernt den rechten Abstand */
     z-index: 1100;
 }
 
@@ -34,15 +33,26 @@
 
 .mobile-menu-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    padding: 1rem 1.5rem;
+    padding: 1.5rem 1.5rem 1.2rem 1.5rem; /* Bottom-Padding reduziert, um das Logo anzuheben */
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
+    position: relative;
 }
 
 .mobile-menu-header .logo {
-    height: 40px;
+    height: 80px; /* Logo deutlich vergrößert */
+    flex-grow: 1;
+    text-align: center;
+    /* Kein Padding mehr, das die Zentrierung stört */
+}
+
+.mobile-menu-header .close-btn {
+    position: absolute;
+    right: 1.5rem; /* Positioniert den Button ganz rechts */
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .mobile-menu-content {
@@ -116,5 +126,19 @@
 @media (max-width: 1199px) {
     .hamburger-btn {
         display: block;
+    }
+}
+
+/* --- Toast-Benachrichtigungen --- */
+@media (max-width: 768px) {
+    .toast {
+        left: 20px;
+        right: 20px;
+        bottom: 20px;
+        width: auto;
+        max-width: calc(100% - 40px);
+        transform: translateX(0);
+        justify-content: center;
+        text-align: center;
     }
 }

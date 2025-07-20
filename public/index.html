@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <meta name="description" content="HTW Dresden AI Chat Assistant - Dein intelligenter Helfer für alle Fragen rund um die HTW Dresden">
     <title>HTW Dresden AI Chat Assistant</title>
+
+    <!-- iOS Web App-Optimierung -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HTW Chat">
+    <link rel="apple-touch-icon" href="/image/smoky_klein.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/image/smoky_klein_192x192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/image/smoky_klein_512x512.png">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -97,8 +105,6 @@
         </main>
     </div>
 
-    <button id="scroll-btn" title="Zum neuesten springen"><i class="fas fa-arrow-down"></i></button>
-    
     <div id="settings-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -155,6 +161,19 @@
                             <option value="reduced" data-i18n="animation_speed_reduced">Reduziert</option>
                             <option value="none" data-i18n="animation_speed_none">Keine</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="setting_home_screen_icon">Home-Bildschirm-Icon</label>
+                        <div class="image-picker" id="setting-home-screen-icon">
+                            <label>
+                                <input type="radio" name="home-icon" value="image/smoky_klein.png" checked>
+                                <img src="image/smoky_klein.png" alt="Smoky">
+                            </label>
+                            <label>
+                                <input type="radio" name="home-icon" value="image/stu_klein.png">
+                                <img src="image/stu_klein.png" alt="Stu">
+                            </label>
+                        </div>
                     </div>
                 </div>
 
