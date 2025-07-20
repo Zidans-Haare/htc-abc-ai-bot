@@ -330,9 +330,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startNewChat() {
         conversationId = null;
-        messagesEl.innerHTML = '';
+        messagesEl.innerHTML = `
+            <div id="welcome-message">
+                <div class="message ai">
+                    <div class="avatar">
+                        <img src="/image/smoky_klein.png" alt="Bot Avatar">
+                    </div>
+                    <div class="bubble">
+                        <span>Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?</span>
+                    </div>
+                </div>
+            </div>`;
         useFirstAvatar = true;
-        addMsg('Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?', false, new Date(), false, false);
+        startWelcomeAnimation();
         
         // De-select any active history item
         document.querySelectorAll('.history-item.active').forEach(item => item.classList.remove('active'));
@@ -363,6 +373,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const chat = history.find(c => c.id === id);
         if (!chat) return;
 
+        const welcomeMessage = document.getElementById('welcome-message');
+        if (welcomeMessage) {
+            welcomeMessage.remove();
+        }
+        
         conversationId = chat.id;
         messagesEl.innerHTML = '';
         useFirstAvatar = true;
@@ -464,6 +479,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function sendMsg() {
         const txt = chatInput.value.trim();
         if (!txt) return;
+
+        const welcomeMessage = document.getElementById('welcome-message');
+        if (welcomeMessage) {
+            welcomeMessage.remove();
+        }
 
         const isNewChat = !conversationId;
         if (isNewChat) {
@@ -617,9 +637,46 @@ document.addEventListener('DOMContentLoaded', () => {
         if (history.length > 0) {
             loadChat(history[history.length - 1].id);
         } else {
-            addMsg('Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?', false, new Date(), false, false);
+            startNewChat();
         }
     }
 
+    let welcomeInterval;
+    function startWelcomeAnimation() {
+        const welcomeBubble = document.querySelector('#welcome-message .bubble');
+        const welcomeText = document.querySelector('#welcome-message .bubble span');
+        if (!welcomeBubble || !welcomeText) return;
+
+        const messages = [
+            "Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden.",
+            "Hello! I am Alex, your AI assistant from HTW Dresden.",
+            "你好！我是 Alex，你来自德累斯顿应用技术大学的 AI 助手。"
+        ];
+
+        let messageIndex = 0;
+        
+        const updateMessage = () => {
+            welcomeBubble.classList.remove('show');
+            setTimeout(() => {
+                messageIndex = (messageIndex + 1) % messages.length;
+                welcomeText.textContent = messages[messageIndex];
+                welcomeBubble.classList.add('show');
+            }, 500); // Time for fade out
+        };
+
+        welcomeText.textContent = messages[messageIndex];
+        welcomeBubble.classList.add('show');
+
+        if (welcomeInterval) clearInterval(welcomeInterval);
+        welcomeInterval = setInterval(updateMessage, 4000);
+    }
+
+    function stopWelcomeAnimation() {
+        if (welcomeInterval) {
+            clearInterval(welcomeInterval);
+            welcomeInterval = null;
+        }
+    }
+    
     init();
 });
