@@ -1,20 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Hochschuhl ABC Management</title>
+  <title>Login - Hochschul ABC Management</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <script defer src="/login/login.js"></script>
   <link rel="icon" href="/favicon.ico">
+  <style>
+    :root {
+        --bg-color: #e0e0e0;
+        --app-bg: #e9ecef;
+        --content-bg: #ffffff;
+        --primary-text: #1f2937;
+        --secondary-text: #6b7280;
+        --border-color: #e5e7eb;
+        --accent-color: #EC6608;
+        --accent-dark: #d95f07;
+        --input-border: #d1d5db;
+        --font-family: 'Roboto', sans-serif;
+    }
+    body {
+        font-family: var(--font-family);
+    }
+    .btn-primary {
+        background-color: var(--accent-color);
+        color: white;
+        transition: background-color 0.2s;
+    }
+    .btn-primary:hover {
+        background-color: var(--accent-dark);
+    }
+    .btn-primary:focus-visible {
+        outline: 2px solid var(--accent-dark);
+        outline-offset: 2px;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-  <div id="login-screen" class="flex items-center justify-center bg-gray-100">
-    <form id="login-form" class="bg-white p-4 rounded shadow space-y-2">
-      <input id="login-user" class="border p-2 w-64" placeholder="User">
-      <input id="login-pass" type="password" class="border p-2 w-64" placeholder="Password">
-      <button class="w-full bg-blue-600 text-white px-4 py-2 rounded" type="submit">Login</button>
-    </form>
+<body class="bg-[var(--bg-color)] flex items-center justify-center h-screen">
+  <div class="w-full max-w-md">
+    <div class="bg-[var(--content-bg)] p-8 rounded-xl shadow-lg">
+      <div class="flex justify-center mb-8">
+        <img src="/image/HTW.svg" alt="HTW Logo" class="h-20">
+      </div>
+      <h2 class="text-2xl font-bold text-center text-[var(--primary-text)] mb-2">Admin Login</h2>
+      <p class="text-center text-[var(--secondary-text)] mb-8">Bitte melden Sie sich an, um fortzufahren.</p>
+      <form id="login-form" class="space-y-6">
+        <div>
+          <label for="login-user" class="sr-only">Benutzername</label>
+          <input id="login-user" name="username" type="text" required class="w-full px-4 py-3 border border-[var(--input-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]" placeholder="Benutzername">
+        </div>
+        <div>
+          <label for="login-pass" class="sr-only">Passwort</label>
+          <input id="login-pass" name="password" type="password" required class="w-full px-4 py-3 border border-[var(--input-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]" placeholder="Passwort">
+        </div>
+        <div>
+          <button type="submit" class="w-full btn-primary font-bold py-3 px-4 rounded-lg">
+            Anmelden
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </body>
 </html>

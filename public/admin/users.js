@@ -13,16 +13,35 @@ async function loadUsers() {
 function renderUsers(users) {
   const userListDiv = document.getElementById('user-list');
   userListDiv.innerHTML = '';
+  if (users.length === 0) {
+    userListDiv.innerHTML = '<p class="text-[var(--secondary-text)]">Keine Benutzer gefunden.</p>';
+    return;
+  }
   users.forEach(user => {
     const userElement = document.createElement('div');
-    userElement.className = 'flex items-center justify-between p-2 border-b';
-    userElement.innerHTML = `
-      <span>${user.username} (${user.role})</span>
-      <div>
-        <button class="change-password-btn px-2 py-1 bg-yellow-500 text-white rounded mr-2" data-username="${user.username}">Passwort ändern</button>
-        <button class="remove-user-btn px-2 py-1 bg-red-500 text-white rounded" data-username="${user.username}">Löschen</button>
-      </div>
+    userElement.className = 'flex items-center justify-between p-3 border-b border-[var(--border-color)]';
+    
+    const userInfo = document.createElement('div');
+    userInfo.innerHTML = `
+      <p class="font-medium">${user.username}</p>
+      <p class="text-sm text-[var(--secondary-text)]">${user.role}</p>
     `;
+
+    const userActions = document.createElement('div');
+    userActions.className = 'flex items-center space-x-2';
+    userActions.innerHTML = `
+      <button class="change-password-btn btn-secondary px-3 py-2 rounded-md flex items-center space-x-2" data-username="${user.username}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2h2l1.743-1.743A6 6 0 0119 9z" /></svg>
+        <span>Passwort</span>
+      </button>
+      <button class="remove-user-btn bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md flex items-center space-x-2" data-username="${user.username}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        <span>Löschen</span>
+      </button>
+    `;
+    
+    userElement.appendChild(userInfo);
+    userElement.appendChild(userActions);
     userListDiv.appendChild(userElement);
   });
 

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - Hochschul ABC Management</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,52 +40,96 @@
     .btn-primary {
         background-color: var(--accent-color);
         color: white;
+        transition: background-color 0.2s;
     }
     .btn-primary:hover {
         background-color: var(--accent-dark);
+    }
+    .btn-primary:focus-visible {
+        outline: 2px solid var(--accent-dark);
+        outline-offset: 2px;
     }
     .btn-secondary {
         background-color: var(--content-bg);
         color: var(--primary-text);
         border: 1px solid var(--border-color);
+        transition: background-color 0.2s;
     }
     .btn-secondary:hover {
         background-color: var(--app-bg);
+    }
+    .btn-secondary:focus-visible {
+        outline: 2px solid var(--accent-color);
+        outline-offset: 2px;
+    }
+    .headline-item:hover {
+        background-color: var(--content-bg);
+    }
+    .active-headline {
+        background-color: var(--accent-color) !important;
+        color: white !important;
+        font-weight: 500;
+    }
+    .active-headline:hover {
+        background-color: var(--accent-dark) !important;
+    }
+    #sidebar.collapsed {
+        width: 96px; /* Breite für Icons + Padding */
+    }
+    #sidebar.collapsed .sidebar-text,
+    #sidebar.collapsed #user-session-info {
+        display: none;
+    }
+    #sidebar.collapsed .nav-link {
+        justify-content: center;
     }
   </style>
 </head>
 <body class="flex h-screen bg-[var(--bg-color)] text-[var(--primary-text)]">
 
   <!-- Sidebar Navigation -->
-  <aside class="w-64 flex-shrink-0 bg-[var(--app-bg)] p-6 flex flex-col border-r border-[var(--border-color)]">
+  <aside id="sidebar" class="w-64 flex-shrink-0 bg-[var(--app-bg)] p-6 flex flex-col border-r border-[var(--border-color)] transition-all duration-300">
     <div class="flex justify-center items-center mb-8">
         <img src="/image/HTW.svg" alt="HTWD Logo" class="h-16">
     </div>
     <nav id="main-menu" class="flex-grow space-y-2">
-        <a href="#" id="btn-editor" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
-            <span>Editor</span>
+        <a href="#" id="btn-editor" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-pen-to-square w-5 text-center"></i>
+            <span class="sidebar-text">Editor</span>
         </a>
-        <a href="#" id="btn-questions" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
-            <span>Fragen</span>
-            <span id="open-count" class="ml-auto text-sm bg-red-500 text-white rounded-full px-2">0</span>
+        <a href="#" id="btn-questions" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-circle-question w-5 text-center"></i>
+            <span class="sidebar-text">Fragen</span>
+            <span id="open-count" class="ml-auto text-sm bg-red-500 text-white rounded-full px-2 sidebar-text">0</span>
         </a>
-        <a href="#" id="btn-archive" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
-            <span>Archiv</span>
+        <a href="#" id="btn-archive" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-box-archive w-5 text-center"></i>
+            <span class="sidebar-text">Archiv</span>
         </a>
-        <a href="#" id="btn-feedback" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
-            <span>Feedback</span>
+        <a href="#" id="btn-feedback" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-comment-dots w-5 text-center"></i>
+            <span class="sidebar-text">Feedback</span>
         </a>
-        <a href="#" id="btn-export" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
-            <span>Export</span>
+        <a href="#" id="btn-export" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-file-export w-5 text-center"></i>
+            <span class="sidebar-text">Export</span>
         </a>
-        <a href="#" id="btn-user" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors hidden">
-            <span>Benutzer</span>
+        <a href="#" id="btn-user" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors hidden">
+            <i class="fa-solid fa-users w-5 text-center"></i>
+            <span class="sidebar-text">Benutzer</span>
         </a>
     </nav>
     <div class="mt-auto">
-        <a href="#" id="btn-logout" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
-            <span>Logout</span>
+        <div id="user-session-info" class="px-4 py-2 mb-2 text-center text-sm text-[var(--secondary-text)] sidebar-text">
+            <!-- Session-Info wird hier per JS eingefügt -->
+        </div>
+        <a href="#" id="btn-logout" class="nav-link hover:bg-[var(--content-bg)] flex items-center justify-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors border-t border-[var(--border-color)]">
+            <i class="fa-solid fa-right-from-bracket w-5 text-center"></i>
+            <span class="sidebar-text">Logout</span>
         </a>
+        <button id="sidebar-toggle" class="w-full mt-4 text-[var(--secondary-text)] hover:text-[var(--primary-text)] transition-colors">
+             <i id="sidebar-toggle-icon" class="fa-solid fa-chevron-left"></i>
+        </button>
     </div>
   </aside>
 
@@ -99,7 +144,7 @@
             id="search"
             type="text"
             placeholder="Suchen..."
-            class="w-full px-3 py-2 border border-[var(--input-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] bg-white"
+            class="w-full px-3 py-2 border border-[var(--input-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)] bg-white"
           >
         </div>
         <!-- Headlines List -->
@@ -108,37 +153,37 @@
         </div>
         <!-- Add Heading Button -->
         <div class="p-4 border-t border-[var(--border-color)]">
-          <button id="add-heading" class="w-full px-3 py-2 rounded-md btn-primary transition-colors">
+          <button id="add-heading" class="w-full px-3 py-2 rounded-md btn-primary">
             Neue Überschrift
           </button>
         </div>
       </div>
       <!-- Right Content Area: Text Editor (75%) -->
-      <div id="editor-pane" class="w-3/4 flex flex-col">
-        <div class="p-4 bg-white border-b border-[var(--border-color)] flex space-x-4 items-center">
-          <input id="headline-input" class="p-2 border border-[var(--input-border)] rounded flex-1" placeholder="Überschrift">
+      <div id="editor-pane" class="w-3/4 flex flex-col bg-white">
+        <div class="p-4 border-b border-[var(--border-color)] flex space-x-4 items-center">
+          <input id="headline-input" class="p-2 border border-[var(--input-border)] rounded flex-1 bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Überschrift">
           <span id="current-user" class="p-2 text-[var(--secondary-text)] text-sm text-right"></span>
         </div>
         <div id="editor" class="flex-grow"></div>
-        <div class="p-4 bg-white border-t border-[var(--border-color)] flex justify-end space-x-4 items-center">
+        <div class="p-4 border-t border-[var(--border-color)] flex justify-end space-x-4 items-center">
           <label class="flex items-center space-x-2 mr-auto">
             <input id="active-toggle" type="checkbox" class="h-4 w-4 text-[var(--accent-color)] focus:ring-[var(--accent-color)] border-[var(--input-border)] rounded">
             <span>Aktiv</span>
           </label>
-          <button id="delete-btn" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors">Löschen</button>
-          <button id="save-btn" class="px-4 py-2 rounded-md btn-primary transition-colors" disabled>Speichern</button>
+          <button id="delete-btn" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">Löschen</button>
+          <button id="save-btn" class="px-4 py-2 rounded-md btn-primary" disabled>Speichern</button>
         </div>
       </div>
     </div>
     <!-- Question Management View -->
     <div id="questions-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
-      <input id="question-search" class="p-2 border border-[var(--input-border)] rounded-md mb-2 w-full max-w-md" placeholder="Suche...">
+      <input id="question-search" class="p-2 border border-[var(--input-border)] rounded-md mb-2 w-full max-w-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Suche...">
       <div class="mb-4 space-x-2">
         <button id="tab-open" class="px-4 py-2 rounded-md btn-primary">Offene Fragen</button>
         <button id="tab-answered" class="px-4 py-2 rounded-md btn-secondary">Beantwortete Fragen</button>
       </div>
       <div class="mb-2">
-        <button id="delete-selected" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors hidden">Ausgewählte löschen</button>
+        <button id="delete-selected" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors hidden focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">Ausgewählte löschen</button>
       </div>
       <div id="open-list" class="space-y-4"></div>
       <div id="answered-list" class="space-y-4 hidden"></div>
@@ -146,8 +191,8 @@
     <!-- Archive View -->
     <div id="archive-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
       <div class="flex mb-2 space-x-4">
-        <input id="archive-search" class="flex-1 p-2 border border-[var(--input-border)] rounded-md" placeholder="Suche...">
-        <select id="archive-sort" class="p-2 border border-[var(--input-border)] rounded-md">
+        <input id="archive-search" class="flex-1 p-2 border border-[var(--input-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Suche...">
+        <select id="archive-sort" class="p-2 border border-[var(--input-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]">
           <option value="newest">Neueste</option>
           <option value="oldest">Älteste</option>
           <option value="editor">Geändert von</option>
@@ -164,9 +209,9 @@
       <div id="user-admin" class="p-6 space-y-4 border border-[var(--border-color)] rounded-lg">
         <h2 class="font-semibold text-lg">Neuen Benutzer anlegen</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input id="new-user" class="border p-2 rounded-md border-[var(--input-border)]" placeholder="Username">
-            <input id="new-pass" type="password" class="border p-2 rounded-md border-[var(--input-border)]" placeholder="Passwort">
-            <select id="new-role" class="p-2 border rounded-md border-[var(--input-border)]">
+            <input id="new-user" class="border p-2 rounded-md border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Username">
+            <input id="new-pass" type="password" class="border p-2 rounded-md border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Passwort">
+            <select id="new-role" class="p-2 border rounded-md border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]">
               <option value="editor">Editor</option>
               <option value="admin">Admin</option>
               <option value="entwickler">Entwickler</option>
@@ -186,8 +231,8 @@
       <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
         <h3 class="text-lg font-medium mb-4">Antwort verschieben</h3>
         <p class="mb-4 text-[var(--secondary-text)]">Zu welcher Überschrift soll diese Antwort hinzugefügt werden?</p>
-        <select id="move-select" class="border p-2 w-full mb-2 rounded-md border-[var(--input-border)]"></select>
-        <input id="move-new" class="border p-2 w-full mb-4 rounded-md border-[var(--input-border)]" placeholder="Oder neue Überschrift erstellen...">
+        <select id="move-select" class="border p-2 w-full mb-2 rounded-md border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]"></select>
+        <input id="move-new" class="border p-2 w-full mb-4 rounded-md border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Oder neue Überschrift erstellen...">
         <div class="flex justify-end space-x-2">
           <button id="move-cancel" class="px-4 py-2 rounded-md btn-secondary">Abbrechen</button>
           <button id="move-confirm" class="px-4 py-2 rounded-md btn-primary">Speichern</button>

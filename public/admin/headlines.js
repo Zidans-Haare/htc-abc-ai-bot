@@ -27,11 +27,11 @@ function setSaveButtonState(enabled) {
   if (enabled) {
     saveBtn.disabled = false;
     saveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-    saveBtn.classList.add('bg-blue-500');
+    saveBtn.classList.add('btn-primary');
   } else {
     saveBtn.disabled = true;
     saveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-    saveBtn.classList.remove('bg-blue-500');
+    saveBtn.classList.remove('btn-primary');
   }
 }
 
@@ -63,25 +63,25 @@ function renderHeadlines(items) {
   console.log('Rendering headlines:', items);
   listEl.innerHTML = '';
   if (items.length === 0) {
-    listEl.innerHTML = '<div>Keine Überschriften verfügbar</div>';
+    listEl.innerHTML = '<div class="p-2 text-[var(--secondary-text)]">Keine Überschriften gefunden.</div>';
     return;
   }
   items.forEach(h => {
     const li = document.createElement('li');
     li.textContent = h.headline;
-    li.className = 'p-2 hover:bg-gray-100 cursor-pointer rounded';
+    li.className = 'headline-item p-2 cursor-pointer rounded transition-colors';
     li.dataset.id = h.id;
     li.addEventListener('click', () => {
       if (selectedHeadlineEl) {
-        selectedHeadlineEl.classList.remove('bg-blue-600', 'text-white', 'font-bold');
+        selectedHeadlineEl.classList.remove('active-headline');
       }
-      li.classList.add('bg-blue-600', 'text-white', 'font-bold');
+      li.classList.add('active-headline');
       selectedHeadlineEl = li;
       loadEntry(h.id);
     });
     listEl.appendChild(li);
     if (currentId && String(currentId) === String(h.id)) {
-      li.classList.add('bg-blue-600', 'text-white', 'font-bold');
+      li.classList.add('active-headline');
       selectedHeadlineEl = li;
     }
   });

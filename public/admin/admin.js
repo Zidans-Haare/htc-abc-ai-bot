@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!sessionStorage.getItem('userRole')) {
         sessionStorage.setItem('userRole', session.role);
     }
+    // Display logged in user info
+    const userSessionInfo = document.getElementById('user-session-info');
+    if (userSessionInfo && session.username) {
+        userSessionInfo.innerHTML = `Angemeldet als:<br><strong class="font-medium text-[var(--primary-text)]">${session.username}</strong>`;
+    }
   } catch (err) {
     console.error('Validation error:', err);
     sessionStorage.removeItem('userRole');
@@ -47,6 +52,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   const moveNew = document.getElementById('move-new');
   const moveConfirm = document.getElementById('move-confirm');
   const moveCancel = document.getElementById('move-cancel');
+
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const sidebarToggleIcon = document.getElementById('sidebar-toggle-icon');
+
+  // --- Sidebar Toggle Logic ---
+  function setSidebarState(collapsed) {
+    if (collapsed) {
+      sidebar.classList.add('collapsed');
+      sidebarToggleIcon.classList.remove('fa-chevron-left');
+      sidebarToggleIcon.classList.add('fa-chevron-right');
+    } else {
+      sidebar.classList.remove('collapsed');
+      sidebarToggleIcon.classList.remove('fa-chevron-right');
+      sidebarToggleIcon.classList.add('fa-chevron-left');
+    }
+  }
+
+  sidebarToggle.addEventListener('click', () => {
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+    setSidebarState(isCollapsed);
+    localStorage.setItem('sidebarCollapsed', isCollapsed);
+  });
+
+  // Check for saved sidebar state
+  const savedSidebarState = localStorage.getItem('sidebarCollapsed') === 'true';
+  setSidebarState(savedSidebarState);
 
   // --- View Switching Logic ---
   function showEditor() {
@@ -103,11 +135,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updateButtonStyles(activeButton) {
     const buttons = [editorBtn, questionsBtn, archiveBtn, userBtn, feedbackBtn, exportBtn];
     buttons.forEach(btn => {
-      btn.classList.remove('bg-blue-600', 'text-white');
-      btn.classList.add('bg-gray-200');
+      btn.classList.remove('active');
     });
-    activeButton.classList.add('bg-blue-600', 'text-white');
-    activeButton.classList.remove('bg-gray-200');
+    activeButton.classList.add('active');
   }
 
   // --- Role-based UI Setup ---

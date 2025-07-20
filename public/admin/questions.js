@@ -16,51 +16,51 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
     selectedQuestions.clear();
     deleteSelectedBtn.classList.add('hidden');
     try {
-      console.log('Fetching unanswered questions...');
       const questions = await fetchAndParse('/api/admin/unanswered');
-      console.log('Unanswered questions received:', questions);
       if (!Array.isArray(questions)) {
-        console.error('Expected array, got:', questions);
-        openList.innerHTML = '<div>Keine Fragen verfügbar</div>';
+        openList.innerHTML = '<div class="text-gray-500">Keine offenen Fragen gefunden.</div>';
         return;
       }
       const qFilter = questionSearch.value.toLowerCase();
       updateOpenCount(questions.length);
       questions.filter(q => !qFilter || q.question.toLowerCase().includes(qFilter)).forEach(q => {
         const div = document.createElement('div');
-        div.className = 'border p-4 rounded';
+        div.className = 'border border-[var(--border-color)] p-4 rounded-lg';
 
         const header = document.createElement('div');
         header.className = 'flex justify-between items-start mb-2';
 
         const left = document.createElement('div');
-        left.className = 'flex items-start space-x-2';
+        left.className = 'flex items-start space-x-3';
 
         const cb = document.createElement('input');
         cb.type = 'checkbox';
-        cb.className = 'mt-1';
+        cb.className = 'mt-1 h-4 w-4 text-[var(--accent-color)] focus:ring-[var(--accent-color)] border-[var(--input-border)] rounded';
         cb.addEventListener('change', () => {
           if (cb.checked) selectedQuestions.add(q.question); else selectedQuestions.delete(q.question);
           deleteSelectedBtn.classList.toggle('hidden', selectedQuestions.size === 0);
         });
 
+        const textContainer = document.createElement('div');
         const p = document.createElement('p');
         p.className = 'font-medium';
         p.textContent = q.question;
-
-        left.appendChild(cb);
-        left.appendChild(p);
+        textContainer.appendChild(p);
 
         if (q.translation) {
           const t = document.createElement('p');
-          t.className = 'text-sm text-gray-500';
-          t.textContent = `Translation: ${q.translation}`;
-          left.appendChild(t);
+          t.className = 'text-sm text-[var(--secondary-text)] mt-1';
+          t.textContent = `(Übersetzung: ${q.translation})`;
+          textContainer.appendChild(t);
         }
+        
+        left.appendChild(cb);
+        left.appendChild(textContainer);
 
         const del = document.createElement('button');
         del.type = 'button';
         del.textContent = '🗑️';
+        del.className = 'text-gray-400 hover:text-red-600 transition-colors';
         del.addEventListener('click', () => handleDelete([q.question]));
 
         header.appendChild(left);
@@ -71,14 +71,13 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
         const form = document.createElement('form');
         form.innerHTML = `
           <input type="hidden" name="question" value="${q.question}">
-          <input name="answer" class="border p-2 w-full mb-2" placeholder="Antwort" required>
-          <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Senden</button>
+          <textarea name="answer" class="border border-[var(--input-border)] p-2 w-full mb-2 rounded-md" placeholder="Antwort hier eingeben..." required rows="3"></textarea>
+          <button class="btn-primary px-4 py-2 rounded-md" type="submit">Antworten</button>
         `;
         form.addEventListener('submit', async e => {
           e.preventDefault();
           const data = { question: q.question, answer: form.answer.value };
           try {
-            console.log('Submitting answer:', data);
             const resp = await fetch('/api/admin/answer', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -99,7 +98,7 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
         openList.appendChild(div);
       });
     } catch (err) {
-      openList.innerHTML = '<div>Fehler beim Laden</div>';
+      openList.innerHTML = '<div class="text-red-500">Fehler beim Laden der offenen Fragen.</div>';
       console.error('Error loading unanswered questions:', err);
     }
   }
@@ -107,8 +106,8 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
   async function handleDelete(questions) {
     if (!questions || questions.length === 0) return;
     const text = questions.length === 1
-      ? `Frage wirklich löschen?\n${questions[0]}`
-      : `Fragen wirklich löschen?\n${questions.join('\n')}`;
+      ? `Soll die folgende Frage wirklich gelöscht werden?\n\n"${questions[0]}"`
+      : `Sollen ${questions.length} Fragen wirklich gelöscht werden?`;
     if (!confirm(text)) return;
     try {
       const resp = await fetch('/api/admin/unanswered', {
@@ -132,33 +131,29 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
   async function loadAnswered() {
     answeredList.innerHTML = '';
     try {
-      console.log('Fetching answered questions...');
       const pairs = await fetchAndParse('/api/admin/answered');
-      console.log('Answered questions received:', pairs);
       if (!Array.isArray(pairs)) {
-        console.error('Expected array, got:', pairs);
-        answeredList.innerHTML = '<div>Keine Antworten verfügbar</div>';
+        answeredList.innerHTML = '<div class="text-gray-500">Keine beantworteten Fragen gefunden.</div>';
         return;
       }
       const qFilter = questionSearch.value.toLowerCase();
       pairs.filter(p => !qFilter || p.question.toLowerCase().includes(qFilter)).forEach(p => {
         const div = document.createElement('div');
-        div.className = 'border p-4 rounded';
+        div.className = 'border border-[var(--border-color)] p-4 rounded-lg';
         const form = document.createElement('form');
         form.innerHTML = `
           <p class="mb-2 font-medium">${p.question}</p>
           <input type="hidden" name="question" value="${p.question}">
-          <input name="answer" class="border p-2 w-full mb-2" value="${p.answer}" required>
+          <textarea name="answer" class="border border-[var(--input-border)] p-2 w-full mb-2 rounded-md" required rows="3">${p.answer}</textarea>
           <div class="flex space-x-2">
-            <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Aktualisieren</button>
-            <button type="button" class="bg-green-600 text-white px-4 py-2 rounded move-btn">In Wissen verschieben</button>
+            <button class="btn-primary px-4 py-2 rounded-md" type="submit">Aktualisieren</button>
+            <button type="button" class="btn-secondary px-4 py-2 rounded-md move-btn">In Wissen verschieben</button>
           </div>
         `;
         form.addEventListener('submit', async e => {
           e.preventDefault();
           const data = { question: p.question, answer: form.answer.value };
           try {
-            console.log('Updating answer:', data);
             const resp = await fetch('/api/admin/update', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -178,42 +173,42 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
         answeredList.appendChild(div);
       });
     } catch (err) {
-      answeredList.innerHTML = '<div>Fehler beim Laden</div>';
+      answeredList.innerHTML = '<div class="text-red-500">Fehler beim Laden der beantworteten Fragen.</div>';
       console.error('Error loading answered questions:', err);
     }
   }
 
   function showOpen() {
-    console.log('Showing open questions...');
     openList.classList.remove('hidden');
     answeredList.classList.add('hidden');
-    tabOpen.classList.add('bg-blue-600', 'text-white');
-    tabAnswered.classList.remove('bg-blue-600', 'text-white');
-    tabAnswered.classList.add('bg-gray-200');
-    tabOpen.classList.remove('bg-gray-200');
+    tabOpen.classList.remove('btn-secondary');
+    tabOpen.classList.add('btn-primary');
+    tabAnswered.classList.remove('btn-primary');
+    tabAnswered.classList.add('btn-secondary');
     selectedQuestions.clear();
     deleteSelectedBtn.classList.add('hidden');
     loadOpen();
   }
 
   function showAnswered() {
-    console.log('Showing answered questions...');
     answeredList.classList.remove('hidden');
     openList.classList.add('hidden');
-    tabAnswered.classList.add('bg-blue-600', 'text-white');
-    tabOpen.classList.remove('bg-blue-600', 'text-white');
-    tabOpen.classList.add('bg-gray-200');
-    tabAnswered.classList.remove('bg-gray-200');
+    tabAnswered.classList.remove('btn-secondary');
+    tabAnswered.classList.add('btn-primary');
+    tabOpen.classList.remove('btn-primary');
+    tabOpen.classList.add('btn-secondary');
     loadAnswered();
   }
 
-  console.log('Setting up question tabs...');
   tabOpen.addEventListener('click', showOpen);
   tabAnswered.addEventListener('click', showAnswered);
   questionSearch.addEventListener('input', () => {
-    console.log('Question search input changed...');
-    loadOpen();
-    loadAnswered();
+    if (!openList.classList.contains('hidden')) {
+        loadOpen();
+    }
+    if (!answeredList.classList.contains('hidden')) {
+        loadAnswered();
+    }
   });
   deleteSelectedBtn.addEventListener('click', () => handleDelete(Array.from(selectedQuestions)));
 

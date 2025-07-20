@@ -49,7 +49,7 @@ function renderArchive() {
       <p class="text-sm text-gray-500 mb-2">${date} - ${e.editor || ''}</p>
       <div class="text-sm mb-2">${e.text}</div>`;
     const btn = document.createElement('button');
-    btn.className = 'px-2 py-1 bg-blue-500 text-white rounded mr-2';
+    btn.className = 'btn-primary px-3 py-1 rounded-md mr-2';
     btn.textContent = 'Wiederherstellen';
     btn.addEventListener('click', async () => {
       try {
