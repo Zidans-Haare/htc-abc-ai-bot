@@ -195,6 +195,15 @@
       </div>
       <!-- Right Content Area: Text Editor (75%) -->
       <div id="editor-pane" class="w-3/4 flex flex-col bg-white">
+        <div id="question-edit-banner" class="hidden p-4 bg-blue-100 border-b border-blue-200 flex items-center justify-between">
+            <div>
+                <span class="font-semibold text-blue-800">Frage wird bearbeitet:</span>
+                <span id="question-edit-label" class="text-blue-800"></span>
+                <input type="hidden" id="question-edit-id">
+            </div>
+            <button id="cancel-edit-question" class="text-blue-500 hover:text-blue-700 font-bold">Abbrechen &times;</button>
+            <button id="test-ai-response" class="px-4 py-2 rounded-md text-white" style="background-color: green;">Test</button>
+        </div>
         <div class="p-4 border-b border-[var(--border-color)] flex space-x-4 items-center">
           <input id="headline-input" class="p-2 border border-[var(--input-border)] rounded flex-1 bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Überschrift">
           <span id="current-user" class="p-2 text-[var(--secondary-text)] text-sm text-right"></span>
@@ -329,6 +338,26 @@
             <button id="export-pdf" class="px-4 py-2 rounded-md btn-primary">PDF</button>
         </div>
       </div>
+    </div>
+
+    <!-- AI Response Modal -->
+    <div id="ai-response-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl">
+            <h3 class="text-lg font-medium mb-4">AI-Antwort-Test</h3>
+            <div class="space-y-4">
+                <div>
+                    <h4 class="font-semibold">Frage (Prompt):</h4>
+                    <p id="ai-prompt" class="p-2 bg-gray-100 rounded-md"></p>
+                </div>
+                <div>
+                    <h4 class="font-semibold">Antwort von der AI:</h4>
+                    <div id="ai-response" class="p-2 bg-gray-100 rounded-md h-64 overflow-y-auto"></div>
+                </div>
+            </div>
+            <div class="flex justify-end mt-6">
+                <button id="ai-response-close" class="px-4 py-2 rounded-md btn-secondary">Schließen</button>
+            </div>
+        </div>
     </div>
   </main>
 </body>
