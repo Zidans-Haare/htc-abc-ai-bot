@@ -24,6 +24,7 @@
     z-index: 2000;
     display: flex;
     flex-direction: column;
+    -webkit-transition: left 0.3s ease-in-out;
     transition: left 0.3s ease-in-out;
 }
 
@@ -111,6 +112,7 @@
     z-index: 1999;
     opacity: 0;
     visibility: hidden;
+    -webkit-transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
     transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
