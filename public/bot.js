@@ -707,12 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTime();
         setInterval(updateTime, 1000 * 60); // Update every minute
 
-        const history = getChatHistory();
-        if (history.length > 0) {
-            loadChat(history[history.length - 1].id);
-        } else {
-            startNewChat();
-        }
+        startNewChat();
 
         // fix mobile bottom cut of (android)
         // Call initially and on resize/orientation change
