@@ -37,10 +37,17 @@ function renderUsers(users) {
     userElement.className = 'flex items-center justify-between p-3 border-b border-[var(--border-color)]';
     
     const userInfo = document.createElement('div');
-    userInfo.innerHTML = `
-      <p class="font-medium">${user.username}</p>
-      <p class="text-sm text-[var(--secondary-text)]">${user.role}</p>
-    `;
+    
+    const usernameP = document.createElement('p');
+    usernameP.className = 'font-medium';
+    usernameP.textContent = user.username;
+
+    const roleP = document.createElement('p');
+    roleP.className = 'text-sm text-[var(--secondary-text)]';
+    roleP.textContent = user.role;
+
+    userInfo.appendChild(usernameP);
+    userInfo.appendChild(roleP);
 
     const userActions = document.createElement('div');
     userActions.className = 'flex items-center space-x-2';

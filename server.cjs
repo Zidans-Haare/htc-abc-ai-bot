@@ -51,7 +51,12 @@ const protectAdmin = (req, res, next) => {
   if (req.url.startsWith('/admin/')) {
     if (useAdmin) {
       const token = auth.createSession('debug_admin', 'admin');
-      res.cookie('sessionToken', token, { httpOnly: true, secure: useHttps, maxAge: 1000 * 60 * 60 });
+      res.cookie('sessionToken', token, {
+        httpOnly: true,
+        secure: useHttps,
+        maxAge: 1000 * 60 * 60,
+        sameSite: 'strict'
+      });
       req.session = auth.getSession(token);
       return next();
     }
@@ -107,6 +112,10 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
+
+// Apply the rate limiting middleware to API calls
+app.use('/api', apiLimiter);
+app.use('/api/login', loginLimiter);
 
 // Routes
 app.use('/api', auth.router);

@@ -98,7 +98,14 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     const token = createSession(user.username, user.role);
-    res.cookie('sessionToken', token, { httpOnly: true, secure: true, maxAge: SESSION_TTL });
+    // secure: true should be used in production when using HTTPS
+    const secureCookie = req.app.get('env') === 'production';
+    res.cookie('sessionToken', token, {
+      httpOnly: true,
+      secure: secureCookie,
+      maxAge: SESSION_TTL,
+      sameSite: 'strict'
+    });
     res.json({ role: user.role });
   } catch (err) {
     console.error('Login failed:', err);
