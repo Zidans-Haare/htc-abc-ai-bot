@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendBtnEl = document.getElementById('send-btn');
     const typingEl = document.getElementById('typing');
     const historyContainer = document.getElementById('history-items-container');
+    const promptSuggestionsContainer = document.getElementById('prompt-suggestions-container');
     
     // --- Modals & Buttons ---
     const settingsBtn = document.getElementById("settings-btn");
@@ -360,26 +361,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startNewChat() {
         conversationId = null;
-        messagesEl.innerHTML = `
-            <div id="welcome-message">
-                <div class="message ai">
-                    <div class="avatar">
-                        <img src="/image/smoky_klein.png" alt="Bot Avatar">
-                    </div>
-                    <div class="bubble">
-                        <span>Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?</span>
-                    </div>
-                </div>
-            </div>`;
-        const suggestions = document.getElementById('prompt-suggestions');
-        if (suggestions) {
-            suggestions.style.display = 'flex';
-        }
-        useFirstAvatar = true;
-        startWelcomeAnimation();
-        setupSuggestionListeners();
+        messagesEl.innerHTML = createWelcomeMessageHTML();
+        promptSuggestionsContainer.innerHTML = createPromptSuggestionsHTML(false); // Don't show in-chat suggestions initially
         
-        // De-select any active history item
+        const welcomeContainer = document.getElementById('welcome-container');
+        if (welcomeContainer) {
+            const suggestionsInWelcome = welcomeContainer.querySelector('#prompt-suggestions');
+            suggestionsInWelcome.addEventListener('click', (e) => {
+                 if (e.target.closest('.suggestion-card')) {
+                     hideWelcome(welcomeContainer, true);
+                }
+            });
+            chatInput.addEventListener('focus', () => hideWelcome(welcomeContainer, false), { once: true });
+        }
+        
+        useFirstAvatar = true;
+        setupSuggestionListeners(promptSuggestionsContainer); // Setup for the empty container
         document.querySelectorAll('.history-item.active').forEach(item => item.classList.remove('active'));
     }
 
@@ -414,13 +411,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const chat = history.find(c => c.id === id);
         if (!chat) return;
 
-        const welcomeMessage = document.getElementById('welcome-message');
-        if (welcomeMessage) {
-            welcomeMessage.remove();
-        }
-        
-        conversationId = chat.id;
         messagesEl.innerHTML = '';
+        promptSuggestionsContainer.innerHTML = createPromptSuggestionsHTML(true);
+
+        conversationId = chat.id;
         useFirstAvatar = true;
 
         chat.messages.forEach(msg => {
@@ -520,17 +514,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const txt = typeof promptText === 'string' ? promptText : chatInput.value.trim();
         if (!txt) return;
 
-        const welcomeMessage = document.getElementById('welcome-message');
-        if (welcomeMessage) {
-            welcomeMessage.remove();
+        const welcomeContainer = document.getElementById('welcome-container');
+        if (welcomeContainer) {
+            hideWelcome(welcomeContainer, true);
         }
-        const suggestions = document.getElementById('prompt-suggestions');
-        if (suggestions) {
-            suggestions.style.display = 'none';
-        }
+        promptSuggestionsContainer.innerHTML = createPromptSuggestionsHTML(true);
 
         const isNewChat = !conversationId;
-        addMsg(txt, true, new Date(), false, !isNewChat); // Save user message immediately only if it's not a new chat
+        addMsg(txt, true, new Date(), false, !isNewChat);
 
         chatInput.value = '';
         chatInput.style.height = 'auto';
@@ -888,10 +879,9 @@ document.addEventListener('DOMContentLoaded', () => {
         handleKeyboard();
     }
 
-    function setupSuggestionListeners() {
-        const suggestions = document.getElementById('prompt-suggestions');
-        if (suggestions) {
-            suggestions.addEventListener('click', (e) => {
+    function setupSuggestionListeners(container) {
+        if (container) {
+            container.addEventListener('click', (e) => {
                 const card = e.target.closest('.suggestion-card');
                 if (card) {
                     const promptText = card.querySelector('p').textContent;
@@ -901,34 +891,72 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function createWelcomeMessageHTML() {
+        return `
+            <div id="welcome-container">
+                <img src="/image/HTW.svg" alt="HTW Dresden Logo" class="welcome-logo">
+                <div class="welcome-text">Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?</div>
+                <div id="prompt-suggestions" class="welcome-suggestions">
+                    <div class="suggestion-card">
+                        <h4>Vergleiche Studiengänge</h4>
+                        <p>Was sind die Unterschiede zwischen Medieninformatik und Informatik?</p>
+                    </div>
+                    <div class="suggestion-card">
+                        <h4>Finde Orte</h4>
+                        <p>Wo befindet sich das Büro von Professor Schmidt?</p>
+                    </div>
+                    <div class="suggestion-card">
+                        <h4>Kreative Ideen</h4>
+                        <p>Gib mir eine Idee für ein spannendes Abschlussthema im Bereich KI.</p>
+                    </div>
+                    <div class="suggestion-card">
+                        <h4>Hilfe im Alltag</h4>
+                        <p>Wann hat die Mensa diese Woche geöffnet?</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function createPromptSuggestionsHTML(show) {
+        if (!show) return '';
+        return `
+            <div id="prompt-suggestions">
+                 <div class="suggestion-card">
+                    <p>Was sind die Unterschiede zwischen Medieninformatik und Informatik?</p>
+                </div>
+                <div class="suggestion-card">
+                    <p>Wo befindet sich das Büro von Professor Schmidt?</p>
+                </div>
+                <div class="suggestion-card">
+                    <p>Gib mir eine Idee für ein spannendes Abschlussthema im Bereich KI.</p>
+                </div>
+                <div class="suggestion-card">
+                    <p>Wann hat die Mensa diese Woche geöffnet?</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function hideWelcome(welcomeContainer, showSuggestionsAfter) {
+        if (welcomeContainer && !welcomeContainer.classList.contains('hidden')) {
+            welcomeContainer.classList.add('hidden');
+            // Use a timeout to allow the fade-out animation to complete before removing
+            setTimeout(() => {
+                if (messagesEl.contains(welcomeContainer)) {
+                    messagesEl.removeChild(welcomeContainer);
+                }
+                if (showSuggestionsAfter) {
+                    promptSuggestionsContainer.innerHTML = createPromptSuggestionsHTML(true);
+                    setupSuggestionListeners(promptSuggestionsContainer);
+                }
+            }, 300); 
+        }
+    }
+
     let welcomeInterval;
     function startWelcomeAnimation() {
-        const welcomeBubble = document.querySelector('#welcome-message .bubble');
-        const welcomeText = document.querySelector('#welcome-message .bubble span');
-        if (!welcomeBubble || !welcomeText) return;
-
-        const messages = [
-            "Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden.",
-            "Hello! I am Alex, your AI assistant from HTW Dresden.",
-            "你好！我是 Alex，你来自德累斯顿应用技术大学的 AI 助手。"
-        ];
-
-        let messageIndex = 0;
-        
-        const updateMessage = () => {
-            welcomeBubble.classList.remove('show');
-            setTimeout(() => {
-                messageIndex = (messageIndex + 1) % messages.length;
-                welcomeText.textContent = messages[messageIndex];
-                welcomeBubble.classList.add('show');
-            }, 500); // Time for fade out
-        };
-
-        welcomeText.textContent = messages[messageIndex];
-        welcomeBubble.classList.add('show');
-
-        if (welcomeInterval) clearInterval(welcomeInterval);
-        welcomeInterval = setInterval(updateMessage, 4000);
+        // This function is no longer needed as the welcome message is static.
     }
 
     function stopWelcomeAnimation() {
