@@ -371,8 +371,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             </div>`;
+        const suggestions = document.getElementById('prompt-suggestions');
+        if (suggestions) {
+            suggestions.style.display = 'flex';
+        }
         useFirstAvatar = true;
         startWelcomeAnimation();
+        setupSuggestionListeners();
         
         // De-select any active history item
         document.querySelectorAll('.history-item.active').forEach(item => item.classList.remove('active'));
@@ -511,13 +516,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function sendMsg() {
-        const txt = chatInput.value.trim();
+    async function sendMsg(promptText) {
+        const txt = typeof promptText === 'string' ? promptText : chatInput.value.trim();
         if (!txt) return;
 
         const welcomeMessage = document.getElementById('welcome-message');
         if (welcomeMessage) {
             welcomeMessage.remove();
+        }
+        const suggestions = document.getElementById('prompt-suggestions');
+        if (suggestions) {
+            suggestions.style.display = 'none';
         }
 
         const isNewChat = !conversationId;
@@ -539,6 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         chatInput.value = '';
+        chatInput.style.height = 'auto'; // Reset height after sending
         chatInput.disabled = true;
         sendBtnEl.disabled = true;
         typingEl.style.display = 'flex';
@@ -713,6 +723,19 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(updateTime, 1000 * 60); // Update every minute
 
         startNewChat();
+    }
+
+    function setupSuggestionListeners() {
+        const suggestions = document.getElementById('prompt-suggestions');
+        if (suggestions) {
+            suggestions.addEventListener('click', (e) => {
+                const card = e.target.closest('.suggestion-card');
+                if (card) {
+                    const promptText = card.querySelector('p').textContent;
+                    sendMsg(promptText);
+                }
+            });
+        }
     }
 
     let welcomeInterval;
