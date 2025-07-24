@@ -530,42 +530,164 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const isNewChat = !conversationId;
-        if (isNewChat) {
-            conversationId = `chat_${Date.now()}`;
-        }
-        
-        addMsg(txt, true, new Date());
-
-        if (isNewChat && settings.saveHistory) {
-            const history = getChatHistory();
-            history.push({
-                id: conversationId,
-                title: txt.substring(0, 40) + (txt.length > 40 ? '...' : ''),
-                messages: [{ text: txt, isUser: true, timestamp: new Date().toISOString() }]
-            });
-            saveChatHistory(history);
-            renderChatHistory();
-        }
+        addMsg(txt, true, new Date(), false, !isNewChat); // Save user message immediately only if it's not a new chat
 
         chatInput.value = '';
-        chatInput.style.height = 'auto'; // Reset height after sending
+        chatInput.style.height = 'auto';
         chatInput.disabled = true;
         sendBtnEl.disabled = true;
         typingEl.style.display = 'flex';
 
+        let aiMessageBubble;
+        let fullResponse = '';
+        let currentConversationId = conversationId;
+        const wordQueue = [];
+        let isRendering = false;
+        let streamEnded = false;
+
+        function renderWords() {
+            if (wordQueue.length === 0) {
+                isRendering = false;
+                if (streamEnded) {
+                    finalizeMessage();
+                }
+                return;
+            }
+            isRendering = true;
+            
+            const word = wordQueue.shift();
+            fullResponse += word;
+            aiMessageBubble.querySelector('span').innerHTML = fullResponse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+            scrollToBottom();
+
+            const delay = word.includes('\n') ? 150 : 80;
+            setTimeout(renderWords, delay);
+        }
+
+        function finalizeMessage() {
+            if (aiMessageBubble) {
+                const c = document.createElement('span');
+                c.className = 'copy-btn';
+                c.innerHTML = '<i class="fas fa-copy"></i>';
+                c.addEventListener('click', () => navigator.clipboard.writeText(fullResponse));
+                aiMessageBubble.appendChild(c);
+
+                const md = document.createElement('div');
+                md.className = 'metadata';
+                md.textContent = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                aiMessageBubble.appendChild(md);
+            }
+
+            if (settings.saveHistory) {
+                const history = getChatHistory();
+                let chat = history.find(c => c.id === currentConversationId);
+                if (isNewChat) {
+                    history.push({
+                        id: currentConversationId,
+                        title: txt.substring(0, 40) + (txt.length > 40 ? '...' : ''),
+                        messages: [
+                            { text: txt, isUser: true, timestamp: new Date().toISOString() },
+                            { text: fullResponse, isUser: false, timestamp: new Date().toISOString() }
+                        ]
+                    });
+                    renderChatHistory();
+                } else if (chat) {
+                    const lastMessage = chat.messages[chat.messages.length - 1];
+                    if (lastMessage && !lastMessage.isUser) {
+                        lastMessage.text = fullResponse;
+                    } else {
+                         chat.messages.push({ text: fullResponse, isUser: false, timestamp: new Date().toISOString() });
+                    }
+                }
+                saveChatHistory(history);
+            }
+        }
+
         try {
-            const res = await fetch('/api/chat', {
+            const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: txt, conversationId })
+                body: JSON.stringify({ prompt: txt, conversationId: currentConversationId })
             });
-            const data = await res.json();
-            
-            addMsg(data.response, false, new Date(), true, true);
 
+            if (!response.body) {
+                throw new Error("Streaming not supported or response has no body.");
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let firstChunk = true;
+            let tokenBuffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    streamEnded = true;
+                    if (tokenBuffer) {
+                        wordQueue.push(tokenBuffer);
+                        if (!isRendering) renderWords();
+                    }
+                    if (!isRendering) {
+                         finalizeMessage();
+                    }
+                    break;
+                }
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n\n').filter(line => line.trim() !== '');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataContent = line.substring(6);
+                        if (dataContent === '[DONE]') {
+                            continue;
+                        }
+                        
+                        const data = JSON.parse(dataContent);
+
+                        if (firstChunk) {
+                            typingEl.style.display = 'none';
+                            currentConversationId = data.conversationId;
+                            if (isNewChat) {
+                                conversationId = currentConversationId;
+                            }
+                            
+                            const m = document.createElement('div');
+                            m.className = 'message ai';
+                            const avatar = document.createElement('div');
+                            avatar.className = 'avatar';
+                            const avatarSrc = useFirstAvatar ? botAvatarImage1 : botAvatarImage2;
+                            avatar.innerHTML = `<img src="${avatarSrc}" alt="Bot Avatar" />`;
+                            useFirstAvatar = !useFirstAvatar;
+                            m.appendChild(avatar);
+
+                            aiMessageBubble = document.createElement('div');
+                            aiMessageBubble.className = 'bubble';
+                            aiMessageBubble.innerHTML = '<span></span>';
+                            m.appendChild(aiMessageBubble);
+                            messagesEl.appendChild(m);
+                            firstChunk = false;
+                        }
+                        
+                        if (data.token) {
+                            tokenBuffer += data.token;
+                            const parts = tokenBuffer.split(/(\s+)/);
+                            if (parts.length > 1) {
+                                for (let i = 0; i < parts.length - 1; i++) {
+                                    wordQueue.push(parts[i]);
+                                }
+                                tokenBuffer = parts[parts.length - 1];
+                                if (!isRendering) {
+                                    renderWords();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         } catch (e) {
-            addMsg('Fehler bei der Verbindung zum Server.', false, new Date());
             console.error(e);
+            addMsg('Fehler bei der Verbindung zum Server.', false, new Date());
         } finally {
             typingEl.style.display = 'none';
             chatInput.disabled = false;

@@ -84,75 +84,41 @@ async function generateResponse(req, res) {
       return res.status(400).json({ error: "Prompt ist erforderlich" });
     }
 
-    // Generate new conversationId if not provided
-    const convoId =
-      conversationId ||
-      new Date().toISOString() + Math.random().toString(36).slice(2);
+    // Set headers for streaming
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders(); // Flush the headers to establish the connection
+
+    const convoId = conversationId || new Date().toISOString() + Math.random().toString(36).slice(2);
     console.log(`Processing conversationId: ${convoId}`);
 
-    // Retrieve or create conversation
-    let messages = conversations.get(convoId);
-    if (!messages) {
-      messages = [];
+    let messages = conversations.get(convoId) || [];
+    if (messages.length === 0) {
       conversations.set(convoId, messages);
       console.log(`Created new conversation: ${convoId}`);
-    } else {
-      console.log(
-        `Found conversation: ${convoId}, messages: ${messages.length}`
-      );
     }
 
-    // Add user prompt to conversation
-    const userMessage = {
-      text: prompt,
-      isUser: true,
-      timestamp: new Date().toISOString(),
-    };
-    messages = [...messages, userMessage];
-    conversations.set(convoId, messages);
+    const userMessage = { text: prompt, isUser: true, timestamp: new Date().toISOString() };
+    messages.push(userMessage);
     console.log(`Saved user message: ${prompt}`);
 
-    // Fetch data from HochschuhlABC table
     const entries = await HochschuhlABC.findAll({
-      where: {
-        active: true,
-        archived: null,
-      },
+      where: { active: true, archived: null },
       order: [["headline", "DESC"]],
       attributes: ["headline", "text"],
     });
+    const hochschulContent = entries.map(entry => `## ${entry.headline}\n\n${entry.text}\n\n`).join("");
 
-    // Format database content
-    const hochschulContent = entries
-      .map((entry) => `## ${entry.headline}\n\n${entry.text}\n\n`)
-      .join("");
+    const historyText = messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n");
+    const fullTextForTokenCheck = `**Inhalt des Hochschul ABC (2025)**:\n${hochschulContent}\n\n**Gesprächsverlauf**:\n${historyText}\n\nBenutzerfrage: ${prompt}`;
 
-    // Format conversation history for prompt
-    const historyText = messages
-      .map((m) => `${m.isUser ? "User" : "Assistant"}: ${m.text}`)
-      .join("\n");
-
-    // Check token limit and summarize if needed
-    let messagesToUse = messages;
-    const fullText = `
-      **Inhalt des Hochschul ABC (2025)**:
-      ${hochschulContent}
-      
-      **Gesprächsverlauf**:
-      ${historyText}
-      
-      Benutzerfrage: ${prompt}
-    `;
-    if (!isWithinTokenLimit(fullText, 6000)) {
-      messagesToUse = await summarizeConversation(messages);
-      messages = messagesToUse;
+    if (!isWithinTokenLimit(fullTextForTokenCheck, 6000)) {
+      messages = await summarizeConversation(messages);
       conversations.set(convoId, messages);
-      console.log(
-        `Summarized conversation, new message count: ${messagesToUse.length}`
-      );
+      console.log(`Summarized conversation, new message count: ${messages.length}`);
     }
 
-    // Create the full prompt
     const fullPrompt = `
       --system prompt--
       You are a customer support agent dedicated to answering questions, resolving issues, 
@@ -182,44 +148,41 @@ async function generateResponse(req, res) {
       --
       
       **Gesprächsverlauf**:
-      ${messagesToUse
-        .map((m) => `${m.isUser ? "User" : "Assistant"}: ${m.text}`)
-        .join("\n")}
+      ${messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n")}
       
       --user prompt--
       ${prompt}
     `;
 
-    // Generate response
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    const text = response.text();
+    const result = await model.generateContentStream(fullPrompt);
+    
+    let fullResponseText = '';
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      fullResponseText += chunkText;
+      res.write(`data: ${JSON.stringify({ token: chunkText, conversationId: convoId })}\n\n`);
+    }
 
-    // Add AI response to conversation
-    const aiMessage = {
-      text,
-      isUser: false,
-      timestamp: new Date().toISOString(),
-    };
-    messages = [...messages, aiMessage];
+    const aiMessage = { text: fullResponseText, isUser: false, timestamp: new Date().toISOString() };
+    messages.push(aiMessage);
     conversations.set(convoId, messages);
-    console.log(`Saved AI response: ${text.slice(0, 50)}...`);
+    console.log(`Saved AI response: ${fullResponseText.slice(0, 50)}...`);
 
-    // Log unanswered questions
-    if (
-      text.includes(
-        "<+>"
-      )
-    ) {
+    if (fullResponseText.includes("<+>")) {
       logUnansweredQuestion(prompt);
     }
 
-    // console.log(`answer finished at: ${new Date().toISOString()}`);
+    res.write('data: [DONE]\n\n');
+    res.end();
 
-    res.json({ response: text, conversationId: convoId });
   } catch (error) {
     console.error("Fehler beim Generieren der Antwort:", error.message);
-    res.status(500).json({ error: "Interner Serverfehler" });
+    // Ensure the connection is closed properly in case of an error
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Interner Serverfehler" });
+    } else {
+      res.end();
+    }
   }
 }
 
