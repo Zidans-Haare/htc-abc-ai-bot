@@ -65,7 +65,7 @@ body {
     background: var(--bg-color);
     font-family: 'Roboto', sans-serif;
     color: var(--primary-text);
-    height: calc(100 * var(--vh, 1vh));  /* Fallback to vh if --vh not set */
+    height: 100vh; /* Use vh unit for full viewport height */
     overflow: hidden;
     font-size: var(--font-size);
     transition-property: background-color, color;
@@ -277,13 +277,36 @@ body {
 
 #settings-btn { background: transparent; border: none; color: var(--secondary-text); font-size: 1.5rem; cursor: pointer; transition: transform 0.2s, color 0.2s; }
 #settings-btn:hover { transform: scale(1.1); color: var(--primary-text); }
-.chat-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; position: relative; width: 100%; max-width: 1350px; margin: 0 auto; }
-#messages { flex: 1 1 auto; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: calc(1rem * var(--layout-density-multiplier)); scroll-behavior: smooth; }
-#input-container { padding: 1rem 1.5rem 1.5rem; background-color: var(--content-bg); border-top: none; transition-property: background-color; }
+.chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
+    width: 100%;
+    max-width: 1350px;
+    margin: 0 auto;
+}
+#messages {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: calc(1rem * var(--layout-density-multiplier));
+    scroll-behavior: smooth;
+}
+#input-container {
+    padding: 1rem 1.5rem 1.5rem;
+    background-color: var(--content-bg);
+    border-top: none;
+    transition-property: background-color;
+    flex-shrink: 0; /* Verhindert, dass der Input-Container schrumpft */
+}
 .input-area { background: var(--content-bg); border: 5px solid var(--input-border); border-radius: var(--input-radius); padding: 0.5rem; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); max-width: 1350px; margin: 0 auto; width: 100%; }
 .input-area:focus-within { border-color: var(--accent-color); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); }
 .wrapper { display: flex; gap: 0.5rem; align-items: center; }
-#chat-input { flex: 1; padding: 0.75rem 1rem; border: none; resize: none; font-size: 1rem; background: transparent; color: var(--primary-text); font-family: 'Roboto', sans-serif; }
+#chat-input { flex: 1; padding: 0.75rem 1rem; border: none; resize: none; font-size: 1rem; background: transparent; color: var(--primary-text); font-family: 'Roboto', sans-serif; max-height: 120px; /* Maximale Höhe, ca. 5 Zeilen */ line-height: 1.5; }
 #chat-input:focus, #chat-input:focus-visible { outline: none !important; }
 #chat-input::placeholder { font-family: 'Roboto', sans-serif; }
 button.send { background: var(--accent-color); color: #fff; width: 55px; height: 55px; border: none; border-radius: 28px; cursor: pointer; font-size: 1.2rem; transition: background-color 0.2s; }

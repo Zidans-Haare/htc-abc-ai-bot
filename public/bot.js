@@ -645,6 +645,11 @@ document.addEventListener('DOMContentLoaded', () => {
     sendBtnEl.addEventListener('click', sendMsg);
     chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
     
+    chatInput.addEventListener('input', () => {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = `${chatInput.scrollHeight}px`;
+    });
+
     settingsBtn.addEventListener("click", () => { 
         tempSettings = {...settings}; 
         updateSettingsUI(); 
@@ -708,12 +713,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(updateTime, 1000 * 60); // Update every minute
 
         startNewChat();
-
-        // fix mobile bottom cut of (android)
-        // Call initially and on resize/orientation change
-        setVH();
-        window.addEventListener('resize', setVH);
-        window.addEventListener('orientationchange', setVH);
     }
 
     let welcomeInterval;
@@ -753,11 +752,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // fix mobile bottom cut of (android)
-    function setVH() {
-        let vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-    }
-    
     init();
 });
