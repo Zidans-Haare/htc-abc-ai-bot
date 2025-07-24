@@ -765,43 +765,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Keyboard Handling for Mobile ---
-    function handleKeyboard() {
+    function initViewportHandler() {
         const appContainer = document.querySelector('.app-container');
-        if (!appContainer) return;
-
-        // Use a more reliable check for mobile devices
-        const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
-        if (isMobile) {
-            let initialHeight = window.innerHeight;
-
-            chatInput.addEventListener('focus', () => {
-                // Set a fixed height to prevent the whole page from shrinking
-                appContainer.style.height = `${initialHeight}px`;
-                // Scroll to the bottom to keep the input in view
-                setTimeout(() => {
-                    scrollToBottom();
-                    chatInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }, 300); // Delay to allow keyboard to appear
-            });
-
-            chatInput.addEventListener('blur', () => {
-                // Restore dynamic height when keyboard is dismissed
-                appContainer.style.height = '100%';
-            });
-
-            window.addEventListener('resize', () => {
-                // Update initial height if the window is resized for reasons other than the keyboard
-                if (window.innerHeight < initialHeight - 150) { // Keyboard is likely open
-                    // Do nothing, keep the fixed height
-                } else {
-                    initialHeight = window.innerHeight;
-                    if (document.activeElement !== chatInput) {
-                         appContainer.style.height = '100%';
-                    }
-                }
-            });
+        if (!appContainer || !window.visualViewport) {
+            return; // API not supported, or element not found
         }
+
+        const isMobile = window.matchMedia("(max-width: 768px)").matches;
+        if (!isMobile) {
+            return; // Only apply this logic on mobile devices
+        }
+
+        const viewportHandler = () => {
+            const viewport = window.visualViewport;
+            // Set the height of the app container to the visual viewport height.
+            // This makes the container fill exactly the visible area above the keyboard.
+            appContainer.style.height = `${viewport.height}px`;
+        };
+
+        chatInput.addEventListener('focus', () => {
+             window.visualViewport.addEventListener('resize', viewportHandler);
+             viewportHandler(); // Call once immediately on focus
+        });
+
+        chatInput.addEventListener('blur', () => {
+            window.visualViewport.removeEventListener('resize', viewportHandler);
+            // Reset to initial state when keyboard is gone
+            appContainer.style.height = '100%';
+        });
     }
 
     // --- Event Listeners ---
@@ -876,7 +867,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(updateTime, 1000 * 60); // Update every minute
 
         startNewChat();
-        handleKeyboard();
+        initViewportHandler();
     }
 
     function setupSuggestionListeners(container) {
