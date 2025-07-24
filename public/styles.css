@@ -65,7 +65,7 @@ body {
     background: var(--bg-color);
     font-family: 'Roboto', sans-serif;
     color: var(--primary-text);
-    height: 100vh;
+    height: calc(100 * var(--vh, 1vh));  /* Fallback to vh if --vh not set */
     overflow: hidden;
     font-size: var(--font-size);
     transition-property: background-color, color;

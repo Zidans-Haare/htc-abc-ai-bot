@@ -713,6 +713,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             startNewChat();
         }
+
+        // fix mobile bottom cut of (android)
+        // Call initially and on resize/orientation change
+        setVH();
+        window.addEventListener('resize', setVH);
+        window.addEventListener('orientationchange', setVH);
     }
 
     let welcomeInterval;
@@ -750,6 +756,12 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(welcomeInterval);
             welcomeInterval = null;
         }
+    }
+
+    // fix mobile bottom cut of (android)
+    function setVH() {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
     
     init();
