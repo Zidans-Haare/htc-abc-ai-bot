@@ -71,6 +71,21 @@ const protectAdmin = (req, res, next) => {
   next();
 };
 
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const loginLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5, // Limit each IP to 5 requests per windowMs
+    message: "Too many login attempts from this IP, please try again after an hour",
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -105,17 +120,46 @@ app.use(helmet({
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(protectAdmin);
+
+// Middleware für geschützte Dashboard-Ressourcen
+const protectDashboard = (req, res, next) => {
+  // Prüfe Sitzung für /dashboard/*
+  if (req.url.startsWith('/dashboard')) {
+    if (useAdmin) {
+      const token = auth.createSession('debug_admin', 'admin');
+      res.cookie('sessionToken', token, {
+        httpOnly: true,
+        secure: useHttps,
+        maxAge: 1000 * 60 * 60,
+        sameSite: 'strict'
+      });
+      req.session = auth.getSession(token);
+      return next();
+    }
+    const token = req.cookies.sessionToken;
+    const session = token && auth.getSession(token);
+    if (session) {
+      req.session = session;
+      return next();
+    }
+    return res.status(401).sendFile(path.join(__dirname, 'public', 'login', 'login.html'));
+  }
+  next();
+};
+app.use(protectDashboard);
+app.use('/dashboard', express.static(path.join(__dirname, 'public', 'dashboard')));
+
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Apply the rate limiting middleware to API calls
+app.use('/api', apiLimiter);
+app.use('/api/login', loginLimiter);
 
 // Log all incoming requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
-
-// Apply the rate limiting middleware to API calls
-app.use('/api', apiLimiter);
-app.use('/api/login', loginLimiter);
 
 // Routes
 app.use('/api', auth.router);
