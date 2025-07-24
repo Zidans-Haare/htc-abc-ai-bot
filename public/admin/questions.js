@@ -1,6 +1,6 @@
 import { fetchAndParse } from './utils.js';
 
-export function initQuestions({ openMoveModal, updateOpenCount }) {
+export function initQuestions({ openMoveModal, updateOpenCount, showEditor }) {
   const tabOpen = document.getElementById('tab-open');
   const tabAnswered = document.getElementById('tab-answered');
   const openList = document.getElementById('open-list');
@@ -8,6 +8,7 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
   const questionSearch = document.getElementById('question-search');
   const deleteSelectedBtn = document.getElementById('delete-selected');
   const openCountSpan = document.getElementById('open-count');
+  const btnEditQuestions = document.getElementById('btn-edit-questions');
 
   let selectedQuestions = new Set();
 
@@ -71,8 +72,11 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
         const form = document.createElement('form');
         form.innerHTML = `
           <input type="hidden" name="question" value="${q.question}">
+          <!--
           <textarea name="answer" class="border border-[var(--input-border)] p-2 w-full mb-2 rounded-md" placeholder="Antwort hier eingeben..." required rows="3"></textarea>
           <button class="btn-primary px-4 py-2 rounded-md" type="submit">Antworten</button>
+          -->
+          <button type="button" class="px-4 py-2 rounded-md text-white btn-edit-question" style="background-color: cornflowerblue;">Bearbeiten</button>
         `;
         form.addEventListener('submit', async e => {
           e.preventDefault();
@@ -94,6 +98,15 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
             console.error('Answer submission error:', err);
           }
         });
+
+        const editButton = form.querySelector('.btn-edit-question');
+        editButton.addEventListener('click', () => {
+            document.getElementById('question-edit-label').textContent = q.question;
+            document.getElementById('question-edit-id').value = q.question;
+            document.getElementById('question-edit-banner').classList.remove('hidden');
+            showEditor();
+        });
+
         div.appendChild(form);
         openList.appendChild(div);
       });
@@ -199,6 +212,8 @@ export function initQuestions({ openMoveModal, updateOpenCount }) {
     tabOpen.classList.add('btn-secondary');
     loadAnswered();
   }
+
+  
 
   tabOpen.addEventListener('click', showOpen);
   tabAnswered.addEventListener('click', showAnswered);

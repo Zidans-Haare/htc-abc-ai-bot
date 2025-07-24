@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize all modules
   initHeadlines();
-  const questionsManager = initQuestions({ openMoveModal, updateOpenCount });
+  const questionsManager = initQuestions({ openMoveModal, updateOpenCount, showEditor });
   initArchive();
   initExport();
   setupFeedback();
@@ -271,5 +271,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (currentUserSpan) {
       currentUserSpan.innerHTML = `last edit by:<br>${e.detail.username}`;
     }
+  });
+
+  // --- AI Response Modal Logic ---
+  const aiResponseModal = document.getElementById('ai-response-modal');
+  const aiResponseClose = document.getElementById('ai-response-close');
+  const testAiResponseBtn = document.getElementById('test-ai-response');
+  const aiPrompt = document.getElementById('ai-prompt');
+  const aiResponse = document.getElementById('ai-response');
+
+  testAiResponseBtn.addEventListener('click', async () => {
+    const question = document.getElementById('question-edit-label').textContent;
+    aiPrompt.textContent = question;
+    aiResponse.textContent = 'Lade...';
+    aiResponseModal.classList.remove('hidden');
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: question }),
+      });
+      const data = await response.json();
+      aiResponse.textContent = data.response;
+    } catch (error) {
+      aiResponse.textContent = 'Fehler beim Abrufen der AI-Antwort.';
+      console.error('Error fetching AI response:', error);
+    }
+  });
+
+  aiResponseClose.addEventListener('click', () => {
+    aiResponseModal.classList.add('hidden');
   });
 });
