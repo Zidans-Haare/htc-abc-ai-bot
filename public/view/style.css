@@ -37,3 +37,13 @@ hr {
     color: red;
     font-weight: bold;
 }
+.sort-link {
+    font-size: 0.9rem;
+    font-weight: normal;
+    color: #007bff;
+    cursor: pointer;
+    text-decoration: none;
+}
+.sort-link:hover {
+    text-decoration: underline;
+}
