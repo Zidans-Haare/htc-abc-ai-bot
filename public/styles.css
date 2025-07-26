@@ -65,7 +65,7 @@ body {
     background: var(--bg-color);
     font-family: 'Roboto', sans-serif;
     color: var(--primary-text);
-    height: 100vh; /* Use vh unit for full viewport height */
+    height: 100dvh; /* Use vh unit for full viewport height */
     overflow: hidden;
     font-size: var(--font-size);
     transition-property: background-color, color;
@@ -755,4 +755,24 @@ input:checked + .slider:before { transform: translateX(22px); }
     outline: 3px solid var(--accent-color) !important;
     outline-offset: 2px;
     border-radius: 4px;
+}
+/* --- Markdown Rendering --- */
+.bubble ul, .bubble ol {
+    padding-left: 20px;
+}
+
+.bubble ul + ul,
+.bubble ol + ol,
+.bubble ul + ol,
+.bubble ol + ul,
+.bubble hr + ul,
+.bubble hr + ol,
+.bubble p + ul,
+.bubble p + ol {
+    /* margin-bottom: 1em; */
+    padding-bottom: 1em;
+    /* border-bottom: 1px solid var(--border-color); */
+}
+.bubble ul {
+    list-style-type: none;
 }

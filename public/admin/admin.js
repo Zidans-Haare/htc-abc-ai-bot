@@ -5,6 +5,7 @@ import { initUsers, loadUsers } from './users.js';
 import { initArchive, loadArchive } from './archive.js';
 import { initExport } from './export.js';
 import { setupFeedback } from './feedback.js';
+import { renderMarkup } from '../js/markup.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -47,12 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   const openCountSpan = document.getElementById('open-count');
   
-  const moveModal = document.getElementById('move-modal');
-  const moveSelect = document.getElementById('move-select');
-  const moveNew = document.getElementById('move-new');
-  const moveConfirm = document.getElementById('move-confirm');
-  const moveCancel = document.getElementById('move-cancel');
-
   const sidebar = document.getElementById('sidebar');
   const sidebarToggle = document.getElementById('sidebar-toggle');
   const sidebarToggleIcon = document.getElementById('sidebar-toggle-icon');
@@ -209,62 +204,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize all modules
   initHeadlines();
-  const questionsManager = initQuestions({ openMoveModal, updateOpenCount, showEditor });
+  const questionsManager = initQuestions({ updateOpenCount, showEditor });
   initArchive();
   initExport();
   setupFeedback();
-
-  // --- Modal Logic ---
-  let moveData = null;
-  async function openMoveModal(question, answer) {
-    moveData = { question, answer };
-    await loadHeadlines();
-    moveSelect.innerHTML = '<option value="">Überschrift wählen...</option>';
-    allHeadlines.forEach(h => {
-      const opt = document.createElement('option');
-      opt.value = h.id;
-      opt.textContent = h.headline;
-      moveSelect.appendChild(opt);
-    });
-    moveNew.value = '';
-    moveModal.classList.remove('hidden');
-  }
-
-  moveCancel.addEventListener('click', () => moveModal.classList.add('hidden'));
-
-  moveConfirm.addEventListener('click', async () => {
-    if (!moveData) return;
-    const payload = {
-      question: moveData.question,
-      answer: moveData.answer,
-      headlineId: moveSelect.value || null,
-      newHeadline: moveNew.value.trim()
-    };
-    if (!payload.headlineId && !payload.newHeadline) {
-      alert('Bitte Überschrift wählen oder neu eingeben');
-      return;
-    }
-    try {
-      const resp = await fetch('/api/admin/move', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (resp.ok) {
-        const result = await resp.json();
-        moveModal.classList.add('hidden');
-        questionsManager.loadAnswered();
-        await loadHeadlines();
-        // Switch to editor and select the new/updated headline
-        showEditor();
-        selectHeadline(result.entryId);
-      } else {
-        console.error('Move failed:', await resp.json());
-      }
-    } catch (err) {
-      console.error('Move error:', err);
-    }
-  });
   
   document.addEventListener('update-username', (e) => {
     const currentUserSpan = document.getElementById('current-user');
@@ -294,8 +237,55 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         body: JSON.stringify({ prompt: question }),
       });
-      const data = await response.json();
-      aiResponse.textContent = data.response;
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullResponse = '';
+      aiResponse.innerHTML = ''; // Clear previous content
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process buffer line by line
+        let boundary = buffer.lastIndexOf('\n');
+        if (boundary === -1) continue; // Wait for a full line
+
+        const lines = buffer.substring(0, boundary).split('\n');
+        buffer = buffer.substring(boundary + 1);
+
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                const jsonString = line.substring(6);
+                if (jsonString === '[DONE]') {
+                    continue;
+                }
+                try {
+                    const json = JSON.parse(jsonString);
+                    if (json.token) {
+                        fullResponse += json.token;
+                        aiResponse.innerHTML = renderMarkup(fullResponse);
+                    }
+                } catch (e) {
+                    console.error('Failed to parse stream chunk:', e, 'Chunk:', jsonString);
+                }
+            }
+        }
+      }
+      // Enable the button after the test is complete
+      const markAsAnsweredBtn = document.getElementById('mark-as-answered-btn');
+      markAsAnsweredBtn.disabled = false;
+      markAsAnsweredBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+      markAsAnsweredBtn.classList.add('btn-primary');
+
     } catch (error) {
       aiResponse.textContent = 'Fehler beim Abrufen der AI-Antwort.';
       console.error('Error fetching AI response:', error);
@@ -304,5 +294,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   aiResponseClose.addEventListener('click', () => {
     aiResponseModal.classList.add('hidden');
+  });
+
+  const cancelEditBtn = document.getElementById('cancel-edit-question');
+  cancelEditBtn.addEventListener('click', () => {
+    document.getElementById('question-edit-banner').classList.add('hidden');
   });
 });

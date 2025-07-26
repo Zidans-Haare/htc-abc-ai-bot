@@ -38,11 +38,8 @@ function setSaveButtonState(enabled) {
 function checkForChanges() {
   const currentHeadline = headlineInput.value;
   const currentText = editor.getMarkdown();
-  if (currentHeadline !== originalHeadline || currentText !== originalText) {
-    setSaveButtonState(true);
-  } else {
-    setSaveButtonState(false);
-  }
+  const hasChanged = currentHeadline !== originalHeadline || currentText !== originalText;
+  setSaveButtonState(hasChanged);
 }
 
 async function loadHeadlines() {
@@ -139,6 +136,26 @@ async function saveEntry() {
     const data = await res.json();
     console.log('Entry saved:', data);
     currentId = data.id;
+
+    // If question banner is visible, link the article
+    const questionBanner = document.getElementById('question-edit-banner');
+    if (!questionBanner.classList.contains('hidden')) {
+      const questionId = document.getElementById('question-edit-id').value;
+      if (questionId && currentId) {
+        await fetch('/api/admin/questions/link-article', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questionId: questionId, articleId: currentId }),
+        });
+        // Update banner text
+        const answeredInDiv = document.getElementById('question-answered-in');
+        if (answeredInDiv) {
+            answeredInDiv.innerHTML = `<strong>Beantwortet in:</strong> ${payload.headline}`;
+            answeredInDiv.style.display = 'block';
+        }
+      }
+    }
+
     await loadHeadlines();
     await loadEntry(currentId);
   } catch (err) {

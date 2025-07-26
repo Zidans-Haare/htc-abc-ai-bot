@@ -153,6 +153,9 @@ const Feedback = sequelize.define('Feedback', {
   timestamps: false
 });
 
+// Define associations
+Questions.belongsTo(HochschuhlABC, { foreignKey: 'linked_article_id' });
+
 sequelize.sync({ alter: true })
   .catch(err => console.error('SQLite sync error:', err.message));
 

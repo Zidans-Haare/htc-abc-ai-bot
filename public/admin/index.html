@@ -12,6 +12,8 @@
   <link href="/admin/toastui/toastui-editor.css" rel="stylesheet">
   <script src="/admin/toastui/toastui-editor.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="../js/marked.min.js"></script>
+  <script src="../js/purify.min.js"></script>
   <script defer type="module" src="/admin/admin.js"></script>
   <link rel="icon" href="/favicon.ico">
   <style>
@@ -197,12 +199,17 @@
       <div id="editor-pane" class="w-3/4 flex flex-col bg-white">
         <div id="question-edit-banner" class="hidden p-4 bg-blue-100 border-b border-blue-200 flex items-center justify-between">
             <div>
-                <span class="font-semibold text-blue-800">Frage wird bearbeitet:</span>
+                <span class="font-semibold text-blue-800">Frage:</span>
                 <span id="question-edit-label" class="text-blue-800"></span>
+                <div id="question-edit-translation" class="text-sm mt-1" style="color: var(--primary-text); display: none;"></div>
+                <div id="question-answered-in" class="text-sm mt-1" style="color: var(--primary-text); display: none;"></div>
                 <input type="hidden" id="question-edit-id">
             </div>
-            <button id="cancel-edit-question" class="text-blue-500 hover:text-blue-700 font-bold">Abbrechen &times;</button>
-            <button id="test-ai-response" class="px-4 py-2 rounded-md text-white" style="background-color: green;">Test</button>
+            <div class="flex items-center space-x-2">
+                <button id="cancel-edit-question" class="font-bold px-4 py-2 rounded-md" style="background-color: transparent; color: cornflowerblue; border: 1px solid cornflowerblue;">Abbrechen</button>
+                <button id="test-ai-response" class="px-4 py-2 rounded-md text-white" style="background-color: green;">Test</button>
+                <button id="mark-as-answered-btn" class="px-4 py-2 rounded-md btn-primary" disabled>Beantwortet</button>
+            </div>
         </div>
         <div class="p-4 border-b border-[var(--border-color)] flex space-x-4 items-center">
           <input id="headline-input" class="p-2 border border-[var(--input-border)] rounded flex-1 bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Überschrift">
@@ -306,25 +313,6 @@
                 <button id="remove-user-confirm" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>Endgültig löschen</button>
             </div>
         </div>
-    </div>
-
-    <!-- Move Answer Modal -->
-    <div id="move-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h3 class="text-lg font-medium mb-4">Antwort verschieben</h3>
-        <p class="mb-4 text-[var(--secondary-text)]">Zu welcher Überschrift soll diese Antwort hinzugefügt werden?</p>
-        <div class="custom-select-wrapper">
-            <select id="move-select" class="custom-select"></select>
-            <div class="custom-select-arrow">
-                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-            </div>
-        </div>
-        <input id="move-new" class="border p-2 w-full my-4 rounded-md border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Oder neue Überschrift erstellen...">
-        <div class="flex justify-end space-x-2">
-          <button id="move-cancel" class="px-4 py-2 rounded-md btn-secondary">Abbrechen</button>
-          <button id="move-confirm" class="px-4 py-2 rounded-md btn-primary">Speichern</button>
-        </div>
-      </div>
     </div>
 
     <!-- Export Modal -->
