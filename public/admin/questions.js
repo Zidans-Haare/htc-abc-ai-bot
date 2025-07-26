@@ -25,7 +25,7 @@ export function initQuestions({ openMoveModal, updateOpenCount, showEditor }) {
         const response = await fetch('/api/admin/mark-answered', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: questionId })
+            body: JSON.stringify({ questionId: questionId })
         });
 
         if (response.ok) {
@@ -82,7 +82,7 @@ export function initQuestions({ openMoveModal, updateOpenCount, showEditor }) {
         if (q.translation) {
           const t = document.createElement('p');
           t.className = 'text-sm text-[var(--secondary-text)] mt-1';
-          t.textContent = `(Übersetzung: ${q.translation})`;
+          t.textContent = `Übersetzung: ${q.translation}`;
           textContainer.appendChild(t);
         }
         
@@ -133,7 +133,7 @@ export function initQuestions({ openMoveModal, updateOpenCount, showEditor }) {
         const editButton = form.querySelector('.btn-edit-question');
         editButton.addEventListener('click', () => {
             document.getElementById('question-edit-label').textContent = q.question;
-            document.getElementById('question-edit-id').value = q.question;
+            document.getElementById('question-edit-id').value = q.id;
             
             const translationEl = document.getElementById('question-edit-translation');
             if (q.translation) {
@@ -141,6 +141,12 @@ export function initQuestions({ openMoveModal, updateOpenCount, showEditor }) {
                 translationEl.style.display = 'block';
             } else {
                 translationEl.style.display = 'none';
+            }
+
+            const answeredInDiv = document.getElementById('question-answered-in');
+            if (answeredInDiv) {
+                answeredInDiv.style.display = 'none';
+                answeredInDiv.textContent = '';
             }
 
             // Disable the button initially

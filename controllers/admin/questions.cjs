@@ -78,9 +78,9 @@ module.exports = (adminAuth) => {
   });
 
   router.post('/mark-answered', adminAuth, async (req, res) => {
-    const { question } = req.body || {};
-    if (!question) {
-      return res.status(400).json({ error: 'question required' });
+    const { questionId } = req.body || {};
+    if (!questionId) {
+      return res.status(400).json({ error: 'questionId required' });
     }
     try {
       const [affectedRows] = await Questions.update(
@@ -88,7 +88,7 @@ module.exports = (adminAuth) => {
           answered: true,
           user: req.user.username
         },
-        { where: { question: question } }
+        { where: { id: questionId } }
       );
 
       if (affectedRows === 0) {
@@ -99,6 +99,31 @@ module.exports = (adminAuth) => {
     } catch (err) {
       console.error('Failed to mark question as answered:', err);
       res.status(500).json({ error: 'Failed to mark question as answered' });
+    }
+  });
+
+  router.post('/questions/link-article', adminAuth, async (req, res) => {
+    const { questionId, articleId } = req.body;
+
+    if (!questionId || !articleId) {
+      return res.status(400).json({ error: 'questionId and articleId are required' });
+    }
+
+    try {
+      await Questions.update(
+        {
+          linked_article_id: articleId,
+          answered: true,
+          user: req.user.username
+        },
+        {
+          where: { id: questionId }
+        }
+      );
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Failed to link article to question:', error);
+      res.status(500).json({ error: 'Failed to link article to question' });
     }
   });
 
