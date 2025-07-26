@@ -1,6 +1,6 @@
 import { setupUI, addMessage, showToast, scrollToBottom, updateTime, renderChatHistory, openMobileMenu, closeMobileMenu, startWelcomeAnimation, stopWelcomeAnimation, openModal, closeModal, generateCaptcha, setFeedbackLanguage } from './js/ui.js';
 import { loadSettings, saveSettings, resetSettings, handleSettingChange, getSettings, openSettings, closeSettings } from './js/settings.js';
-import { deleteAllChats, autoDeleteOldChats, loadChat, saveMessageToHistory } from './js/history.js';
+import { deleteAllChats, autoDeleteOldChats, loadChat, saveMessageToHistory, getChatHistory } from './js/history.js';
 import { sendMsg, sendFeedback } from './js/api.js';
 
 document.addEventListener('DOMContentLoaded', () => {
