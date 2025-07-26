@@ -48,12 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   const openCountSpan = document.getElementById('open-count');
   
-  const moveModal = document.getElementById('move-modal');
-  const moveSelect = document.getElementById('move-select');
-  const moveNew = document.getElementById('move-new');
-  const moveConfirm = document.getElementById('move-confirm');
-  const moveCancel = document.getElementById('move-cancel');
-
   const sidebar = document.getElementById('sidebar');
   const sidebarToggle = document.getElementById('sidebar-toggle');
   const sidebarToggleIcon = document.getElementById('sidebar-toggle-icon');
@@ -210,62 +204,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize all modules
   initHeadlines();
-  const questionsManager = initQuestions({ openMoveModal, updateOpenCount, showEditor });
+  const questionsManager = initQuestions({ updateOpenCount, showEditor });
   initArchive();
   initExport();
   setupFeedback();
-
-  // --- Modal Logic ---
-  let moveData = null;
-  async function openMoveModal(question, answer) {
-    moveData = { question, answer };
-    await loadHeadlines();
-    moveSelect.innerHTML = '<option value="">Überschrift wählen...</option>';
-    allHeadlines.forEach(h => {
-      const opt = document.createElement('option');
-      opt.value = h.id;
-      opt.textContent = h.headline;
-      moveSelect.appendChild(opt);
-    });
-    moveNew.value = '';
-    moveModal.classList.remove('hidden');
-  }
-
-  moveCancel.addEventListener('click', () => moveModal.classList.add('hidden'));
-
-  moveConfirm.addEventListener('click', async () => {
-    if (!moveData) return;
-    const payload = {
-      question: moveData.question,
-      answer: moveData.answer,
-      headlineId: moveSelect.value || null,
-      newHeadline: moveNew.value.trim()
-    };
-    if (!payload.headlineId && !payload.newHeadline) {
-      alert('Bitte Überschrift wählen oder neu eingeben');
-      return;
-    }
-    try {
-      const resp = await fetch('/api/admin/move', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (resp.ok) {
-        const result = await resp.json();
-        moveModal.classList.add('hidden');
-        questionsManager.loadAnswered();
-        await loadHeadlines();
-        // Switch to editor and select the new/updated headline
-        showEditor();
-        selectHeadline(result.entryId);
-      } else {
-        console.error('Move failed:', await resp.json());
-      }
-    } catch (err) {
-      console.error('Move error:', err);
-    }
-  });
   
   document.addEventListener('update-username', (e) => {
     const currentUserSpan = document.getElementById('current-user');

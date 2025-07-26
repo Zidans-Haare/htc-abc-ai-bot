@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Questions } = require('../db.cjs');
+const { Questions, HochschuhlABC } = require('../db.cjs');
 const { Op } = require('sequelize');
 
 module.exports = (adminAuth) => {
@@ -63,6 +63,11 @@ module.exports = (adminAuth) => {
   router.get('/answered', adminAuth, async (req, res) => {
     try {
       const questions = await Questions.findAll({
+        include: [{
+          model: HochschuhlABC,
+          attributes: ['headline', 'text'],
+          required: false
+        }],
         where: {
           answered: true,
           archived: false,

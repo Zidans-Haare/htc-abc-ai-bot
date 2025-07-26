@@ -206,7 +206,7 @@
                 <input type="hidden" id="question-edit-id">
             </div>
             <div class="flex items-center space-x-2">
-                <button id="cancel-edit-question" class="font-bold px-4 py-2 rounded-md" style="background-color: transparent; color: cornflowerblue; border: 1px solid cornflowerblue;">Abbrechen &times;</button>
+                <button id="cancel-edit-question" class="font-bold px-4 py-2 rounded-md" style="background-color: transparent; color: cornflowerblue; border: 1px solid cornflowerblue;">Abbrechen</button>
                 <button id="test-ai-response" class="px-4 py-2 rounded-md text-white" style="background-color: green;">Test</button>
                 <button id="mark-as-answered-btn" class="px-4 py-2 rounded-md btn-primary" disabled>Beantwortet</button>
             </div>
@@ -313,25 +313,6 @@
                 <button id="remove-user-confirm" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>Endgültig löschen</button>
             </div>
         </div>
-    </div>
-
-    <!-- Move Answer Modal -->
-    <div id="move-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h3 class="text-lg font-medium mb-4">Antwort verschieben</h3>
-        <p class="mb-4 text-[var(--secondary-text)]">Zu welcher Überschrift soll diese Antwort hinzugefügt werden?</p>
-        <div class="custom-select-wrapper">
-            <select id="move-select" class="custom-select"></select>
-            <div class="custom-select-arrow">
-                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-            </div>
-        </div>
-        <input id="move-new" class="border p-2 w-full my-4 rounded-md border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Oder neue Überschrift erstellen...">
-        <div class="flex justify-end space-x-2">
-          <button id="move-cancel" class="px-4 py-2 rounded-md btn-secondary">Abbrechen</button>
-          <button id="move-confirm" class="px-4 py-2 rounded-md btn-primary">Speichern</button>
-        </div>
-      </div>
     </div>
 
     <!-- Export Modal -->

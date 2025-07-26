@@ -1,6 +1,6 @@
 import { fetchAndParse } from './utils.js';
 
-export function initQuestions({ openMoveModal, updateOpenCount, showEditor }) {
+export function initQuestions({ updateOpenCount, showEditor }) {
   const tabOpen = document.getElementById('tab-open');
   const tabAnswered = document.getElementById('tab-answered');
   const openList = document.getElementById('open-list');
@@ -208,33 +208,50 @@ export function initQuestions({ openMoveModal, updateOpenCount, showEditor }) {
         const div = document.createElement('div');
         div.className = 'border border-[var(--border-color)] p-4 rounded-lg';
         const form = document.createElement('form');
+        
+        let answerValue = p.answer || '';
+        if (p.HochschuhlABC && p.HochschuhlABC.headline && p.HochschuhlABC.text) {
+          answerValue = `${p.HochschuhlABC.headline}<br><br>${p.HochschuhlABC.text}`;
+        }
+
         form.innerHTML = `
           <p class="mb-2 font-medium">${p.question}</p>
           <input type="hidden" name="question" value="${p.question}">
-          <input name="answer" class="border border-[var(--input-border)] p-2 w-full mb-2 rounded-md" value="${p.answer}" required>
+          <div class="border border-gray-300 p-2 w-full mb-2 rounded-md">${answerValue}</div>
           <div class="flex space-x-2">
-            <button class="btn-primary px-4 py-2 rounded-md" type="submit">Aktualisieren</button>
-            <button type="button" class="btn-secondary px-4 py-2 rounded-md move-btn">In Wissen verschieben</button>
+            <button type="button" class="btn-secondary px-4 py-2 rounded-md edit-again-btn">erneut Bearbeiten</button>
           </div>
         `;
-        form.addEventListener('submit', async e => {
-          e.preventDefault();
-          const data = { question: p.question, answer: form.answer.value };
-          try {
-            const resp = await fetch('/api/admin/update', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data),
-            });
-            if (!resp.ok) {
-              console.error('Answer update failed:', await resp.json());
-            }
-          } catch (err) {
-            console.error('Answer update error:', err);
+        
+        form.querySelector('.edit-again-btn').addEventListener('click', () => {
+          document.getElementById('question-edit-label').textContent = p.question;
+          document.getElementById('question-edit-id').value = p.id;
+          
+          const translationEl = document.getElementById('question-edit-translation');
+          if (p.translation) {
+              translationEl.textContent = p.translation;
+              translationEl.style.display = 'block';
+          } else {
+              translationEl.style.display = 'none';
           }
-        });
-        form.querySelector('.move-btn').addEventListener('click', () => {
-          openMoveModal(p.question, form.answer.value);
+
+          const answeredInDiv = document.getElementById('question-answered-in');
+          if (p.HochschuhlABC && p.HochschuhlABC.headline) {
+              answeredInDiv.style.display = 'block';
+              answeredInDiv.textContent = `Beantwortet in: ${p.HochschuhlABC.headline}`;
+          } else {
+              answeredInDiv.style.display = 'none';
+              answeredInDiv.textContent = '';
+          }
+          
+          const markAsAnsweredBtn = document.getElementById('mark-as-answered-btn');
+          markAsAnsweredBtn.disabled = true;
+          markAsAnsweredBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+          markAsAnsweredBtn.classList.remove('btn-primary');
+
+          document.getElementById('question-edit-banner').classList.remove('hidden');
+          showEditor();
+          document.getElementById('headline-input').dispatchEvent(new Event('input'));
         });
         div.appendChild(form);
         answeredList.appendChild(div);
