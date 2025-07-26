@@ -353,4 +353,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   aiResponseClose.addEventListener('click', () => {
     aiResponseModal.classList.add('hidden');
   });
+
+  const cancelEditBtn = document.getElementById('cancel-edit-question');
+  cancelEditBtn.addEventListener('click', () => {
+    document.getElementById('question-edit-banner').classList.add('hidden');
+  });
 });
