@@ -113,7 +113,6 @@ module.exports = (adminAuth) => {
       await Questions.update(
         {
           linked_article_id: articleId,
-          answered: true,
           user: req.user.username
         },
         {

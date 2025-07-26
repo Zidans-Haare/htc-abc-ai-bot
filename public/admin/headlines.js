@@ -150,7 +150,7 @@ async function saveEntry() {
         // Update banner text
         const answeredInDiv = document.getElementById('question-answered-in');
         if (answeredInDiv) {
-            answeredInDiv.textContent = `beantwortet in: ${payload.headline}`;
+            answeredInDiv.innerHTML = `<strong>Beantwortet in:</strong> ${payload.headline}`;
             answeredInDiv.style.display = 'block';
         }
       }
