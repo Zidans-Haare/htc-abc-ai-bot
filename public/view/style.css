@@ -17,6 +17,12 @@ h1 {
     font-size: 1.8rem;
     margin-bottom: 0.5rem;
 }
+h2 {
+    margin-bottom: 0.2rem;
+}
+h3 {
+    margin-bottom: 0.1rem;
+}
 p {
     color: #4a4a4a; /* 90% gray */
     margin-top: 0;

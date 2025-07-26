@@ -773,3 +773,6 @@ input:checked + .slider:before { transform: translateX(22px); }
     padding-bottom: 1em;
     /* border-bottom: 1px solid var(--border-color); */
 }
+.bubble ul {
+    list-style-type: none;
+}
