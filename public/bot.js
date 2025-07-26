@@ -13,9 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
         init() {
             loadSettings();
             this.settings = getSettings();
-            if(autoDeleteOldChats(this.settings)) {
-                this.renderHistory();
-            }
+            autoDeleteOldChats(this.settings);
+            this.renderHistory();
             
             updateTime();
             setInterval(updateTime, 1000 * 60);

@@ -756,3 +756,20 @@ input:checked + .slider:before { transform: translateX(22px); }
     outline-offset: 2px;
     border-radius: 4px;
 }
+/* --- Markdown Rendering --- */
+.bubble ul, .bubble ol {
+    padding-left: 20px;
+}
+
+.bubble ul + ul,
+.bubble ol + ol,
+.bubble ul + ol,
+.bubble ol + ul,
+.bubble hr + ul,
+.bubble hr + ol,
+.bubble p + ul,
+.bubble p + ol {
+    /* margin-bottom: 1em; */
+    padding-bottom: 1em;
+    /* border-bottom: 1px solid var(--border-color); */
+}
