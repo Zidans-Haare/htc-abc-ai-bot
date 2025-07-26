@@ -201,10 +201,14 @@
             <div>
                 <span class="font-semibold text-blue-800">Frage wird bearbeitet:</span>
                 <span id="question-edit-label" class="text-blue-800"></span>
+                <div id="question-edit-translation" class="text-sm mt-1" style="color: var(--primary-text); display: none;"></div>
                 <input type="hidden" id="question-edit-id">
             </div>
-            <button id="cancel-edit-question" class="text-blue-500 hover:text-blue-700 font-bold">Abbrechen &times;</button>
-            <button id="test-ai-response" class="px-4 py-2 rounded-md text-white" style="background-color: green;">Test</button>
+            <div class="flex items-center space-x-2">
+                <button id="cancel-edit-question" class="font-bold px-4 py-2 rounded-md" style="background-color: transparent; color: cornflowerblue; border: 1px solid cornflowerblue;">Abbrechen &times;</button>
+                <button id="test-ai-response" class="px-4 py-2 rounded-md text-white" style="background-color: green;">Test</button>
+                <button id="mark-as-answered-btn" class="px-4 py-2 rounded-md btn-primary" disabled>Beantwortet</button>
+            </div>
         </div>
         <div class="p-4 border-b border-[var(--border-color)] flex space-x-4 items-center">
           <input id="headline-input" class="p-2 border border-[var(--input-border)] rounded flex-1 bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Überschrift">

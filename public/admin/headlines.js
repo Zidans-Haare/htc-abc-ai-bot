@@ -38,11 +38,8 @@ function setSaveButtonState(enabled) {
 function checkForChanges() {
   const currentHeadline = headlineInput.value;
   const currentText = editor.getMarkdown();
-  if (currentHeadline !== originalHeadline || currentText !== originalText) {
-    setSaveButtonState(true);
-  } else {
-    setSaveButtonState(false);
-  }
+  const hasChanged = currentHeadline !== originalHeadline || currentText !== originalText;
+  setSaveButtonState(hasChanged);
 }
 
 async function loadHeadlines() {

@@ -77,5 +77,30 @@ module.exports = (adminAuth) => {
     }
   });
 
+  router.post('/mark-answered', adminAuth, async (req, res) => {
+    const { question } = req.body || {};
+    if (!question) {
+      return res.status(400).json({ error: 'question required' });
+    }
+    try {
+      const [affectedRows] = await Questions.update(
+        {
+          answered: true,
+          user: req.user.username
+        },
+        { where: { question: question } }
+      );
+
+      if (affectedRows === 0) {
+        return res.status(404).json({ message: 'Question not found.' });
+      }
+
+      res.json({ success: true, message: 'Question marked as answered.' });
+    } catch (err) {
+      console.error('Failed to mark question as answered:', err);
+      res.status(500).json({ error: 'Failed to mark question as answered' });
+    }
+  });
+
   return router;
 };

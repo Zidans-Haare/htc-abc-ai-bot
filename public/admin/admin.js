@@ -323,6 +323,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         for (const line of lines) {
             if (line.startsWith('data: ')) {
                 const jsonString = line.substring(6);
+                if (jsonString === '[DONE]') {
+                    continue;
+                }
                 try {
                     const json = JSON.parse(jsonString);
                     if (json.token) {
@@ -335,6 +338,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
       }
+      // Enable the button after the test is complete
+      const markAsAnsweredBtn = document.getElementById('mark-as-answered-btn');
+      markAsAnsweredBtn.disabled = false;
+      markAsAnsweredBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+      markAsAnsweredBtn.classList.add('btn-primary');
 
     } catch (error) {
       aiResponse.textContent = 'Fehler beim Abrufen der AI-Antwort.';

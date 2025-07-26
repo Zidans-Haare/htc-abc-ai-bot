@@ -9,8 +9,39 @@ export function initQuestions({ openMoveModal, updateOpenCount, showEditor }) {
   const deleteSelectedBtn = document.getElementById('delete-selected');
   const openCountSpan = document.getElementById('open-count');
   const btnEditQuestions = document.getElementById('btn-edit-questions');
+  const markAsAnsweredBtn = document.getElementById('mark-as-answered-btn');
 
   let selectedQuestions = new Set();
+
+  async function handleMarkAsAnswered() {
+    const questionId = document.getElementById('question-edit-id').value;
+
+    if (!questionId) {
+        alert('Keine Frage zum Markieren ausgewählt.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/admin/mark-answered', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: questionId })
+        });
+
+        if (response.ok) {
+            // alert('Frage als beantwortet markiert.');
+            document.getElementById('question-edit-banner').classList.add('hidden');
+            loadOpen();
+            loadAnswered();
+        } else {
+            const error = await response.json();
+            alert(`Fehler: ${error.message}`);
+        }
+    } catch (error) {
+        console.error('Fehler beim Markieren als beantwortet:', error);
+        alert('Ein unerwarteter Fehler ist aufgetreten.');
+    }
+  }
 
   async function loadOpen() {
     openList.innerHTML = '';
@@ -103,8 +134,25 @@ export function initQuestions({ openMoveModal, updateOpenCount, showEditor }) {
         editButton.addEventListener('click', () => {
             document.getElementById('question-edit-label').textContent = q.question;
             document.getElementById('question-edit-id').value = q.question;
+            
+            const translationEl = document.getElementById('question-edit-translation');
+            if (q.translation) {
+                translationEl.textContent = q.translation;
+                translationEl.style.display = 'block';
+            } else {
+                translationEl.style.display = 'none';
+            }
+
+            // Disable the button initially
+            const markAsAnsweredBtn = document.getElementById('mark-as-answered-btn');
+            markAsAnsweredBtn.disabled = true;
+            markAsAnsweredBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+            markAsAnsweredBtn.classList.remove('btn-primary');
+
             document.getElementById('question-edit-banner').classList.remove('hidden');
             showEditor();
+            // Manually trigger change check to set initial button states
+            document.getElementById('headline-input').dispatchEvent(new Event('input'));
         });
 
         div.appendChild(form);
@@ -229,6 +277,8 @@ export function initQuestions({ openMoveModal, updateOpenCount, showEditor }) {
 
   // Initial state
   showOpen();
+
+  markAsAnsweredBtn.addEventListener('click', handleMarkAsAnswered);
 
   return { loadOpen, loadAnswered };
 }
