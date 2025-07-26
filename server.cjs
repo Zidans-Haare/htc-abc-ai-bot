@@ -170,6 +170,11 @@ app.use('/api/feedback', feedbackController);
 // Mount admin routes
 app.use('/api', adminController(auth.getSession, logAction));
 
+const viewController = require("./controllers/viewController.cjs");
+
+// View route
+app.get("/api/view/articles", viewController.getPublishedArticles);
+
 // Handle favicon.ico
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 

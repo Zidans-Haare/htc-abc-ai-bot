@@ -294,8 +294,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         body: JSON.stringify({ prompt: question }),
       });
-      const data = await response.json();
-      aiResponse.textContent = data.response;
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      aiResponse.textContent = ''; // Clear previous content
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process buffer line by line
+        let boundary = buffer.lastIndexOf('\n');
+        if (boundary === -1) continue; // Wait for a full line
+
+        const lines = buffer.substring(0, boundary).split('\n');
+        buffer = buffer.substring(boundary + 1);
+
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                const jsonString = line.substring(6);
+                try {
+                    const json = JSON.parse(jsonString);
+                    if (json.token) {
+                        aiResponse.textContent += json.token;
+                    }
+                } catch (e) {
+                    console.error('Failed to parse stream chunk:', e, 'Chunk:', jsonString);
+                }
+            }
+        }
+      }
+
     } catch (error) {
       aiResponse.textContent = 'Fehler beim Abrufen der AI-Antwort.';
       console.error('Error fetching AI response:', error);
