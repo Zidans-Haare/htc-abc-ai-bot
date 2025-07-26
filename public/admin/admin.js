@@ -5,6 +5,7 @@ import { initUsers, loadUsers } from './users.js';
 import { initArchive, loadArchive } from './archive.js';
 import { initExport } from './export.js';
 import { setupFeedback } from './feedback.js';
+import { renderMarkup } from '../js/markup.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -301,8 +302,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      aiResponse.textContent = ''; // Clear previous content
       let buffer = '';
+      let fullResponse = '';
+      aiResponse.innerHTML = ''; // Clear previous content
 
       while (true) {
         const { done, value } = await reader.read();
@@ -324,7 +326,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 try {
                     const json = JSON.parse(jsonString);
                     if (json.token) {
-                        aiResponse.textContent += json.token;
+                        fullResponse += json.token;
+                        aiResponse.innerHTML = renderMarkup(fullResponse);
                     }
                 } catch (e) {
                     console.error('Failed to parse stream chunk:', e, 'Chunk:', jsonString);

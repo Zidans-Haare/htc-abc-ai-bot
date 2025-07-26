@@ -1,4 +1,5 @@
 import { addMessage, showToast } from './ui.js';
+import { renderMarkup } from './markup.js';
 
 export async function sendMsg(app, promptText) {
     const txt = typeof promptText === 'string' ? promptText : document.getElementById('chat-input').value.trim();
@@ -105,7 +106,7 @@ export async function sendMsg(app, promptText) {
                     
                     if (data.token) {
                         fullResponse += data.token;
-                        aiMessageBubble.querySelector('span').innerHTML = fullResponse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                        aiMessageBubble.querySelector('span').innerHTML = renderMarkup(fullResponse);
                         app.scrollToBottom();
                     }
                 }

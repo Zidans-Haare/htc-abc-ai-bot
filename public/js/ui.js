@@ -1,4 +1,5 @@
 import { i18n, i18n_feedback } from './config.js';
+import { renderMarkup } from './markup.js';
 
 // --- DOM Element References ---
 const messagesEl = document.getElementById('messages');
@@ -80,7 +81,7 @@ export function addMessage(text, isUser, timestamp, copyable = false, save = tru
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
     
-    bubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    bubble.innerHTML = renderMarkup(text);
 
     if (!isUser && copyable) {
         const c = document.createElement('span');

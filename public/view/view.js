@@ -1,3 +1,5 @@
+import { renderMarkup } from '../js/markup.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
     const container = document.getElementById('articles-container');
 
@@ -20,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             headline.textContent = article.headline;
 
             const content = document.createElement('p');
-            content.textContent = article.content;
+            content.innerHTML = renderMarkup(article.content);
 
             const separator = document.createElement('hr');
 
