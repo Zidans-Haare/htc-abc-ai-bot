@@ -134,6 +134,9 @@ async function generateResponse(req, res) {
       
       If multiple persons are responsible, briefly explain the difference between them and provide full contact data for each.
       
+      If there are diverging Answers for long and short term students, and the user did not yet specify their status, 
+      ask for clarification and point out the difference.
+
       Answer in the language of the user prompt, or the language the user wishes.
 
 
