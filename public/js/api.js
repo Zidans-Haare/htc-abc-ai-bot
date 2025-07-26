@@ -25,28 +25,6 @@ export async function sendMsg(app, promptText) {
     let aiMessageBubble;
     let fullResponse = '';
     let currentConversationId = app.conversationId;
-    const wordQueue = [];
-    let isRendering = false;
-    let streamEnded = false;
-
-    function renderWords() {
-        if (wordQueue.length === 0) {
-            isRendering = false;
-            if (streamEnded) {
-                finalizeMessage();
-            }
-            return;
-        }
-        isRendering = true;
-        
-        const word = wordQueue.shift();
-        fullResponse += word;
-        aiMessageBubble.querySelector('span').innerHTML = fullResponse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-        app.scrollToBottom();
-
-        const delay = word.includes('\n') ? 150 : 80;
-        setTimeout(renderWords, delay);
-    }
 
     function finalizeMessage() {
         if (aiMessageBubble) {
@@ -81,19 +59,11 @@ export async function sendMsg(app, promptText) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let firstChunk = true;
-        let tokenBuffer = '';
 
         while (true) {
             const { done, value } = await reader.read();
             if (done) {
-                streamEnded = true;
-                if (tokenBuffer) {
-                    wordQueue.push(tokenBuffer);
-                    if (!isRendering) renderWords();
-                }
-                if (!isRendering) {
-                     finalizeMessage();
-                }
+                finalizeMessage();
                 break;
             }
 
@@ -134,17 +104,9 @@ export async function sendMsg(app, promptText) {
                     }
                     
                     if (data.token) {
-                        tokenBuffer += data.token;
-                        const parts = tokenBuffer.split(/(\s+)/);
-                        if (parts.length > 1) {
-                            for (let i = 0; i < parts.length - 1; i++) {
-                                wordQueue.push(parts[i]);
-                            }
-                            tokenBuffer = parts[parts.length - 1];
-                            if (!isRendering) {
-                                renderWords();
-                            }
-                        }
+                        fullResponse += data.token;
+                        aiMessageBubble.querySelector('span').innerHTML = fullResponse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                        app.scrollToBottom();
                     }
                 }
             }

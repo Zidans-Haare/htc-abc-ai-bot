@@ -1,7 +1,7 @@
 import { CHAT_HISTORY_KEY } from './config.js';
 import { renderChatHistory as renderHistoryUI } from './ui.js';
 
-function getChatHistory() {
+export function getChatHistory() {
     const history = localStorage.getItem(CHAT_HISTORY_KEY);
     return history ? JSON.parse(history) : [];
 }
