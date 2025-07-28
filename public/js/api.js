@@ -1,5 +1,6 @@
 import { addMessage, showToast } from './ui.js';
 import { renderMarkup } from './markup.js';
+import { getChatById } from './history.js';
 
 export async function sendMsg(app, promptText) {
     const txt = typeof promptText === 'string' ? promptText : document.getElementById('chat-input').value.trim();
@@ -132,6 +133,8 @@ export async function sendFeedback(app) {
     const feedbackText = document.getElementById('feedback-input').value.trim();
     const email = document.getElementById('feedback-email').value.trim();
     const captcha = document.getElementById('captcha-input').value;
+    const historySelect = document.getElementById('feedback-chat-history');
+    const selectedHistoryId = historySelect.value;
 
     if (!feedbackText) {
         showToast("Bitte geben Sie Ihr Feedback ein.");
@@ -144,17 +147,31 @@ export async function sendFeedback(app) {
         return;
     }
 
+    let attachedChatHistory = null;
+    if (selectedHistoryId) {
+        const chat = getChatById(selectedHistoryId);
+        if (chat && chat.messages) {
+            attachedChatHistory = chat.messages.map(msg => {
+                const prefix = msg.isUser ? 'User' : 'Assistant';
+                return `${prefix}: ${msg.text}`;
+            }).join('\n\n');
+        }
+    }
+
     try {
+        const payload = {
+            feedback_text: feedbackText,
+            email: email,
+            conversation_id: app.conversationId,
+            captcha: captcha,
+            expected_captcha: app.expectedCaptcha,
+            attached_chat_history: attachedChatHistory
+        };
+
         const response = await fetch('/api/feedback', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                feedback_text: feedbackText,
-                email: email,
-                conversation_id: app.conversationId,
-                captcha: captcha,
-                expected_captcha: app.expectedCaptcha
-            })
+            body: JSON.stringify(payload)
         });
 
         if (response.ok) {
@@ -162,6 +179,7 @@ export async function sendFeedback(app) {
             app.closeFeedback();
             document.getElementById('feedback-input').value = '';
             document.getElementById('feedback-email').value = '';
+            historySelect.value = '';
         } else {
             const errorData = await response.json();
             showToast(`Fehler: ${errorData.message || 'Feedback konnte nicht gesendet werden.'}`);

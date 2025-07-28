@@ -147,6 +147,10 @@ const Feedback = sequelize.define('Feedback', {
   timestamp: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  attached_chat_history: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'feedback',

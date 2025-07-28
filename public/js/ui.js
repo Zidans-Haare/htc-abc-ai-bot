@@ -1,5 +1,6 @@
 import { i18n, i18n_feedback } from './config.js';
 import { renderMarkup } from './markup.js';
+import { getChatHistory } from './history.js';
 
 // --- DOM Element References ---
 const messagesEl = document.getElementById('messages');
@@ -339,4 +340,22 @@ export function generateCaptcha() {
     document.getElementById('captcha-question').textContent = `${num1} + ${num2} = ?`;
     document.getElementById('captcha-input').value = '';
     return expectedCaptcha;
+}
+
+export function populateChatHistoryDropdown() {
+    const history = getChatHistory();
+    const select = document.getElementById('feedback-chat-history');
+    if (!select) return;
+
+    // Clear existing options except the first one
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+
+    history.forEach(chat => {
+        const option = document.createElement('option');
+        option.value = chat.id;
+        option.textContent = chat.title;
+        select.appendChild(option);
+    });
 }

@@ -10,6 +10,11 @@ function saveChatHistory(history) {
     localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(history));
 }
 
+export function getChatById(id) {
+    const history = getChatHistory();
+    return history.find(chat => chat.id === id);
+}
+
 export function deleteAllChats(app) {
     if (confirm("Möchten Sie wirklich alle Chatverläufe unwiderruflich löschen?")) {
         localStorage.removeItem(CHAT_HISTORY_KEY);

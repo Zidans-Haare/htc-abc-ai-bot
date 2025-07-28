@@ -22,13 +22,19 @@ export function setupFeedback(userRole) {
         }
 
         feedbackList.innerHTML = feedbackData.map(item => `
-            <div class="p-4 bg-white rounded shadow-md">
+            <div class="p-4 bg-white rounded shadow-md mb-4">
                 <p class="text-gray-800">${item.feedback_text}</p>
                 <div class="text-sm text-gray-500 mt-2">
                     <span>${new Date(item.timestamp).toLocaleString()}</span>
                     ${item.email ? `| <span>Email: ${item.email}</span>` : ''}
                     ${item.conversation_id ? `| <span>Conversation ID: ${item.conversation_id}</span>` : ''}
                 </div>
+                ${item.attached_chat_history ? `
+                    <details class="mt-4">
+                        <summary class="cursor-pointer text-blue-600 hover:underline">Angehängten Chat-Verlauf anzeigen</summary>
+                        <pre class="mt-2 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap">${item.attached_chat_history}</pre>
+                    </details>
+                ` : ''}
             </div>
         `).join('');
     }
