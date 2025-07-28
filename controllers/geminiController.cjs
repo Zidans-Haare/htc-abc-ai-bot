@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { HochschuhlABC, Questions } = require("./db.cjs");
+const { HochschuhlABC, Questions, Images } = require("./db.cjs");
 const { getCached } = require("../utils/cache");
 const { estimateTokens, isWithinTokenLimit } = require("../utils/tokenizer");
 const { summarizeConversation } = require("../utils/summarizer");
@@ -110,6 +110,11 @@ async function generateResponse(req, res) {
     });
     const hochschulContent = entries.map(entry => `## ${entry.headline}\n\n${entry.text}\n\n`).join("");
 
+    const images = await Images.findAll({
+      attributes: ["filename", "description"],
+    });
+    const imageList = images.map(image => `image_name: ${image.filename} description: ${image.description.replace(/\n/g, ' ')}`).join("\n\n");
+
     const historyText = messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n");
     const fullTextForTokenCheck = `**Inhalt des Hochschul ABC (2025)**:\n${hochschulContent}\n\n**Gesprächsverlauf**:\n${historyText}\n\nBenutzerfrage: ${prompt}`;
 
@@ -147,7 +152,7 @@ async function generateResponse(req, res) {
       ${imageList}
 
       If and image is in the Image List, that helps to answer the user question, add the image link to the answer. 
-      format the url in markdown: ![](url)
+      format the url in markdown: "\n\n ![](/uploads/<image_name>) \n\n"
 
 
 
