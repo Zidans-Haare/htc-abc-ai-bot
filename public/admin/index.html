@@ -366,6 +366,19 @@
             </div>
         </div>
     </div>
+
+    <!-- Edit Image Description Modal -->
+    <div id="edit-image-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+            <h3 class="text-lg font-medium mb-4">Bildbeschreibung bearbeiten</h3>
+            <img id="edit-image-preview" src="" alt="Vorschau" class="w-full h-64 object-contain mb-4 rounded-md bg-gray-100">
+            <textarea id="edit-image-description-input" class="w-full p-2 border border-[var(--input-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" rows="4"></textarea>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button id="edit-image-cancel" class="px-4 py-2 rounded-md btn-secondary">Abbrechen</button>
+                <button id="edit-image-save" class="px-4 py-2 rounded-md btn-primary">Speichern</button>
+            </div>
+        </div>
+    </div>
   </main>
 </body>
 </html>

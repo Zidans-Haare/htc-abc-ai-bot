@@ -168,37 +168,58 @@ function handleCopyUrl(event) {
     });
 }
 
-async function handleEditImage(event) {
+function handleEditImage(event) {
     const button = event.currentTarget;
     const filename = button.dataset.filename;
     const currentDescription = button.dataset.description;
 
-    const newDescription = prompt('Neue Beschreibung eingeben:', currentDescription);
+    const modal = document.getElementById('edit-image-modal');
+    const preview = document.getElementById('edit-image-preview');
+    const descriptionInput = document.getElementById('edit-image-description-input');
+    const cancelButton = document.getElementById('edit-image-cancel');
+    const saveButton = document.getElementById('edit-image-save');
 
-    if (newDescription === null || newDescription.trim() === currentDescription) {
-        // User cancelled or didn't change the description
-        return;
-    }
+    preview.src = `/uploads/${filename}`;
+    descriptionInput.value = currentDescription;
 
-    try {
-        const response = await fetch(`/api/admin/images/${filename}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ description: newDescription.trim() })
-        });
+    modal.classList.remove('hidden');
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Update fehlgeschlagen');
+    const closeAndCleanup = () => {
+        modal.classList.add('hidden');
+        saveButton.onclick = null; // Remove the specific listener
+    };
+
+    cancelButton.onclick = closeAndCleanup;
+
+    saveButton.onclick = async () => {
+        const newDescription = descriptionInput.value.trim();
+        if (newDescription === currentDescription) {
+            closeAndCleanup();
+            return;
         }
 
-        await loadImages(); // Refresh the gallery
-    } catch (error) {
-        console.error('Error updating image description:', error);
-        alert(`Fehler beim Aktualisieren der Beschreibung: ${error.message}`);
-    }
+        try {
+            const response = await fetch(`/api/admin/images/${filename}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ description: newDescription })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Update fehlgeschlagen');
+            }
+
+            await loadImages(); // Refresh the gallery
+        } catch (error) {
+            console.error('Error updating image description:', error);
+            alert(`Fehler beim Aktualisieren der Beschreibung: ${error.message}`);
+        } finally {
+            closeAndCleanup();
+        }
+    };
 }
 
 async function handleDeleteImage(event) {
