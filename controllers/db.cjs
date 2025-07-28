@@ -178,4 +178,4 @@ Questions.belongsTo(HochschuhlABC, { foreignKey: 'linked_article_id' });
 // sequelize.sync({ alter: true })
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Bilder };
+module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images };

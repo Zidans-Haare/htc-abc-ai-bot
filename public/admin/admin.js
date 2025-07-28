@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
+    imagesView.classList.add('hidden');
     updateButtonStyles(editorBtn);
   }
 
@@ -94,6 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
+    imagesView.classList.add('hidden');
     updateButtonStyles(questionsBtn);
   }
   
@@ -107,6 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     questionsView.classList.add('hidden');
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
+    imagesView.classList.add('hidden');
     updateButtonStyles(archiveBtn);
     loadArchive();
   }
@@ -117,6 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     questionsView.classList.add('hidden');
     archiveView.classList.add('hidden');
     feedbackView.classList.add('hidden');
+    imagesView.classList.add('hidden');
     updateButtonStyles(userBtn);
     loadUsers();
   }
@@ -127,15 +131,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     questionsView.classList.add('hidden');
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
+    imagesView.classList.add('hidden');
     updateButtonStyles(feedbackBtn);
   }
 
+  function showImages() {
+    imagesView.classList.remove('hidden');
+    editorView.classList.add('hidden');
+    questionsView.classList.add('hidden');
+    archiveView.classList.add('hidden');
+    userView.classList.add('hidden');
+    feedbackView.classList.add('hidden');
+    updateButtonStyles(imagesBtn);
+  }
+
   function updateButtonStyles(activeButton) {
-    const buttons = [editorBtn, questionsBtn, archiveBtn, userBtn, feedbackBtn, exportBtn];
+    const buttons = [editorBtn, questionsBtn, archiveBtn, userBtn, feedbackBtn, exportBtn, imagesBtn];
     buttons.forEach(btn => {
-      btn.classList.remove('active');
+      if (btn) btn.classList.remove('active');
     });
-    activeButton.classList.add('active');
+    if (activeButton) activeButton.classList.add('active');
   }
 
   // --- Role-based UI Setup ---
@@ -196,6 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       archiveView.classList.add('hidden');
       userView.classList.add('hidden');
       feedbackView.classList.add('hidden');
+      imagesView.classList.add('hidden');
       break;
   }
 

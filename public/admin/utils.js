@@ -5,21 +5,26 @@
  * @returns {Promise<any>} - The parsed JSON response.
  */
 export async function fetchAndParse(url, options = {}) {
-  const res = await fetch(url, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-  });
+  const res = await fetch(url, options); // No need to set headers here, overrideFetch does it
   if (!res.ok) {
-    let errorMessage = 'Unknown error';
+    let errorMessage;
     try {
-      const error = await res.json();
-      errorMessage = error.error || errorMessage;
+      // Try to parse JSON, but handle cases where body might be empty or not JSON
+      const errorBody = await res.text();
+      if (errorBody) {
+        const errorJson = JSON.parse(errorBody);
+        errorMessage = errorJson.error || errorJson.message || 'Server error';
+      } else {
+        errorMessage = `HTTP error ${res.status}`;
+      }
     } catch (e) {
-      errorMessage = await res.text() || errorMessage;
+      errorMessage = `HTTP error ${res.status} - Could not parse error response.`;
     }
-    throw new Error(`HTTP error ${res.status}: ${errorMessage}`);
+    throw new Error(errorMessage);
   }
-  return res.json();
+  // If response is OK, but has no content, return null.
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
 /**
@@ -29,14 +34,29 @@ export async function fetchAndParse(url, options = {}) {
 export function overrideFetch() {
   const originalFetch = window.fetch.bind(window);
   window.fetch = async (input, init = {}) => {
-    init.credentials = 'include'; // Ensure credentials are always included
+    // Set default headers if they are not present
+    if (!init.headers) {
+        init.headers = {};
+    }
+    // Set credentials and Content-Type if not already set
+    init.credentials = init.credentials || 'include';
+    if (!init.headers['Content-Type'] && !(init.body instanceof FormData)) {
+      init.headers['Content-Type'] = 'application/json';
+    }
+
     const res = await originalFetch(input, init);
+    
     if (res.status === 401) {
       console.error('Unauthorized request:', input);
       sessionStorage.removeItem('userRole');
       alert('Session abgelaufen, bitte erneut anmelden');
       window.location.href = '/login/login.html';
+      // Return a new promise that will never resolve, to stop further processing
+      return new Promise(() => {}); 
     }
+    
+    // For other errors, we need to be able to read the body again later.
+    // So we clone the response. The original response can be read by the caller.
     return res;
   };
 }
