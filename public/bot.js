@@ -22,6 +22,40 @@ document.addEventListener('DOMContentLoaded', () => {
             this.startNewChat();
             setupUI(this);
             this.setupSuggestionListeners();
+            this.loadSuggestions();
+        },
+
+        async loadSuggestions() {
+            const suggestionsContainer = document.getElementById('prompt-suggestions');
+            if (!suggestionsContainer) return;
+
+            try {
+                const response = await fetch('/api/suggestions');
+                if (!response.ok) throw new Error('Failed to load suggestions');
+                
+                const suggestions = await response.json();
+                
+                suggestionsContainer.innerHTML = ''; // Clear existing suggestions
+                
+                suggestions.forEach(suggestion => {
+                    const card = document.createElement('div');
+                    card.className = 'suggestion-card';
+                    
+                    const title = document.createElement('h4');
+                    title.textContent = suggestion.headline;
+                    
+                    const text = document.createElement('p');
+                    text.textContent = suggestion.text;
+                    
+                    card.appendChild(title);
+                    card.appendChild(text);
+                    suggestionsContainer.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Error loading suggestions:', error);
+                suggestionsContainer.innerHTML = '<p style="color: var(--secondary-text); text-align: center;">Vorschläge konnten nicht geladen werden.</p>';
+            }
         },
 
         send(promptText) {
@@ -30,9 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addMessage(text, isUser, timestamp, copyable = false, save = true) {
             addMessage(text, isUser, timestamp, copyable, save);
-            if (save && this.settings.saveHistory) {
-                saveMessageToHistory(this.conversationId, text, isUser, text);
-            }
         },
 
         startNewChat() {
@@ -54,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             this.useFirstAvatar = true;
             startWelcomeAnimation();
-            this.setupSuggestionListeners();
             
             document.querySelectorAll('.history-item.active').forEach(item => item.classList.remove('active'));
         },
@@ -122,11 +152,11 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         setupSuggestionListeners() {
-            const suggestions = document.getElementById('prompt-suggestions');
-            if (suggestions) {
-                suggestions.addEventListener('click', (e) => {
+            const suggestionsContainer = document.getElementById('prompt-suggestions');
+            if (suggestionsContainer) {
+                suggestionsContainer.addEventListener('click', (e) => {
                     const card = e.target.closest('.suggestion-card');
-                    if (card) {
+                    if (card && card.contains(e.target)) {
                         const promptText = card.querySelector('p').textContent;
                         this.send(promptText);
                     }

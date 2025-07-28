@@ -49,6 +49,10 @@ export function loadChat(id, app) {
     if (welcomeMessage) {
         welcomeMessage.remove();
     }
+    const suggestions = document.getElementById('prompt-suggestions');
+    if (suggestions) {
+        suggestions.style.display = 'none';
+    }
     
     app.conversationId = chat.id;
     document.getElementById('messages').innerHTML = '';

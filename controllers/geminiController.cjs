@@ -231,4 +231,27 @@ async function generateResponse(req, res) {
   }
 }
 
-module.exports = { generateResponse };
+const { Sequelize } = require('sequelize');
+
+async function getSuggestions(req, res) {
+  try {
+    const suggestions = await HochschuhlABC.findAll({
+      where: { active: true, archived: null },
+      order: Sequelize.literal('RANDOM()'),
+      limit: 4,
+      attributes: ['headline', 'text'],
+    });
+
+    const formattedSuggestions = suggestions.map(s => ({
+      headline: s.headline,
+      text: s.text.substring(0, 100) + (s.text.length > 100 ? '...' : ''),
+    }));
+
+    res.json(formattedSuggestions);
+  } catch (error) {
+    console.error("Fehler beim Abrufen der Vorschläge:", error.message);
+    res.status(500).json({ error: "Vorschläge konnten nicht geladen werden" });
+  }
+}
+
+module.exports = { generateResponse, getSuggestions };
