@@ -79,7 +79,7 @@ async function logUnansweredQuestion(newQuestion) {
 
 async function generateResponse(req, res) {
   try {
-    const { prompt, conversationId } = req.body;
+    const { prompt, conversationId, timezoneOffset } = req.body;
     if (!prompt) {
       return res.status(400).json({ error: "Prompt ist erforderlich" });
     }
@@ -113,7 +113,7 @@ async function generateResponse(req, res) {
     const images = await Images.findAll({
       attributes: ["filename", "description"],
     });
-    const imageList = images.map(image => `image_name: ${image.filename} description: ${image.description.replace(/\n/g, ' ')}`).join("\n\n");
+    const imageList = images.map(image => `image_name: ${image.filename} description: ${image.description ? image.description.replace(/\n/g, ' ') : ''}`).join("\n\n");
 
     const historyText = messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n");
     const fullTextForTokenCheck = `**Inhalt des Hochschul ABC (2025)**:\n${hochschulContent}\n\n**Gesprächsverlauf**:\n${historyText}\n\nBenutzerfrage: ${prompt}`;
@@ -124,6 +124,32 @@ async function generateResponse(req, res) {
       console.log(`Summarized conversation, new message count: ${messages.length}`);
     }
 
+    const now = new Date();
+    const dateAndTime = `Current date and time in Dresden, Germany is ${now.toLocaleString('de-DE', { timeZone: 'Europe/Berlin', dateStyle: 'full', timeStyle: 'long' })}`;
+    
+    let timezoneInfo = '';
+    try {
+        // Get German offset in minutes from UTC
+        const germanOffsetString = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Berlin', timeZoneName: 'shortOffset' }).format(now);
+        const gmtMatch = germanOffsetString.match(/GMT([+-]\d+)/);
+        if (!gmtMatch) throw new Error("Could not parse German timezone offset.");
+        
+        const germanOffsetHours = parseInt(gmtMatch[1], 10);
+        const germanOffsetMinutes = germanOffsetHours * 60;
+
+        // Get user offset in minutes from UTC (it's inverted from the client)
+        const userOffsetMinutes = -timezoneOffset;
+
+        const offsetDifferenceHours = (userOffsetMinutes - germanOffsetMinutes) / 60;
+
+        if (Math.abs(offsetDifferenceHours) > 0) {
+            const direction = offsetDifferenceHours > 0 ? 'ahead of' : 'behind';
+            timezoneInfo = `The user's timezone is ${Math.abs(offsetDifferenceHours)} hours ${direction} German time. When answering questions about time, state the time in the user's local time and mention the difference.`;
+        }
+    } catch (e) {
+        console.error("Could not determine timezone offset:", e.message);
+        // Silently fail, timezoneInfo will be empty
+    }
     const fullPrompt = `
       --system prompt--
       You are a customer support agent dedicated to answering questions, resolving issues, 
@@ -132,6 +158,8 @@ async function generateResponse(req, res) {
       Ensure responses are concise, clear, and directly address the user's concerns. Try to answer to the point and be super helpful and positive.
       Escalate complex issues to human agents when necessary to ensure customer satisfaction.
     
+      ${dateAndTime}.
+      ${timezoneInfo}
 
       Contact data includes Name, Responsibility, Email, Phone number, Room, and talking hours. 
       Whenever you recommend a contact or advise to contact someone, provide complete contact data 
