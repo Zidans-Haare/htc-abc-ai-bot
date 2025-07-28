@@ -85,6 +85,15 @@
     #sidebar.collapsed .nav-link {
         justify-content: center;
     }
+    #sidebar.collapsed #btn-questions {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    #sidebar.collapsed #open-count {
+        margin-top: 4px;
+        margin-left: 5px;
+    }
     .custom-select-wrapper {
         position: relative;
         width: 100%;
@@ -134,10 +143,12 @@
             <i class="fa-solid fa-pen-to-square w-5 text-center"></i>
             <span class="sidebar-text">Editor</span>
         </a>
-        <a href="#" id="btn-questions" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
-            <i class="fa-solid fa-circle-question w-5 text-center"></i>
-            <span class="sidebar-text">Fragen</span>
-            <span id="open-count" class="ml-auto text-sm bg-red-500 text-white rounded-full px-2 sidebar-text">0</span>
+        <a href="#" id="btn-questions" class="nav-link hover:bg-[var(--content-bg)] flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-colors">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-circle-question w-5 text-center"></i>
+                <span class="sidebar-text">Fragen</span>
+            </div>
+            <span id="open-count" class="text-sm bg-red-500 text-white rounded-full px-2">0</span>
         </a>
         <a href="#" id="btn-archive" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
             <i class="fa-solid fa-box-archive w-5 text-center"></i>
