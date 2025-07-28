@@ -776,3 +776,10 @@ input:checked + .slider:before { transform: translateX(22px); }
 .bubble ul {
     list-style-type: none;
 }
+
+/* --- Desktop-spezifische Anpassungen --- */
+@media (min-width: 769px) {
+    #prompt-suggestions {
+        justify-content: center;
+    }
+}
