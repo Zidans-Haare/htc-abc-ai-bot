@@ -6,6 +6,7 @@ import { initArchive, loadArchive } from './archive.js';
 import { initExport } from './export.js';
 import { setupFeedback } from './feedback.js';
 import { renderMarkup } from '../js/markup.js';
+import { initBilder } from './bilder.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -39,12 +40,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const feedbackBtn = document.getElementById('btn-feedback');
   const exportBtn = document.getElementById('btn-export');
   const logoutBtn = document.getElementById('btn-logout');
+  const imagesBtn = document.getElementById('btn-images');
 
   const editorView = document.getElementById('editor-view');
   const questionsView = document.getElementById('questions-view');
   const archiveView = document.getElementById('archive-view');
   const userView = document.getElementById('user-view');
   const feedbackView = document.getElementById('feedback-view');
+  const bilderView = document.getElementById('bilder-view');
   
   const openCountSpan = document.getElementById('open-count');
   
@@ -144,6 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   archiveBtn.classList.add('hidden');
   userBtn.classList.add('hidden');
   feedbackBtn.classList.add('hidden');
+  if(imagesBtn) imagesBtn.classList.add('hidden');
 
   switch (userRole) {
     case 'admin':
@@ -152,12 +156,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       archiveBtn.classList.remove('hidden');
       userBtn.classList.remove('hidden');
       feedbackBtn.classList.remove('hidden');
+      if(imagesBtn) imagesBtn.classList.remove('hidden');
       
       editorBtn.addEventListener('click', showEditor);
       questionsBtn.addEventListener('click', showQuestions);
       archiveBtn.addEventListener('click', showArchive);
       userBtn.addEventListener('click', showUserAdmin);
       feedbackBtn.addEventListener('click', showFeedback);
+      if(imagesBtn) imagesBtn.addEventListener('click', showBilder);
       
       initUsers();
       showEditor();
@@ -166,10 +172,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       editorBtn.classList.remove('hidden');
       questionsBtn.classList.remove('hidden');
       archiveBtn.classList.remove('hidden');
+      if(imagesBtn) imagesBtn.classList.remove('hidden');
 
       editorBtn.addEventListener('click', showEditor);
       questionsBtn.addEventListener('click', showQuestions);
       archiveBtn.addEventListener('click', showArchive);
+      if(imagesBtn) imagesBtn.addEventListener('click', showBilder);
 
       showEditor();
       break;
@@ -208,6 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initArchive();
   initExport();
   setupFeedback();
+  initBilder();
   
   document.addEventListener('update-username', (e) => {
     const currentUserSpan = document.getElementById('current-user');

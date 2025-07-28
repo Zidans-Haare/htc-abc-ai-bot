@@ -150,6 +150,10 @@
             </div>
             <span id="open-count" class="text-sm bg-red-500 text-white rounded-full px-2">0</span>
         </a>
+        <a href="#" id="btn-images" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-image w-5 text-center"></i>
+            <span class="sidebar-text">Bilder</span>
+        </a>
         <a href="#" id="btn-archive" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
             <i class="fa-solid fa-box-archive w-5 text-center"></i>
             <span class="sidebar-text">Archiv</span>
@@ -266,6 +270,10 @@
         </div>
       </div>
       <div id="archive-list" class="space-y-4"></div>
+    </div>
+    <!-- Bilder View -->
+    <div id="bilder-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
+      <div id="bilder-list" class="space-y-4"></div>
     </div>
     <!-- Feedback View -->
     <div id="feedback-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">

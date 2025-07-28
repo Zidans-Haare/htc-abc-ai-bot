@@ -153,10 +153,29 @@ const Feedback = sequelize.define('Feedback', {
   timestamps: false
 });
 
+const Bilder = sequelize.define('Bilder', {
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    filename: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    }
+}, {
+    tableName: 'bilder',
+    timestamps: false
+});
+
 // Define associations
 Questions.belongsTo(HochschuhlABC, { foreignKey: 'linked_article_id' });
 
 // sequelize.sync({ alter: true })
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback };
+module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Bilder };
