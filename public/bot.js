@@ -30,9 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addMessage(text, isUser, timestamp, copyable = false, save = true) {
             addMessage(text, isUser, timestamp, copyable, save);
-            if (save && this.settings.saveHistory) {
-                saveMessageToHistory(this.conversationId, text, isUser, text);
-            }
         },
 
         startNewChat() {
@@ -54,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             this.useFirstAvatar = true;
             startWelcomeAnimation();
-            this.setupSuggestionListeners();
             
             document.querySelectorAll('.history-item.active').forEach(item => item.classList.remove('active'));
         },
@@ -121,11 +117,11 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         setupSuggestionListeners() {
-            const suggestions = document.getElementById('prompt-suggestions');
-            if (suggestions) {
-                suggestions.addEventListener('click', (e) => {
+            const suggestionsContainer = document.getElementById('prompt-suggestions');
+            if (suggestionsContainer) {
+                suggestionsContainer.addEventListener('click', (e) => {
                     const card = e.target.closest('.suggestion-card');
-                    if (card) {
+                    if (card && card.contains(e.target)) {
                         const promptText = card.querySelector('p').textContent;
                         this.send(promptText);
                     }

@@ -15,7 +15,8 @@ export async function sendMsg(app, promptText) {
     }
 
     const isNewChat = !app.conversationId;
-    addMessage(txt, true, new Date(), false, !isNewChat);
+    // Display the user's message immediately in the UI.
+    addMessage(txt, true, new Date());
 
     document.getElementById('chat-input').value = '';
     document.getElementById('chat-input').style.height = 'auto';
@@ -42,8 +43,8 @@ export async function sendMsg(app, promptText) {
         }
 
         if (app.settings.saveHistory) {
-            app.saveMessageToHistory(currentConversationId, txt, true);
-            app.saveMessageToHistory(currentConversationId, fullResponse, false);
+            // Save both user and AI message at the end of the stream
+            app.saveMessageToHistory(currentConversationId, txt, true, fullResponse);
         }
     }
 
