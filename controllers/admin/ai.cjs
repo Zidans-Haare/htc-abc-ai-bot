@@ -35,14 +35,29 @@ module.exports = (authMiddleware) => {
 
       const prompt = `
         Du bist ein Lektor für die Wissensdatenbank einer Hochschule.
-        Analysiere den folgenden Text eines neuen oder überarbeiteten Artikels.
+        Analysiere den folgenden Text und gib deine Antwort AUSSCHLIESSLICH als valides JSON-Objekt zurück.
 
-        Prüfe auf die folgenden drei Punkte:
-        1.  **Widersprüche und Dopplungen:** Vergleiche den Text mit dem folgenden Kontext aus bestehenden Artikeln. Gibt es inhaltliche Widersprüche oder signifikante inhaltliche Überschneidungen, die zu Dopplungen führen?
-        2.  **Rechtschreibung und Grammatik:** Korrigiere alle Rechtschreib- und Grammatikfehler.
-        3.  **Stil und Tonalität:** Stelle sicher, dass der Text in einem klaren, informativen und für Studierende geeigneten Ton verfasst ist.
+        **JSON-Schema:**
+        {
+          "correctedText": "string",
+          "corrections": [{ "original": "string", "corrected": "string", "reason": "string" }],
+          "suggestions": [{ "suggestion": "string", "reason": "string" }],
+          "contradictions": [{ "contradiction": "string", "reason": "string" }]
+        }
 
-        Gib deine Vorschläge in einer klaren, strukturierten Form zurück. Liste die gefundenen Probleme und deine Verbesserungsvorschläge auf.
+        **Analyseprozess:**
+        1.  **Rechtschreibung & Grammatik:**
+            - Korrigiere NUR objektive Rechtschreib- und Grammatikfehler direkt im Text und erstelle daraus den Wert für "correctedText".
+            - Führe KEINE stilistischen oder inhaltlichen Änderungen im "correctedText" durch.
+            - Fülle das "corrections"-Array für JEDE einzelne Korrektur mit dem Original, der Korrektur und einer kurzen Begründung.
+        2.  **Stil & Tonalität:**
+            - Mache Vorschläge zur Verbesserung von Stil und Tonalität. Diese dürfen NICHT in den "correctedText" einfließen.
+            - Fülle das "suggestions"-Array mit deinen Vorschlägen und Begründungen.
+        3.  **Widersprüche & Dopplungen:**
+            - Vergleiche den Text mit dem "Kontext aus bestehenden Artikeln".
+            - Fülle das "contradictions"-Array, wenn du inhaltliche Widersprüche oder signifikante Dopplungen findest.
+
+        **WICHTIG:** Gib nur das JSON-Objekt zurück, ohne umschließende Zeichen wie \`\`\`json.
 
         **Zu analysierender Text:**
         ---
@@ -57,13 +72,48 @@ module.exports = (authMiddleware) => {
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
-      const analysis = response.text();
+      // Clean the response to ensure it's valid JSON
+      const cleanedText = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+      const analysis = JSON.parse(cleanedText);
 
-      res.json({ analysis });
+      res.json(analysis);
 
     } catch (error) {
       console.error('Error analyzing text with AI:', error);
       res.status(500).json({ error: 'Failed to analyze text' });
+    }
+  });
+
+  router.post('/improve-text', authMiddleware, async (req, res) => {
+    const { text, suggestion } = req.body;
+
+    if (!text || !suggestion) {
+      return res.status(400).json({ error: 'Text and suggestion are required' });
+    }
+
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const prompt = `
+        Du bist ein Lektor. Wende die folgende Anweisung zur Verbesserung auf den gegebenen Text an.
+        Gib NUR den vollständig verbesserten Text im Markdown-Format zurück, ohne weitere Erklärungen.
+
+        Anweisung: "${suggestion}"
+
+        Text:
+        ---
+        ${text}
+        ---
+      `;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const improvedText = response.text();
+
+      res.json({ improvedText });
+
+    } catch (error) {
+      console.error('Error improving text with AI:', error);
+      res.status(500).json({ error: 'Failed to improve text' });
     }
   });
 

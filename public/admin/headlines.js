@@ -17,6 +17,80 @@ const aiCheckModal = document.getElementById('ai-check-modal');
 const aiCheckCloseBtn = document.getElementById('ai-check-close');
 const aiCheckResponseEl = document.getElementById('ai-check-response');
 
+const loadedScripts = {};
+
+function loadScript(src) {
+  if (loadedScripts[src]) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => {
+      loadedScripts[src] = true;
+      resolve();
+    };
+    script.onerror = () => {
+      reject(new Error(`Script load error for ${src}`));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+async function handleImproveClick(suggestionText) {
+  const originalText = editor.getMarkdown();
+  
+  // Show loading state
+  const improveBtn = document.querySelector(`button[data-suggestion="${suggestionText}"]`);
+  if(improveBtn) {
+    improveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    improveBtn.disabled = true;
+  }
+
+  try {
+    const response = await fetch('/api/admin/improve-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: originalText, suggestion: suggestionText })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Fehler bei der Verbesserung');
+    }
+
+    const result = await response.json();
+
+    // Highlight changes in the editor
+    const dmp = new diff_match_patch();
+    const diff = dmp.diff_main(originalText, result.improvedText);
+    dmp.diff_cleanupSemantic(diff);
+    
+    let html = '';
+    diff.forEach(part => {
+      const type = part[0];
+      const data = part[1];
+      const sanitizedData = data.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+      switch (type) {
+        case 0: html += sanitizedData; break;
+        case 1: html += `<mark class="ai-insert">${sanitizedData}</mark>`; break;
+        case -1: html += `<mark class="ai-delete">${sanitizedData}</mark>`; break;
+      }
+    });
+    editor.setHTML(html);
+    aiCheckModal.classList.add('hidden'); // Close modal on success
+
+  } catch (error) {
+    console.error('Improve Text Error:', error);
+    alert(`Fehler bei der Verbesserung: ${error.message}`);
+    if(improveBtn) {
+      improveBtn.innerHTML = 'Verbessern';
+      improveBtn.disabled = false;
+    }
+  }
+}
+
 async function handleAiCheck() {
   const text = editor.getMarkdown();
   if (!text.trim()) {
@@ -28,6 +102,8 @@ async function handleAiCheck() {
   aiCheckResponseEl.innerHTML = 'Analysiere...';
 
   try {
+    await loadScript('/js/diff_match_patch.js');
+    
     const response = await fetch('/api/admin/analyze-text', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -40,7 +116,103 @@ async function handleAiCheck() {
     }
 
     const result = await response.json();
-    aiCheckResponseEl.innerText = result.analysis;
+    
+    // Update editor with highlighted changes
+    const dmp = new diff_match_patch();
+    const diff = dmp.diff_main(text, result.correctedText);
+    dmp.diff_cleanupSemantic(diff);
+    
+    let html = '';
+    diff.forEach(part => {
+      const type = part[0];
+      const data = part[1];
+      const sanitizedData = data.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+      switch (type) {
+        case 0: // EQUAL
+          html += sanitizedData;
+          break;
+        case 1: // INSERT
+          html += `<mark class="ai-insert">${sanitizedData}</mark>`;
+          break;
+        case -1: // DELETE
+          html += `<mark class="ai-delete">${sanitizedData}</mark>`;
+          break;
+      }
+    });
+
+    editor.setHTML(html);
+
+    // Populate the modal with suggestions and contradictions
+    aiCheckResponseEl.innerHTML = '';
+
+    const actualCorrections = result.corrections.filter(item => item.original !== item.corrected);
+
+    if (actualCorrections.length === 0 && result.contradictions.length === 0 && result.suggestions.length === 0) {
+        aiCheckResponseEl.innerHTML = '<p>Keine weiteren Vorschläge oder Widersprüche gefunden. Die Rechtschreibkorrekturen wurden direkt im Text markiert.</p>';
+    } else {
+        if (actualCorrections.length > 0) {
+            const correctionsList = document.createElement('div');
+            correctionsList.innerHTML = '<h4 class="font-bold mb-2">Rechtschreib- & Grammatik-Hinweise</h4>';
+            actualCorrections.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'ai-correction-item p-2 bg-gray-50 rounded mb-2';
+                div.innerHTML = `Geändert von "<strong>${item.original}</strong>" zu "<strong>${item.corrected}</strong>" - <em>${item.reason}</em>`;
+                correctionsList.appendChild(div);
+            });
+            aiCheckResponseEl.appendChild(correctionsList);
+        }
+
+        const createSuggestionItem = (item, type) => {
+            const suggestionText = type === 'contradiction' ? item.contradiction : item.suggestion;
+            const details = document.createElement('details');
+            details.className = 'mb-2 cursor-pointer';
+            const summary = document.createElement('summary');
+            summary.className = `p-2 rounded flex justify-between items-center ${type === 'contradiction' ? 'bg-yellow-100' : 'bg-blue-100'}`;
+            
+            const suggestionContent = document.createElement('span');
+            suggestionContent.textContent = suggestionText;
+            
+            const improveBtn = document.createElement('button');
+            improveBtn.className = 'ml-4 px-3 py-1 text-sm rounded-md btn-secondary';
+            improveBtn.textContent = 'Verbessern';
+            improveBtn.dataset.suggestion = suggestionText;
+            improveBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleImproveClick(suggestionText);
+            };
+
+            summary.appendChild(suggestionContent);
+            summary.appendChild(improveBtn);
+            details.appendChild(summary);
+
+            const reason = document.createElement('p');
+            reason.className = 'p-2 mt-1 bg-gray-50';
+            reason.textContent = item.reason;
+            details.appendChild(reason);
+
+            return details;
+        }
+
+        if (result.contradictions.length > 0) {
+            const contradictionsList = document.createElement('div');
+            contradictionsList.innerHTML = '<h4 class="font-bold mt-4 mb-2">Widersprüche & Dopplungen</h4>';
+            result.contradictions.forEach(item => {
+                contradictionsList.appendChild(createSuggestionItem(item, 'contradiction'));
+            });
+            aiCheckResponseEl.appendChild(contradictionsList);
+        }
+
+        if (result.suggestions.length > 0) {
+            const suggestionsList = document.createElement('div');
+            suggestionsList.innerHTML = '<h4 class="font-bold mt-4 mb-2">Stil & Tonalität</h4>';
+            result.suggestions.forEach(item => {
+                suggestionsList.appendChild(createSuggestionItem(item, 'suggestion'));
+            });
+            aiCheckResponseEl.appendChild(suggestionsList);
+        }
+    }
+
   } catch (error) {
     console.error('AI Check Error:', error);
     aiCheckResponseEl.innerText = `Fehler bei der Analyse: ${error.message}`;
@@ -49,7 +221,7 @@ async function handleAiCheck() {
 
 function createMagicWandButton() {
     const button = document.createElement('button');
-    button.className = 'toastui-editor-toolbar-icons';
+    button.className = 'toastui-editor-toolbar-icons ai-check-button';
     button.style.backgroundImage = 'none';
     button.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i>`;
     button.addEventListener('click', handleAiCheck);
