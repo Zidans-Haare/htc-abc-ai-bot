@@ -13,13 +13,61 @@ const activeCheckbox = document.getElementById('active-toggle');
 const saveBtn = document.getElementById('save-btn');
 const deleteBtn = document.getElementById('delete-btn');
 const addBtn = document.getElementById('add-heading');
+const aiCheckModal = document.getElementById('ai-check-modal');
+const aiCheckCloseBtn = document.getElementById('ai-check-close');
+const aiCheckResponseEl = document.getElementById('ai-check-response');
+
+async function handleAiCheck() {
+  const text = editor.getMarkdown();
+  if (!text.trim()) {
+    alert('Der Editor ist leer.');
+    return;
+  }
+
+  aiCheckModal.classList.remove('hidden');
+  aiCheckResponseEl.innerHTML = 'Analysiere...';
+
+  try {
+    const response = await fetch('/api/admin/analyze-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Fehler bei der Analyse');
+    }
+
+    const result = await response.json();
+    aiCheckResponseEl.innerText = result.analysis;
+  } catch (error) {
+    console.error('AI Check Error:', error);
+    aiCheckResponseEl.innerText = `Fehler bei der Analyse: ${error.message}`;
+  }
+}
+
+function createMagicWandButton() {
+    const button = document.createElement('button');
+    button.className = 'toastui-editor-toolbar-icons';
+    button.style.backgroundImage = 'none';
+    button.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i>`;
+    button.addEventListener('click', handleAiCheck);
+    return button;
+}
+
 const editor = new toastui.Editor({
   el: document.getElementById('editor'),
   height: '100%',
   initialEditType: 'wysiwyg',
   previewStyle: 'vertical',
   toolbarItems: [
-    ['heading', 'bold', 'italic', 'link']
+    ['heading', 'bold', 'italic', 'link'],
+    [{
+      name: 'ai-check',
+      tooltip: 'AI Check',
+      el: createMagicWandButton()
+    }]
   ]
 });
 
@@ -211,6 +259,10 @@ export function initHeadlines() {
 
   headlineInput.addEventListener('input', checkForChanges);
   editor.addHook('change', checkForChanges);
+
+  aiCheckCloseBtn.addEventListener('click', () => {
+    aiCheckModal.classList.add('hidden');
+  });
 
   loadHeadlines();
 }
