@@ -153,7 +153,7 @@ const Feedback = sequelize.define('Feedback', {
   timestamps: false
 });
 
-const Bilder = sequelize.define('Bilder', {
+const Images = sequelize.define('Images', {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -168,7 +168,7 @@ const Bilder = sequelize.define('Bilder', {
         allowNull: true
     }
 }, {
-    tableName: 'bilder',
+    tableName: 'images',
     timestamps: false
 });
 

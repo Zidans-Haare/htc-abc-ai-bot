@@ -7,7 +7,7 @@ const sequelizeInstance = new Sequelize({
   logging: false
 });
 
-const Bilder = sequelizeInstance.define('Bilder', {
+const Images = sequelizeInstance.define('Images', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -22,19 +22,19 @@ const Bilder = sequelizeInstance.define('Bilder', {
     allowNull: true
   }
 }, {
-  tableName: 'bilder',
+  tableName: 'images',
   timestamps: false
 });
 
-const createBilderTable = async () => {
+const createImagesTable = async () => {
   try {
-    await Bilder.sync({ force: false });
-    console.log('Tabelle "bilder" erfolgreich erstellt oder bereits vorhanden.');
+    await Images.sync({ force: false });
+    console.log('Tabelle "images" erfolgreich erstellt oder bereits vorhanden.');
   } catch (err) {
-    console.error('Fehler beim Erstellen der bilder-Tabelle:', err.message);
+    console.error('Fehler beim Erstellen der images-Tabelle:', err.message);
   } finally {
     await sequelizeInstance.close();
   }
 };
 
-createBilderTable();
+createImagesTable();

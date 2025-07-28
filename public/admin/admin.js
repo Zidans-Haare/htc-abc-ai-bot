@@ -6,7 +6,7 @@ import { initArchive, loadArchive } from './archive.js';
 import { initExport } from './export.js';
 import { setupFeedback } from './feedback.js';
 import { renderMarkup } from '../js/markup.js';
-import { initBilder } from './bilder.js';
+import { initImages } from './images.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const archiveView = document.getElementById('archive-view');
   const userView = document.getElementById('user-view');
   const feedbackView = document.getElementById('feedback-view');
-  const bilderView = document.getElementById('bilder-view');
+  const imagesView = document.getElementById('images-view');
   
   const openCountSpan = document.getElementById('open-count');
   
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       archiveBtn.addEventListener('click', showArchive);
       userBtn.addEventListener('click', showUserAdmin);
       feedbackBtn.addEventListener('click', showFeedback);
-      if(imagesBtn) imagesBtn.addEventListener('click', showBilder);
+      if(imagesBtn) imagesBtn.addEventListener('click', showImages);
       
       initUsers();
       showEditor();
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       editorBtn.addEventListener('click', showEditor);
       questionsBtn.addEventListener('click', showQuestions);
       archiveBtn.addEventListener('click', showArchive);
-      if(imagesBtn) imagesBtn.addEventListener('click', showBilder);
+      if(imagesBtn) imagesBtn.addEventListener('click', showImages);
 
       showEditor();
       break;
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initArchive();
   initExport();
   setupFeedback();
-  initBilder();
+  initImages();
   
   document.addEventListener('update-username', (e) => {
     const currentUserSpan = document.getElementById('current-user');
