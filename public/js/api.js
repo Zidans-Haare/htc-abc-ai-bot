@@ -42,7 +42,8 @@ export async function sendMsg(app, promptText) {
         }
 
         if (app.settings.saveHistory) {
-            app.saveMessageToHistory(currentConversationId, txt, true, fullResponse);
+            app.saveMessageToHistory(currentConversationId, txt, true);
+            app.saveMessageToHistory(currentConversationId, fullResponse, false);
         }
     }
 
