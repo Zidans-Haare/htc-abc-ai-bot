@@ -91,6 +91,9 @@ function renderImages(images) {
                     <button class="copy-url-btn text-white hover:text-[var(--accent-color)] transition-colors" data-url="/uploads/${image.filename}" title="URL kopieren">
                         <i class="fas fa-copy fa-lg"></i>
                     </button>
+                    <button class="edit-image-btn text-white hover:text-yellow-400 transition-colors ml-4" data-filename="${image.filename}" data-description="${image.description || ''}" title="Beschreibung bearbeiten">
+                        <i class="fas fa-pencil-alt fa-lg"></i>
+                    </button>
                     <button class="delete-image-btn text-white hover:text-red-500 transition-colors ml-4" data-filename="${image.filename}" title="Löschen">
                         <i class="fas fa-trash-alt fa-lg"></i>
                     </button>
@@ -106,6 +109,9 @@ function renderImages(images) {
     // Add event listeners for the new buttons
     imagesList.querySelectorAll('.copy-url-btn').forEach(button => {
         button.addEventListener('click', handleCopyUrl);
+    });
+    imagesList.querySelectorAll('.edit-image-btn').forEach(button => {
+        button.addEventListener('click', handleEditImage);
     });
     imagesList.querySelectorAll('.delete-image-btn').forEach(button => {
         button.addEventListener('click', handleDeleteImage);
@@ -160,6 +166,39 @@ function handleCopyUrl(event) {
         console.error('Could not copy text: ', err);
         alert('Fehler beim Kopieren der URL.');
     });
+}
+
+async function handleEditImage(event) {
+    const button = event.currentTarget;
+    const filename = button.dataset.filename;
+    const currentDescription = button.dataset.description;
+
+    const newDescription = prompt('Neue Beschreibung eingeben:', currentDescription);
+
+    if (newDescription === null || newDescription.trim() === currentDescription) {
+        // User cancelled or didn't change the description
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/admin/images/${filename}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ description: newDescription.trim() })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Update fehlgeschlagen');
+        }
+
+        await loadImages(); // Refresh the gallery
+    } catch (error) {
+        console.error('Error updating image description:', error);
+        alert(`Fehler beim Aktualisieren der Beschreibung: ${error.message}`);
+    }
 }
 
 async function handleDeleteImage(event) {

@@ -68,6 +68,32 @@ module.exports = (authMiddleware) => {
         }
     });
 
+    // PUT (update) an image description
+    router.put('/images/:filename', authMiddleware, async (req, res) => {
+        const { filename } = req.params;
+        const { description } = req.body;
+
+        if (typeof description !== 'string') {
+            return res.status(400).json({ message: 'Ungültige Beschreibung.' });
+        }
+
+        try {
+            const image = await Images.findOne({ where: { filename } });
+
+            if (!image) {
+                return res.status(404).json({ message: 'Bild nicht gefunden.' });
+            }
+
+            image.description = description.trim();
+            await image.save();
+
+            res.status(200).json(image);
+        } catch (error) {
+            console.error(`Fehler beim Aktualisieren der Beschreibung für ${filename}:`, error);
+            res.status(500).json({ message: 'Serverfehler beim Aktualisieren der Beschreibung.' });
+        }
+    });
+
     // DELETE an image
     router.delete('/images/:filename', authMiddleware, async (req, res) => {
         const { filename } = req.params;

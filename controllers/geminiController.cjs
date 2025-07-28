@@ -143,6 +143,15 @@ async function generateResponse(req, res) {
       **Knowledgebase of the HTW Desden**:
       ${hochschulContent}
 
+      **Image List**:
+      ${imageList}
+
+      If and image is in the Image List, that helps to answer the user question, add the image link to the answer. 
+      format the url in markdown: ![](url)
+
+
+
+
       --
 
       If you can not answer a question about the HTW Dresden from the Knowledgebase, 
