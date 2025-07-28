@@ -46,10 +46,14 @@ module.exports = (authMiddleware) => {
         }
 
         try {
+            // Extract description from the request body
+            const { description } = req.body;
+
             // Save image info to the database
             const newImage = await Images.create({
                 filename: req.file.filename,
-                filepath: `/uploads/${req.file.filename}`
+                filepath: `/uploads/${req.file.filename}`,
+                description: description || null // Save description, or null if it's empty
             });
             res.status(201).json(newImage);
         } catch (error) {

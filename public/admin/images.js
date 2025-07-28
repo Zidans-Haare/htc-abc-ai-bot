@@ -84,18 +84,21 @@ function renderImages(images) {
     }
 
     imagesList.innerHTML = images.map(image => `
-        <div class="relative group border rounded-lg overflow-hidden shadow-sm">
-            <img src="/uploads/${image.filename}" alt="${image.description || image.filename}" class="w-full h-48 object-cover">
-            <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-2 text-white text-sm truncate" title="${image.description || image.filename}">
-                ${image.filename}
+        <div class="group border rounded-lg overflow-hidden shadow-sm flex flex-col">
+            <div class="relative">
+                <img src="/uploads/${image.filename}" alt="${image.description || image.filename}" class="w-full h-48 object-cover">
+                <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="copy-url-btn text-white hover:text-[var(--accent-color)] transition-colors" data-url="/uploads/${image.filename}" title="URL kopieren">
+                        <i class="fas fa-copy fa-lg"></i>
+                    </button>
+                    <button class="delete-image-btn text-white hover:text-red-500 transition-colors ml-4" data-filename="${image.filename}" title="Löschen">
+                        <i class="fas fa-trash-alt fa-lg"></i>
+                    </button>
+                </div>
             </div>
-            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <button class="copy-url-btn text-white hover:text-[var(--accent-color)] transition-colors" data-url="/uploads/${image.filename}" title="URL kopieren">
-                    <i class="fas fa-copy fa-lg"></i>
-                </button>
-                <button class="delete-image-btn text-white hover:text-red-500 transition-colors ml-4" data-filename="${image.filename}" title="Löschen">
-                    <i class="fas fa-trash-alt fa-lg"></i>
-                </button>
+            <div class="p-2">
+                <p class="text-sm text-gray-700 truncate" title="${image.description || ''}">${image.description || ''}</p>
+                <p class="text-xs text-gray-500 truncate" title="${image.filename}">${image.filename}</p>
             </div>
         </div>
     `).join('');

@@ -16,3 +16,4 @@ ai_input/faq.txt
 scripts/*.txt
 server.log
 .venv_htc/
+public/uploads/
