@@ -103,7 +103,7 @@ export function addMessage(text, isUser, timestamp, copyable = false, save = tru
 
 export function setupUI(app) {
     // Event Listeners
-    sendBtnEl.addEventListener('click', app.send); 
+    sendBtnEl.addEventListener('click', () => app.send()); 
     chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); app.send(); } });
     
     chatInput.addEventListener('input', () => {

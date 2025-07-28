@@ -24,8 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
             this.setupSuggestionListeners();
         },
 
-        send() {
-            sendMsg(this);
+        send(promptText) {
+            sendMsg(this, promptText);
         },
 
         addMessage(text, isUser, timestamp, copyable = false, save = true) {
