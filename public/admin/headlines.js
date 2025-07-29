@@ -410,6 +410,10 @@ export function selectHeadline(id) {
   }
 }
 
+export function getCurrentId() {
+  return currentId;
+}
+
 export function initHeadlines() {
   saveBtn.addEventListener('click', saveEntry);
   deleteBtn.addEventListener('click', deleteEntry);

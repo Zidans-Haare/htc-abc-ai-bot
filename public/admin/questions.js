@@ -31,6 +31,9 @@ export function initQuestions({ updateOpenCount, showEditor }) {
         if (response.ok) {
             // alert('Frage als beantwortet markiert.');
             document.getElementById('question-edit-banner').classList.add('hidden');
+            document.getElementById('question-context-actions').classList.add('hidden');
+            document.getElementById('delete-btn').classList.remove('hidden');
+            document.getElementById('save-btn').classList.remove('hidden');
             loadOpen();
             loadAnswered();
         } else {
@@ -156,6 +159,9 @@ export function initQuestions({ updateOpenCount, showEditor }) {
             markAsAnsweredBtn.classList.remove('btn-primary');
 
             document.getElementById('question-edit-banner').classList.remove('hidden');
+            document.getElementById('question-context-actions').classList.remove('hidden');
+            document.getElementById('delete-btn').classList.add('hidden');
+            document.getElementById('save-btn').classList.add('hidden');
             showEditor();
             // Manually trigger change check to set initial button states
             document.getElementById('headline-input').dispatchEvent(new Event('input'));
@@ -250,6 +256,9 @@ export function initQuestions({ updateOpenCount, showEditor }) {
           markAsAnsweredBtn.classList.remove('btn-primary');
 
           document.getElementById('question-edit-banner').classList.remove('hidden');
+          document.getElementById('question-context-actions').classList.remove('hidden');
+          document.getElementById('delete-btn').classList.add('hidden');
+          document.getElementById('save-btn').classList.add('hidden');
           showEditor();
           document.getElementById('headline-input').dispatchEvent(new Event('input'));
         });

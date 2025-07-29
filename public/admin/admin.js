@@ -1,5 +1,5 @@
 import { fetchAndParse, overrideFetch } from './utils.js';
-import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline } from './headlines.js';
+import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline, getCurrentId } from './headlines.js';
 import { initQuestions } from './questions.js';
 import { initUsers, loadUsers } from './users.js';
 import { initArchive, loadArchive } from './archive.js';
@@ -249,6 +249,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   const aiResponse = document.getElementById('ai-response');
 
   testAiResponseBtn.addEventListener('click', async () => {
+    const questionId = document.getElementById('question-edit-id').value;
+    const articleId = getCurrentId();
+
+    if (questionId && articleId) {
+      try {
+        await fetch('/api/admin/questions/link-article', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questionId, articleId }),
+        });
+        const headline = document.getElementById('headline-input').value;
+        const answeredInDiv = document.getElementById('question-answered-in');
+        if (answeredInDiv) {
+            answeredInDiv.innerHTML = `<strong>Beantwortet in:</strong> ${headline}`;
+            answeredInDiv.style.display = 'block';
+        }
+      } catch (err) {
+        console.error('Failed to link article:', err);
+      }
+    }
+
     const question = document.getElementById('question-edit-label').textContent;
     aiPrompt.textContent = question;
     aiResponse.textContent = 'Lade...';
@@ -324,5 +345,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cancelEditBtn = document.getElementById('cancel-edit-question');
   cancelEditBtn.addEventListener('click', () => {
     document.getElementById('question-edit-banner').classList.add('hidden');
+    document.getElementById('question-context-actions').classList.add('hidden');
+    document.getElementById('delete-btn').classList.remove('hidden');
+    document.getElementById('save-btn').classList.remove('hidden');
   });
 });

@@ -13,7 +13,7 @@ This project provides a simple Node.js server that exposes an API endpoint for a
 2. **Configuration**
    Create a `.env` file in the project root containing the API key for the Gemini API and an optional port:
    ```env
-   API_KEY=your-google-api-key
+   GEMINI_API_KEY=your-google-api-key
   PORT=3000 # optional, defaults to 3000
    ```
 
