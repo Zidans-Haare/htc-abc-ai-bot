@@ -7,10 +7,10 @@ const { summarizeConversation } = require("../utils/summarizer");
 // In-memory conversation store
 const conversations = new Map();
 
-const apiKey = process.env.API_KEY;
+const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
   console.error(
-    "Fehler: Kein API-Key gefunden. Bitte setze die Umgebungsvariable API_KEY."
+    "Fehler: Kein API-Key gefunden. Bitte setze die Umgebungsvariable GEMINI_API_KEY."
   );
   process.exit(1);
 }
