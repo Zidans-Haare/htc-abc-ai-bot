@@ -304,7 +304,7 @@ function renderHeadlines(items) {
   });
 }
 
-async function loadEntry(id) {
+export async function loadEntry(id) {
   try {
     console.log('Fetching entry:', id);
     const entry = await fetchAndParse(`/api/admin/entries/${id}`);
@@ -319,7 +319,7 @@ async function loadEntry(id) {
     const formattedDate = timestamp
       ? `${timestamp.getDate()}.${timestamp.getMonth() + 1}.'${String(timestamp.getFullYear()).slice(-2)} ${timestamp.getHours()}:${String(timestamp.getMinutes()).padStart(2, '0')}`
       : '';
-    document.getElementById('current-user').innerHTML = `last edit by:<br>${entry.editor || ''}<br>${formattedDate}`;
+    document.getElementById('last-edited-by').innerHTML = `last edit by:<br>${entry.editor || ''}<br>${formattedDate}`;
     setSaveButtonState(false);
   } catch (err) {
     console.error('Failed to load entry:', err);
@@ -394,7 +394,7 @@ async function deleteEntry() {
     headlineInput.value = '';
     editor.setMarkdown('');
     activeCheckbox.checked = false;
-    document.getElementById('current-user').innerHTML = `last edit by:<br>`;
+    document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
     await loadHeadlines();
     alert('Gelöscht');
   } catch (err) {
@@ -425,7 +425,7 @@ export function initHeadlines() {
     originalHeadline = '';
     originalText = '';
     activeCheckbox.checked = true;
-    document.getElementById('current-user').innerHTML = `last edit by:<br>`;
+    document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
     checkForChanges();
   });
   searchEl.addEventListener('input', () => {

@@ -1,5 +1,5 @@
 import { fetchAndParse, overrideFetch } from './utils.js';
-import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline, getCurrentId } from './headlines.js';
+import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline, getCurrentId, loadEntry } from './headlines.js';
 import { initQuestions } from './questions.js';
 import { initUsers, loadUsers } from './users.js';
 import { initArchive, loadArchive } from './archive.js';
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Validate session
   try {
     const session = await fetchAndParse('/api/validate');
-    document.getElementById('current-user').innerHTML = `last edit by:<br>`;
+    document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
     if (!sessionStorage.getItem('userRole')) {
         sessionStorage.setItem('userRole', session.role);
     }
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initImages();
   
   document.addEventListener('update-username', (e) => {
-    const currentUserSpan = document.getElementById('current-user');
+    const currentUserSpan = document.getElementById('last-edited-by');
     if (currentUserSpan) {
       currentUserSpan.innerHTML = `last edit by:<br>${e.detail.username}`;
     }
@@ -265,6 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             answeredInDiv.innerHTML = `<strong>Beantwortet in:</strong> ${headline}`;
             answeredInDiv.style.display = 'block';
         }
+        await loadEntry(articleId);
       } catch (err) {
         console.error('Failed to link article:', err);
       }
