@@ -9,7 +9,6 @@ let originalText = '';
 const listEl = document.getElementById('headline-list');
 const searchEl = document.getElementById('search');
 const headlineInput = document.getElementById('headline-input');
-const activeCheckbox = document.getElementById('active-toggle');
 const saveBtn = document.getElementById('save-btn');
 const deleteBtn = document.getElementById('delete-btn');
 const addBtn = document.getElementById('add-heading');
@@ -314,7 +313,6 @@ export async function loadEntry(id) {
     editor.setMarkdown(entry.text);
     originalHeadline = entry.headline;
     originalText = entry.text;
-    activeCheckbox.checked = !!entry.active;
     const timestamp = entry.lastUpdated ? new Date(entry.lastUpdated) : null;
     const formattedDate = timestamp
       ? `${timestamp.getDate()}.${timestamp.getMonth() + 1}.'${String(timestamp.getFullYear()).slice(-2)} ${timestamp.getHours()}:${String(timestamp.getMinutes()).padStart(2, '0')}`
@@ -326,11 +324,11 @@ export async function loadEntry(id) {
   }
 }
 
-async function saveEntry() {
+export async function saveEntry() {
   const payload = {
     headline: headlineInput.value.trim(),
     text: editor.getMarkdown().trim(),
-    active: activeCheckbox.checked
+    active: true
   };
   if (!payload.headline || !payload.text) return;
   try {
@@ -393,7 +391,6 @@ async function deleteEntry() {
     currentId = null;
     headlineInput.value = '';
     editor.setMarkdown('');
-    activeCheckbox.checked = false;
     document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
     await loadHeadlines();
     alert('Gelöscht');
@@ -424,7 +421,6 @@ export function initHeadlines() {
     editor.setMarkdown('');
     originalHeadline = '';
     originalText = '';
-    activeCheckbox.checked = true;
     document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
     checkForChanges();
   });

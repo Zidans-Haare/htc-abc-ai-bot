@@ -1,5 +1,5 @@
 import { fetchAndParse, overrideFetch } from './utils.js';
-import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline, getCurrentId, loadEntry } from './headlines.js';
+import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline, getCurrentId, loadEntry, saveEntry } from './headlines.js';
 import { initQuestions } from './questions.js';
 import { initUsers, loadUsers } from './users.js';
 import { initArchive, loadArchive } from './archive.js';
@@ -249,6 +249,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const aiResponse = document.getElementById('ai-response');
 
   testAiResponseBtn.addEventListener('click', async () => {
+    const saveBtn = document.getElementById('save-btn');
+    if (!saveBtn.disabled) {
+      await saveEntry();
+    }
+
     const questionId = document.getElementById('question-edit-id').value;
     const articleId = getCurrentId();
 
