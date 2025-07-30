@@ -1,5 +1,5 @@
 import { fetchAndParse } from './utils.js';
-import { loadHeadlines } from './headlines.js';
+import { loadHeadlines } from './articles.js';
 
 let archiveEntries = [];
 const archiveList = document.getElementById('archive-list');

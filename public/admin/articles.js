@@ -139,7 +139,8 @@ async function handleAiCheck() {
       }
     });
 
-    editor.setHTML(html);
+    //editor.setHTML(html);
+    editor.setMarkdown(result.correctedText); // Use setMarkdown to ensure proper formatting
 
     // Populate the modal with suggestions and contradictions
     aiCheckResponseEl.innerHTML = '';
