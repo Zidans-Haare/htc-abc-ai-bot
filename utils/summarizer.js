@@ -3,7 +3,7 @@ const { estimateTokens } = require('./tokenizer');
 
 const apiKey = process.env.GEMINI_API_KEY || 'Nicht gefunden';
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 async function summarizeConversation(messages) {
   const historyText = messages.map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`).join('\n');

@@ -24,7 +24,7 @@ module.exports = (authMiddleware) => {
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
       // Get all existing articles from the database for context
       const allArticles = await HochschuhlABC.findAll({
@@ -92,7 +92,7 @@ module.exports = (authMiddleware) => {
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       const prompt = `
         Du bist ein Lektor. Wende die folgende Anweisung zur Verbesserung auf den gegebenen Text an.
         Gib NUR den vollständig verbesserten Text im Markdown-Format zurück, ohne weitere Erklärungen.
