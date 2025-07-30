@@ -70,15 +70,22 @@ export function loadChat(id, app) {
 export function saveMessageToHistory(conversationId, message, isUser, fullResponse) {
     const history = getChatHistory();
     let chat = history.find(c => c.id === conversationId);
+
+    const userMessage = { text: message, isUser: true, timestamp: new Date().toISOString() };
+    const aiMessage = { text: fullResponse, isUser: false, timestamp: new Date().toISOString() };
+
     if (chat) {
-        chat.messages.push({ text: message, isUser, timestamp: new Date().toISOString() });
+        // If chat exists, push both the new user message and the AI's response
+        chat.messages.push(userMessage);
+        chat.messages.push(aiMessage);
     } else {
-        history.push({
+        // If it's a new chat, create it with both messages and add it to the start of the history
+        history.unshift({
             id: conversationId,
             title: message.substring(0, 40) + (message.length > 40 ? '...' : ''),
             messages: [
-                { text: message, isUser: true, timestamp: new Date().toISOString() },
-                { text: fullResponse, isUser: false, timestamp: new Date().toISOString() }
+                userMessage,
+                aiMessage
             ]
         });
     }
