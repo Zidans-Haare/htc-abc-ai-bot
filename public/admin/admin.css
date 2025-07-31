@@ -143,3 +143,17 @@ body {
     padding: 0 0.5rem;
     color: #6b7280; /* secondary-text */
 }
+
+.toastui-editor-toolbar-item-wrapper {
+    margin: 0px;
+}
+
+.toastui-editor-toolbar-icons.undo, .toastui-editor-toolbar-icons.redo {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  text-align: center;
+  line-height: 24px;
+  font-size: 16px;
+  cursor: pointer;
+}

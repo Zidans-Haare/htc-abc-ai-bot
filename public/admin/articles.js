@@ -219,6 +219,24 @@ async function handleAiCheck() {
   }
 }
 
+const redoToolbarItem = {
+  name: 'redo',
+  tooltip: 'Redo',
+  command: 'redo',
+  text: '↻',
+  className: 'toastui-editor-toolbar-icons redo',
+  style: { backgroundImage: 'none' }
+};
+
+const undoToolbarItem = {
+  name: 'undo',
+  tooltip: 'Undo',
+  command: 'undo',
+  text: '↺',
+  className: 'toastui-editor-toolbar-icons undo',
+  style: { backgroundImage: 'none' }
+};
+
 function createMagicWandButton() {
     const button = document.createElement('button');
     button.className = 'toastui-editor-toolbar-icons ai-check-button';
@@ -235,6 +253,7 @@ const editor = new toastui.Editor({
   previewStyle: 'vertical',
   toolbarItems: [
     ['heading', 'bold', 'italic', 'link'],
+    [undoToolbarItem, redoToolbarItem],
     [{
       name: 'ai-check',
       tooltip: 'AI Check',
