@@ -94,8 +94,8 @@ export function initQuestions({ updateOpenCount, showEditor }) {
 
         const del = document.createElement('button');
         del.type = 'button';
-        del.textContent = '🗑️';
-        del.className = 'text-gray-400 hover:text-red-600 transition-colors';
+        del.innerHTML = '<i class="fas fa-trash"></i>';
+        del.className = 'text-red-500 hover:text-red-700';
         del.addEventListener('click', () => handleDelete([q.question]));
 
         header.appendChild(left);
@@ -110,7 +110,7 @@ export function initQuestions({ updateOpenCount, showEditor }) {
           <textarea name="answer" class="border border-[var(--input-border)] p-2 w-full mb-2 rounded-md" placeholder="Antwort hier eingeben..." required rows="3"></textarea>
           <button class="btn-primary px-4 py-2 rounded-md" type="submit">Antworten</button>
           -->
-          <button type="button" class="px-4 py-2 rounded-md text-white btn-edit-question" style="background-color: cornflowerblue;">Bearbeiten</button>
+          <button type="button" class="btn-primary px-4 py-2 rounded-md text-white btn-edit-question">Bearbeiten</button>
         `;
         form.addEventListener('submit', async e => {
           e.preventDefault();
