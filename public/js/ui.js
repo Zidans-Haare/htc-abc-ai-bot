@@ -296,7 +296,7 @@ export function startWelcomeAnimation() {
 
     const messages = [
         "Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden.",
-        "Hello! I bin Alex, your AI assistant from HTW Dresden.",
+        "Hello! I am Alex, your AI assistant from HTW Dresden.",
         "你好！我是 Alex，你来自德累斯顿应用技术大学的 AI 助手。"
     ];
 
