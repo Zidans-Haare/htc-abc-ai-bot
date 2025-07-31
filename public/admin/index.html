@@ -162,8 +162,15 @@
       <div id="images-list" class="space-y-4"></div>
     </div>
     <!-- Feedback View -->
-    <div id="feedback-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
-      <div id="feedback-list" class="space-y-4"></div>
+    <div id="feedback-view" class="flex flex-col flex-1 hidden overflow-hidden">
+      <!-- List View -->
+      <div id="feedback-list-container" class="p-6 space-y-4 overflow-y-auto">
+        <div id="feedback-list" class="space-y-4"></div>
+      </div>
+      <!-- Detail View -->
+      <div id="feedback-detail-container" class="hidden p-6 space-y-4 overflow-y-auto">
+        <!-- Details will be rendered here by JS -->
+      </div>
     </div>
     <!-- User Management View -->
     <div id="user-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
