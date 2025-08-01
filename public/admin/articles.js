@@ -38,7 +38,9 @@ function loadScript(src) {
 }
 
 async function handleImproveClick(suggestionText) {
-  const originalText = editor.getMarkdown();
+  let originalText = editor.getMarkdown();
+  // Remove strikethroughs from the original text
+  originalText = originalText.replace(/~~/g, '');
   
   // Show loading state
   const improveBtn = document.querySelector(`button[data-suggestion="${suggestionText}"]`);
