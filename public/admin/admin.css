@@ -159,7 +159,7 @@ body {
 }
 
 .toastui-editor-contents del {
-  background-color: #fff59d; /* A nice shade of yellow */
+  background-color: #64d75c; /* A nice shade of yellow */
   text-decoration: none; /* Remove the line-through */
   color: inherit; /* Use the default text color */
 }

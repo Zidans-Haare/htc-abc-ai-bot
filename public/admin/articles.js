@@ -37,35 +37,14 @@ function loadScript(src) {
   });
 }
 
-async function handleImproveClick(suggestionText) {
-  let originalText = editor.getMarkdown();
-  // Remove strikethroughs from the original text
-  originalText = originalText.replace(/~~/g, '');
-  
-  // Show loading state
-  const improveBtn = document.querySelector(`button[data-suggestion="${suggestionText}"]`);
-  if(improveBtn) {
-    improveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    improveBtn.disabled = true;
-  }
+async function markDiffInMarkdown(originalText, improvedText) {
 
   try {
-    const response = await fetch('/api/admin/improve-text', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: originalText, suggestion: suggestionText })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Fehler bei der Verbesserung');
-    }
-
-    const result = await response.json();
+    await loadScript('/js/diff_match_patch.js');
 
     // Highlight changes in the editor
     const dmp = new diff_match_patch();
-    const diff = dmp.diff_main(originalText, result.improvedText);
+    const diff = dmp.diff_main(originalText, improvedText);
     dmp.diff_cleanupSemantic(diff);
     
     let markdown = '';
@@ -79,6 +58,44 @@ async function handleImproveClick(suggestionText) {
         //case -1: html += `<mark class="ai-delete">${sanitizedData}</mark>`; break;
       }
     });
+    return markdown;
+} catch (error) {
+    console.error('Diff patch error:', error);
+    aiCheckResponseEl.innerText = `Fehler beim Diff: ${error.message}`;
+}
+  
+}
+
+async function handleImproveClick(suggestionText, textBeforeAiCheck) {
+  let originalText = editor.getMarkdown();
+  // Remove strikethroughs from the original text
+  originalText = originalText.replace(/~~/g, '');
+
+  // Show loading state
+  const improveBtn = document.querySelector(`button[data-suggestion="${suggestionText}"]`);
+  if(improveBtn) {
+    improveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    improveBtn.disabled = true;
+  }
+
+  try {
+    // Use the original text for the improvement API call
+    const response = await fetch('/api/admin/improve-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: originalText, suggestion: suggestionText })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Fehler bei der Verbesserung');
+    }
+
+    const result = await response.json();
+
+    // Compare the final result with the original text to mark all changes
+    let markdown = await markDiffInMarkdown(textBeforeAiCheck, result.improvedText);
+
     editor.setMarkdown(markdown);
     aiCheckModal.classList.add('hidden'); // Close modal on success
 
@@ -96,6 +113,10 @@ async function handleAiCheck() {
   let text = editor.getMarkdown();
   // Remove strikethroughs before analysis
   text = text.replace(/~~/g, '');
+  
+  // Store the original, clean text
+  const textBeforeAiCheck = text;
+
   if (!text.trim()) {
     alert('Der Editor ist leer.');
     return;
@@ -105,8 +126,6 @@ async function handleAiCheck() {
   aiCheckResponseEl.innerHTML = 'Analysiere...';
 
   try {
-    await loadScript('/js/diff_match_patch.js');
-    
     const response = await fetch('/api/admin/analyze-text', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -119,32 +138,15 @@ async function handleAiCheck() {
     }
 
     const result = await response.json();
-    
-    // Update editor with highlighted changes
-    const dmp = new diff_match_patch();
-    const diff = dmp.diff_main(text, result.correctedText);
-    dmp.diff_cleanupSemantic(diff);
-    
-    let markdown = '';
-    diff.forEach(part => {
-      const type = part[0];
-      const data = part[1];
-      const sanitizedData = data.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      switch (type) {
-        case 0: // EQUAL
-          markdown += sanitizedData;
-          break;
-        case 1: // INSERT
-          markdown += `~~${sanitizedData}~~`;
-          break;
-        // case -1: // DELETE
-        //   markdown += `<mark class="ai-delete">${sanitizedData}</mark>`;
-        //   break;
-      }
-    });
 
-    //editor.setHTML(html);
-    editor.setMarkdown(markdown); // Use setMarkdown to ensure proper formatting
+    if (typeof result.correctedText !== 'string') {
+      throw new Error('AI response did not include the required "correctedText" field.');
+    }
+
+    // Mark only the initial grammar/spelling diffs
+    let markdown = await markDiffInMarkdown(text, result.correctedText);
+    
+    editor.setMarkdown(markdown);
 
     // Populate the modal with suggestions and contradictions
     aiCheckResponseEl.innerHTML = '';
@@ -183,7 +185,7 @@ async function handleAiCheck() {
             improveBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                handleImproveClick(suggestionText);
+                handleImproveClick(suggestionText, textBeforeAiCheck);
             };
 
             summary.appendChild(suggestionContent);
