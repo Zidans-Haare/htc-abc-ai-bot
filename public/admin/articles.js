@@ -252,7 +252,7 @@ const editor = new toastui.Editor({
   initialEditType: 'wysiwyg',
   previewStyle: 'vertical',
   toolbarItems: [
-    ['heading', 'bold', 'italic', 'link'],
+    ['heading', 'bold', 'italic', 'strike', 'link'],
     [undoToolbarItem, redoToolbarItem],
     [{
       name: 'ai-check',

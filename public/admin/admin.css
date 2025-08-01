@@ -157,3 +157,9 @@ body {
   font-size: 16px;
   cursor: pointer;
 }
+
+.toastui-editor-contents del {
+  background-color: #fff59d; /* A nice shade of yellow */
+  text-decoration: none; /* Remove the line-through */
+  color: inherit; /* Use the default text color */
+}
