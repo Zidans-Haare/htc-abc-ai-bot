@@ -66,18 +66,18 @@ async function handleImproveClick(suggestionText) {
     const diff = dmp.diff_main(originalText, result.improvedText);
     dmp.diff_cleanupSemantic(diff);
     
-    let html = '';
+    let markdown = '';
     diff.forEach(part => {
       const type = part[0];
       const data = part[1];
-      const sanitizedData = data.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+      const sanitizedData = data.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       switch (type) {
-        case 0: html += sanitizedData; break;
-        case 1: html += `<mark class="ai-insert">${sanitizedData}</mark>`; break;
-        case -1: html += `<mark class="ai-delete">${sanitizedData}</mark>`; break;
+        case 0: markdown += sanitizedData; break;
+        case 1: markdown += `~~${sanitizedData}~~`; break;
+        //case -1: html += `<mark class="ai-delete">${sanitizedData}</mark>`; break;
       }
     });
-    editor.setHTML(html);
+    editor.setMarkdown(markdown);
     aiCheckModal.classList.add('hidden'); // Close modal on success
 
   } catch (error) {
@@ -91,7 +91,9 @@ async function handleImproveClick(suggestionText) {
 }
 
 async function handleAiCheck() {
-  const text = editor.getMarkdown();
+  let text = editor.getMarkdown();
+  // Remove strikethroughs before analysis
+  text = text.replace(/~~/g, '');
   if (!text.trim()) {
     alert('Der Editor ist leer.');
     return;
@@ -121,26 +123,26 @@ async function handleAiCheck() {
     const diff = dmp.diff_main(text, result.correctedText);
     dmp.diff_cleanupSemantic(diff);
     
-    let html = '';
+    let markdown = '';
     diff.forEach(part => {
       const type = part[0];
       const data = part[1];
-      const sanitizedData = data.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+      const sanitizedData = data.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       switch (type) {
         case 0: // EQUAL
-          html += sanitizedData;
+          markdown += sanitizedData;
           break;
         case 1: // INSERT
-          html += `<mark class="ai-insert">${sanitizedData}</mark>`;
+          markdown += `~~${sanitizedData}~~`;
           break;
-        case -1: // DELETE
-          html += `<mark class="ai-delete">${sanitizedData}</mark>`;
-          break;
+        // case -1: // DELETE
+        //   markdown += `<mark class="ai-delete">${sanitizedData}</mark>`;
+        //   break;
       }
     });
 
     //editor.setHTML(html);
-    editor.setMarkdown(result.correctedText); // Use setMarkdown to ensure proper formatting
+    editor.setMarkdown(markdown); // Use setMarkdown to ensure proper formatting
 
     // Populate the modal with suggestions and contradictions
     aiCheckResponseEl.innerHTML = '';
@@ -345,9 +347,11 @@ export async function loadEntry(id) {
 }
 
 export async function saveEntry() {
+  // remove strikethroughs from the editor content 
+  const cleanedText = editor.getMarkdown().replace(/~~/g, '');
   const payload = {
     headline: headlineInput.value.trim(),
-    text: editor.getMarkdown().trim(),
+    text: cleanedText.trim(),
     active: true
   };
   if (!payload.headline || !payload.text) return;

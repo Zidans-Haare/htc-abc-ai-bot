@@ -113,6 +113,9 @@ module.exports = (authMiddleware) => {
 
     } catch (error) {
       console.error('Error improving text with AI:', error);
+      if (error.constructor.name === 'GoogleGenerativeAIFetchError') {
+          return res.status(503).json({ error: 'Der AI-Dienst ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.' });
+      }
       res.status(500).json({ error: 'Failed to improve text' });
     }
   });
