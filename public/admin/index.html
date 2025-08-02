@@ -9,12 +9,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="/admin/toastui/toastui-editor.css" rel="stylesheet">
   <link href="/admin/admin.css" rel="stylesheet">
-  <script src="/admin/toastui/toastui-editor.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link href="/admin/milkdown.css" rel="stylesheet">
+  
+  <script src="https://unpkg.com/prosemirror-model/dist/prosemirror-model.min.js"></script>
+  <script src="https://unpkg.com/prosemirror-view/dist/prosemirror-view.min.js"></script>
+  <script src="https://unpkg.com/prosemirror-state/dist/prosemirror-state.min.js"></script>
+  <script src="https://unpkg.com/prosemirror-commands/dist/prosemirror-commands.min.js"></script>
+  <script src="https://unpkg.com/prosemirror-schema-list/dist/prosemirror-schema-list.min.js"></script>
+  <script src="https://unpkg.com/prosemirror-inputrules/dist/prosemirror-inputrules.min.js"></script>
+  <script src="https://unpkg.com/prosemirror-history/dist/prosemirror-history.min.js"></script>
+  <script src="https://unpkg.com/prosemirror-keymap/dist/prosemirror-keymap.min.js"></script>
+  <script src="https://unpkg.com/prosemirror-transform/dist/prosemirror-transform.min.js"></script>
+  <script src="https://unpkg.com/prosemirror-gapcursor/dist/prosemirror-gapcursor.min.js"></script>
+  <script src="https://unpkg.com/prosemirror-dropcursor/dist/prosemirror-dropcursor.min.js"></script>
+
+  <script src="https://jspdf.com/docs/jspdf.min.js"></script>
   <script src="../js/marked.min.js"></script>
   <script src="../js/purify.min.js"></script>
+  
+  <script type="module" src="/admin/milkdown.js"></script>
   <script defer type="module" src="/admin/admin.js"></script>
   <link rel="icon" href="/favicon.ico">
   
@@ -117,7 +131,21 @@
           <input id="headline-input" class="p-2 border border-[var(--input-border)] rounded flex-1 bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Überschrift">
           <span id="last-edited-by" class="p-2 text-[var(--secondary-text)] text-sm text-right"></span>
         </div>
-        <div id="editor" class="flex-grow"></div>
+        <div class="editor">
+          <div class="toolbar">
+            <button id="h1-btn">H1</button>
+            <button id="h2-btn">H2</button>
+            <button id="h3-btn">H3</button>
+            <button id="bold-btn">B</button>
+            <button id="italic-btn">I</button>
+            <button id="underline-btn">U</button>
+            <button id="link-btn">Link</button>
+            <button id="undo-btn">Undo</button>
+            <button id="redo-btn">Redo</button>
+            <button id="ai-check-btn"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+          </div>
+          <div id="editor" class="flex-grow"></div>
+        </div>
         <div class="p-4 border-t border-[var(--border-color)] flex justify-end space-x-4 items-center">
           <div id="question-context-actions" class="hidden items-center space-x-2">
             <button id="test-ai-response" class="px-4 py-2 rounded-md text-white" style="background-color: green;">Speichern + Test</button>

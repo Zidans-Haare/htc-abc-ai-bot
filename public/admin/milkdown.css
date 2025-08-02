@@ -1,0 +1,49 @@
+/* milkdown.css */
+.milkdown {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1rem;
+    background: #fff;
+    color: #000;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.editor {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.milkdown .ProseMirror {
+    height: 100%;
+    outline: none;
+}
+
+.toolbar {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid #ddd;
+    background: #f7f7f7;
+    flex-wrap: wrap;
+}
+
+.toolbar button {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+}
+
+.toolbar button:hover {
+    background: #f0f0f0;
+}
+
+.toolbar button.active {
+    background: #e0e0e0;
+    border-color: #bbb;
+}
