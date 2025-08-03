@@ -1,10 +1,15 @@
 
+import { Editor, rootCtx, defaultValueCtx, commands } from '@milkdown/core';
+import { nord } from '@milkdown/theme-nord';
+import { gfm } from '@milkdown/kit/preset/gfm';
+import { history } from '@milkdown/kit/plugin/history';
+import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
+import { SlashProvider, slashFactory } from '@milkdown/kit/plugin/slash'
+import { TooltipProvider, tooltipFactory } from '@milkdown/kit/plugin/tooltip'
+import { commonmark } from '@milkdown/kit/preset/commonmark'
 
+import '@milkdown/theme-nord/style.css';
 
-
-// Import CSS for bundling
-import '@milkdown/theme-nord/lib/theme.css';
-import '@milkdown-lab/plugin-menu/style.css'; // Headless menu styles (customize as needed)
 
 let editorInstance = null;
 let onChangeCallback = () => {};
@@ -22,7 +27,7 @@ export async function createMilkdownEditor(aiCheckHandler) {
     .use(gfm)
     .use(history)
     .use(listener)
-    .use(menu)
+
     .create();
 
   editorInstance = editor;
