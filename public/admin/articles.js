@@ -1,5 +1,5 @@
 import { fetchAndParse } from './utils.js';
-import { createMilkdownEditor, getMarkdown, setMarkdown, onChange } from './milkdown.js';
+import { createMilkdownEditor, setMarkdown, onChange } from './milk.js';
 
 let currentId = null;
 let allHeadlines = [];
@@ -100,7 +100,7 @@ async function handleImproveClick(suggestionText) {
 }
 
 async function handleAiCheck() {
-  let text = getMarkdown();
+  let text = getMilkdownMarkdown();
   text = text.replace(/~~/g, '').replace(/\*\*/g, ''); // Clean up previous markings
   textBeforeAiCheck = text;
 
@@ -156,7 +156,7 @@ function setSaveButtonState(enabled) {
 
 function checkForChanges() {
   const currentHeadline = headlineInput.value;
-  const currentText = getMarkdown();
+  const currentText = getMilkdownMarkdown();
   const hasChanged = currentHeadline !== originalHeadline || currentText !== originalText;
   setSaveButtonState(hasChanged);
 }
@@ -219,7 +219,7 @@ export async function loadEntry(id) {
 }
 
 export async function saveEntry() {
-  const cleanedText = getMarkdown().replace(/~~/g, '').replace(/\*\*/g, '');
+  const cleanedText = getMilkdownMarkdown().replace(/~~/g, '').replace(/\*\*/g, '');
   const payload = {
     headline: headlineInput.value.trim(),
     text: cleanedText.trim(),
