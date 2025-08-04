@@ -125,7 +125,7 @@ async function generateResponse(req, res) {
     }
 
     const now = new Date();
-    const dateAndTime = `Current date and time in Dresden, Germany is ${now.toLocaleString('de-DE', { timeZone: 'Europe/Berlin', dateStyle: 'full', timeStyle: 'long' })}`;
+    const dateAndTime = `Current date and time in Dresden, Germany is ${now.toLocaleString('en-GB', { timeZone: 'Europe/Berlin', dateStyle: 'full', timeStyle: 'long' })}`;
     
     let timezoneInfo = '';
     try {
@@ -170,7 +170,7 @@ async function generateResponse(req, res) {
       If there are diverging Answers for long and short term students, and the user did not yet specify their status, 
       ask for clarification and point out the difference.
 
-      Answer in the language of the user prompt, or the language the user wishes.
+      IMPORTANT: You MUST answer in the same language as the user's prompt. If the user asks in English, you MUST reply in English. If the user asks in German, you MUST reply in German.
 
 
       **Knowledgebase of the HTW Desden**:
@@ -192,7 +192,7 @@ async function generateResponse(req, res) {
 
       --
       
-      **Gesprächsverlauf**:
+      **Conversation History**:
       ${messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n")}
       
       --user prompt--
