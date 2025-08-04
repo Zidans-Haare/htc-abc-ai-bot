@@ -122,8 +122,30 @@ async function handleAiCheck() {
     return;
   }
 
+  const loader = document.getElementById('ai-check-loader');
+  const resultsEl = document.getElementById('ai-check-results');
+  const timerEl = document.getElementById('ai-timer');
+  let timerInterval;
+
   aiCheckModal.classList.remove('hidden');
-  aiCheckResponseEl.innerHTML = 'Analysiere...';
+  resultsEl.innerHTML = '';
+  loader.classList.remove('hidden');
+
+  // --- Dynamic Timer Calculation ---
+  const baseTime = 15; // Minimum time in seconds
+  const charsPerSecond = 100; // Add 1 second for every 100 characters
+  const maxTime = 90; // Maximum estimated time
+  const estimatedTime = Math.min(maxTime, baseTime + Math.floor(text.length / charsPerSecond));
+  
+  let timeLeft = estimatedTime;
+  timerEl.textContent = timeLeft;
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = Math.max(0, timeLeft);
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+    }
+  }, 1000);
 
   try {
     const response = await fetch('/api/admin/analyze-text', {
@@ -131,6 +153,9 @@ async function handleAiCheck() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text })
     });
+
+    clearInterval(timerInterval);
+    loader.classList.add('hidden');
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -149,12 +174,12 @@ async function handleAiCheck() {
     editor.setMarkdown(markdown);
 
     // Populate the modal with suggestions and contradictions
-    aiCheckResponseEl.innerHTML = '';
+    resultsEl.innerHTML = '';
 
     const actualCorrections = result.corrections.filter(item => item.original !== item.corrected);
 
     if (actualCorrections.length === 0 && result.contradictions.length === 0 && result.suggestions.length === 0) {
-        aiCheckResponseEl.innerHTML = '<p>Keine weiteren Vorschläge oder Widersprüche gefunden. Die Rechtschreibkorrekturen wurden direkt im Text markiert.</p>';
+        resultsEl.innerHTML = '<p>Keine weiteren Vorschläge oder Widersprüche gefunden. Die Rechtschreibkorrekturen wurden direkt im Text markiert.</p>';
     } else {
         if (actualCorrections.length > 0) {
             const correctionsList = document.createElement('div');
@@ -165,7 +190,7 @@ async function handleAiCheck() {
                 div.innerHTML = `Geändert von "<strong>${item.original}</strong>" zu "<strong>${item.corrected}</strong>" - <em>${item.reason}</em>`;
                 correctionsList.appendChild(div);
             });
-            aiCheckResponseEl.appendChild(correctionsList);
+            resultsEl.appendChild(correctionsList);
         }
 
         const createSuggestionItem = (item, type) => {
@@ -206,7 +231,7 @@ async function handleAiCheck() {
             result.contradictions.forEach(item => {
                 contradictionsList.appendChild(createSuggestionItem(item, 'contradiction'));
             });
-            aiCheckResponseEl.appendChild(contradictionsList);
+            resultsEl.appendChild(contradictionsList);
         }
 
         if (result.suggestions.length > 0) {
@@ -215,13 +240,15 @@ async function handleAiCheck() {
             result.suggestions.forEach(item => {
                 suggestionsList.appendChild(createSuggestionItem(item, 'suggestion'));
             });
-            aiCheckResponseEl.appendChild(suggestionsList);
+            resultsEl.appendChild(suggestionsList);
         }
     }
 
   } catch (error) {
+    clearInterval(timerInterval);
+    loader.classList.add('hidden');
     console.error('AI Check Error:', error);
-    aiCheckResponseEl.innerText = `Fehler bei der Analyse: ${error.message}`;
+    resultsEl.innerText = `Fehler bei der Analyse: ${error.message}`;
   }
 }
 

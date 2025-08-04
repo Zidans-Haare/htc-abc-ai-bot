@@ -264,7 +264,13 @@
     <div id="ai-check-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl">
             <h3 class="text-lg font-medium mb-4">✨ AI Analyse</h3>
-            <div id="ai-check-response" class="p-4 bg-gray-100 rounded-md h-96 overflow-y-auto"></div>
+            <div id="ai-check-response" class="p-4 bg-gray-100 rounded-md h-96 overflow-y-auto">
+                <div id="ai-check-loader" class="text-center hidden">
+                    <i class="fas fa-spinner fa-spin text-4xl text-[var(--primary-text)] mb-4"></i>
+                    <p class="text-[var(--secondary-text)]">Die AI-Analyse läuft. Geschätzte verbleibende Zeit: <span id="ai-timer">60</span> Sekunden...</p>
+                </div>
+                <div id="ai-check-results"></div>
+            </div>
             <div class="flex justify-end mt-6">
                 <button id="ai-check-close" class="px-4 py-2 rounded-md btn-secondary">Schließen</button>
             </div>
