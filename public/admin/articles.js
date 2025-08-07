@@ -1,5 +1,4 @@
 import { fetchAndParse } from './utils.js';
-import { createMilkdownEditor, setMarkdown, onChange } from './milk.js';
 
 let currentId = null;
 let allHeadlines = [];
@@ -7,6 +6,9 @@ let selectedHeadlineEl = null;
 let originalHeadline = '';
 let originalText = '';
 let textBeforeAiCheck = '';
+let getMilkdownMarkdown;
+let setMilkdownMarkdown;
+let onMilkdownChange;
 
 const listEl = document.getElementById('headline-list');
 const searchEl = document.getElementById('search');
@@ -85,7 +87,7 @@ async function handleImproveClick(suggestionText) {
 
     const result = await response.json();
     let markdown = await markDiffInMarkdown(textBeforeAiCheck, result.improvedText);
-    setMarkdown(markdown);
+    setMilkdownMarkdown(markdown);
     aiCheckModal.classList.add('hidden');
 
   } catch (error) {
@@ -100,7 +102,7 @@ async function handleImproveClick(suggestionText) {
 }
 
 async function handleAiCheck() {
-  let text = getMilkdownMarkdown();
+  let text = await getMilkdownMarkdown();
   text = text.replace(/~~/g, '').replace(/\*\*/g, ''); // Clean up previous markings
   textBeforeAiCheck = text;
 
@@ -130,7 +132,7 @@ async function handleAiCheck() {
     }
 
     let markdown = await markDiffInMarkdown(text, result.correctedText);
-    setMarkdown(markdown);
+    setMilkdownMarkdown(markdown);
     
     // Populate the modal with suggestions and contradictions
     aiCheckResponseEl.innerHTML = '';
@@ -154,9 +156,9 @@ function setSaveButtonState(enabled) {
   }
 }
 
-function checkForChanges() {
+async function checkForChanges() {
   const currentHeadline = headlineInput.value;
-  const currentText = getMilkdownMarkdown();
+  const currentText = await getMilkdownMarkdown();
   const hasChanged = currentHeadline !== originalHeadline || currentText !== originalText;
   setSaveButtonState(hasChanged);
 }
@@ -204,7 +206,7 @@ export async function loadEntry(id) {
     const entry = await fetchAndParse(`/api/admin/entries/${id}`);
     currentId = entry.id;
     headlineInput.value = entry.headline;
-    setMarkdown(entry.text);
+    await setMilkdownMarkdown(entry.text);
     originalHeadline = entry.headline;
     originalText = entry.text;
     const timestamp = entry.lastUpdated ? new Date(entry.lastUpdated) : null;
@@ -219,7 +221,7 @@ export async function loadEntry(id) {
 }
 
 export async function saveEntry() {
-  const cleanedText = getMilkdownMarkdown().replace(/~~/g, '').replace(/\*\*/g, '');
+  const cleanedText = (await getMilkdownMarkdown()).replace(/~~/g, '').replace(/\*\*/g, '');
   const payload = {
     headline: headlineInput.value.trim(),
     text: cleanedText.trim(),
@@ -261,7 +263,7 @@ async function deleteEntry() {
     await fetchAndParse(`/api/admin/entries/${currentId}`, { method: 'DELETE' });
     currentId = null;
     headlineInput.value = '';
-    setMarkdown('');
+    await setMilkdownMarkdown('');
     document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
     await loadHeadlines();
     alert('Gelöscht');
@@ -282,15 +284,17 @@ export function getCurrentId() {
   return currentId;
 }
 
-export function initHeadlines() {
-  createMilkdownEditor(handleAiCheck);
+export function initHeadlines(editorFuncs) {
+  getMilkdownMarkdown = editorFuncs.getMarkdown;
+  setMilkdownMarkdown = editorFuncs.setMarkdown;
+  onMilkdownChange = editorFuncs.onChange;
 
   saveBtn.addEventListener('click', saveEntry);
   deleteBtn.addEventListener('click', deleteEntry);
-  addBtn.addEventListener('click', () => {
+  addBtn.addEventListener('click', async () => {
     currentId = null;
     headlineInput.value = '';
-    setMarkdown('');
+    await setMilkdownMarkdown('');
     originalHeadline = '';
     originalText = '';
     document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
@@ -301,13 +305,14 @@ export function initHeadlines() {
   });
 
   headlineInput.addEventListener('input', checkForChanges);
-  onChange(checkForChanges);
+  onMilkdownChange(checkForChanges);
 
   aiCheckCloseBtn.addEventListener('click', () => {
     aiCheckModal.classList.add('hidden');
   });
 
   loadHeadlines();
+  return { handleAiCheck };
 }
 
 export { allHeadlines, loadHeadlines };

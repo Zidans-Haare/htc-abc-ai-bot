@@ -18,4 +18,4 @@ server.log
 .venv_htc/
 public/uploads/
 package-lock.json
-public/admin/milkdown_editor/milkdown.umd.js
+public/admin/milkdown_editor/

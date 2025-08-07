@@ -7,6 +7,7 @@ import { initExport } from './export.js';
 import { setupFeedback } from './feedback.js';
 import { renderMarkup } from '../js/markup.js';
 import { initImages } from './images.js';
+import { initEditor, getMarkdown, setMarkdown, onChange } from './milk.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -227,7 +228,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Initialize all modules
-  initHeadlines();
+  async function handleAiCheck() {
+    // This function needs access to the editor functions, so we define it here
+    // after the editor has been initialized.
+    let text = await editorFuncs.getMarkdown();
+    // ... rest of handleAiCheck logic from articles.js
+  }
+
+  const editorFuncs = await initEditor(handleAiCheck);
+  initHeadlines(editorFuncs);
   const questionsManager = initQuestions({ updateOpenCount, showEditor });
   initArchive();
   initExport();

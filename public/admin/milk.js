@@ -1,96 +1,133 @@
 
-import { Editor, rootCtx, defaultValueCtx, commands } from '@milkdown/core';
-import { nord } from '@milkdown/theme-nord';
-import { gfm } from '@milkdown/kit/preset/gfm';
-import { history } from '@milkdown/kit/plugin/history';
-import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
-import { SlashProvider, slashFactory } from '@milkdown/kit/plugin/slash'
-import { TooltipProvider, tooltipFactory } from '@milkdown/kit/plugin/tooltip'
-import { commonmark } from '@milkdown/kit/preset/commonmark'
-
-import '@milkdown/theme-nord/style.css';
-
-
 let editorInstance = null;
 let onChangeCallback = () => {};
+let milkdownBundle = null;
 
-export async function createMilkdownEditor(aiCheckHandler) {
-  const editor = await Editor.make()
-    .config((ctx) => {
-      ctx.set(rootCtx, document.querySelector('#editor'));
-      ctx.set(defaultValueCtx, ''); // Initial content
-      ctx.get(listenerCtx).markdownUpdated((ctx, markdown, prevMarkdown) => {
-        onChangeCallback(markdown);
-      });
-    })
-    .use(nord)
-    .use(gfm)
-    .use(history)
-    .use(listener)
+async function getMilkdown() {
+    if (!milkdownBundle) {
+        milkdownBundle = await import('./milkdown_editor/milkdown.bundle.js');
+    }
+    return milkdownBundle;
+}
 
+export async function initEditor(aiCheckHandler) {
+    if (editorInstance) {
+        // If the editor is already initialized, just update the AI check handler
+        setupToolbar(aiCheckHandler);
+        return editorInstance;
+    }
+
+    // Example in milk.js or HTML <script>
+    const { Editor, rootCtx, defaultValueCtx, commands, nord, gfm, history, listener, listenerCtx, slashFactory, tooltipFactory, commonmark, getMarkdownUtil } = await getMilkdown();
+
+    const editor = await Editor.make()
+      .config((ctx) => {
+        ctx.set(rootCtx, document.querySelector('#editor'));
+        ctx.set(defaultValueCtx, '');
+        ctx.get(listenerCtx).markdownUpdated((ctx, markdown, prevMarkdown) => {
+          if (onChangeCallback) {
+            onChangeCallback(markdown);
+          }
+        });
+      })
+    .use(nord) // Theme
+    .use(commonmark) // Basic markdown support
+    .use(gfm) // GFM extension
+    .use(history) // Undo/redo
+    .use(listener) // Listener
+    .use(slashFactory()) // Slash commands (e.g., / for formatting)
+    .use(tooltipFactory()) // Tooltip toolbar (bold, italic, etc.)
     .create();
 
-  editorInstance = editor;
-  setupToolbar(aiCheckHandler);
-  return editor;
+    editorInstance = editor;
+    setupToolbar(aiCheckHandler);
+
+    return {
+        getMarkdown: () => editorInstance.action(getMarkdownUtil()),
+        setMarkdown: (markdown) => {
+            editorInstance.action(ctx => {
+                const view = ctx.get(rootCtx);
+                if (view) {
+                    editorInstance.action(commands.selectAll);
+                    editorInstance.action(commands.deleteSelection);
+                    editorInstance.action(commands.insert(markdown));
+                }
+            });
+        },
+        onChange: (callback) => {
+            onChangeCallback = callback;
+        },
+        setupAiCheck: setupToolbar // Expose setupToolbar to re-bind AI check
+    };
 }
 
-function setupToolbar(aiCheckHandler) {
-  const editor = editorInstance;
-  if (!editor) return;
+async function setupToolbar(aiCheckHandler) {
+    const editor = editorInstance;
+    if (!editor) return;
 
-  const h1 = document.getElementById('h1-btn');
-  const h2 = document.getElementById('h2-btn');
-  const h3 = document.getElementById('h3-btn');
-  const bold = document.getElementById('bold-btn');
-  const italic = document.getElementById('italic-btn');
-  const underline = document.getElementById('underline-btn');
-  const link = document.getElementById('link-btn');
-  const undoBtn = document.getElementById('undo-btn');
-  const redoBtn = document.getElementById('redo-btn');
-  const aiCheck = document.getElementById('ai-check-btn');
+    const {
+        commands
+    } = await getMilkdown();
 
-  if (h1) h1.addEventListener('click', () => editor.action(toggleHeading({ level: 1 })));
-  if (h2) h2.addEventListener('click', () => editor.action(toggleHeading({ level: 2 })));
-  if (h3) h3.addEventListener('click', () => editor.action(toggleHeading({ level: 3 })));
-  if (bold) bold.addEventListener('click', () => editor.action(toggleStrong()));
-  if (italic) italic.addEventListener('click', () => editor.action(toggleEmphasis()));
-  // Underline is not supported in GFM; keep disabled or implement custom command
-  if (underline) underline.disabled = true;
-  if (link) {
-    link.addEventListener('click', () => {
-      const url = prompt('Enter URL:');
-      if (url) {
-        editor.action(toggleLink({ href: url }));
-      }
-    });
-  }
-  if (undoBtn) undoBtn.addEventListener('click', () => editor.action(undo()));
-  if (redoBtn) redoBtn.addEventListener('click', () => editor.action(redo()));
-  if (aiCheck && aiCheckHandler) {
-    aiCheck.addEventListener('click', aiCheckHandler);
-  }
+    const h1 = document.getElementById('h1-btn');
+    const h2 = document.getElementById('h2-btn');
+    const h3 = document.getElementById('h3-btn');
+    const bold = document.getElementById('bold-btn');
+    const italic = document.getElementById('italic-btn');
+    const underline = document.getElementById('underline-btn');
+    const link = document.getElementById('link-btn');
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
+    const aiCheck = document.getElementById('ai-check-btn');
+
+    if (h1) h1.addEventListener('click', () => editor.action(commands.toggleHeading({
+        level: 1
+    })));
+    if (h2) h2.addEventListener('click', () => editor.action(commands.toggleHeading({
+        level: 2
+    })));
+    if (h3) h3.addEventListener('click', () => editor.action(commands.toggleHeading({
+        level: 3
+    })));
+    if (bold) bold.addEventListener('click', () => editor.action(commands.toggleStrong()));
+    if (italic) italic.addEventListener('click', () => editor.action(commands.toggleEmphasis()));
+    if (underline) underline.disabled = true;
+    if (link) {
+        link.addEventListener('click', () => {
+            const url = prompt('Enter URL:');
+            if (url) {
+                editor.action(commands.toggleLink({
+                    href: url
+                }));
+            }
+        });
+    }
+    if (undoBtn) undoBtn.addEventListener('click', () => editor.action(commands.undo));
+    if (redoBtn) redoBtn.addEventListener('click', () => editor.action(commands.redo));
+    if (aiCheck && aiCheckHandler) {
+        aiCheck.addEventListener('click', aiCheckHandler);
+    }
 }
+
+
 
 export function getMarkdown() {
-  if (!editorInstance) return '';
-  return editorInstance.action(getMarkdown()); // Use Milkdown's utility for proper Markdown serialization
+    if (!editorInstance) return '';
+    return editorInstance.action(getMarkdownUtil());
 }
 
 export function setMarkdown(markdown) {
-  if (!editorInstance) return;
-  editorInstance.action((ctx) => {
-    ctx.set(defaultValueCtx, markdown);
-    editorInstance.action((ctx) => {
-      const view = ctx.get(rootCtx).querySelector('#editor');
-      if (view) {
-        editorInstance.destroy();
-        editorInstance.create();
-      }
+    if (!editorInstance) return;
+    editorInstance.action(ctx => {
+        const view = ctx.get(rootCtx);
+        if (view) {
+            editorInstance.action(commands.selectAll);
+            editorInstance.action(commands.deleteSelection);
+            editorInstance.action(commands.insert(markdown));
+        }
     });
-  });
 }
 
 export function onChange(callback) {
-  onChangeCallback = callback;
+    onChangeCallback = callback;
 }
