@@ -1,73 +1,61 @@
 
+import { Editor, rootCtx, defaultValueCtx, commands, nord, gfm, history, listener, listenerCtx, slashFactory, tooltipFactory, commonmark, getMarkdownUtil } from './milkdown_editor/milkdown.bundle.js';
+
 let editorInstance = null;
 let onChangeCallback = () => {};
-let milkdownBundle = null;
 
-async function getMilkdown() {
-    if (!milkdownBundle) {
-        milkdownBundle = await import('./milkdown_editor/milkdown.bundle.js');
-    }
-    return milkdownBundle;
-}
 
 export async function initEditor(aiCheckHandler) {
-    if (editorInstance) {
-        // If the editor is already initialized, just update the AI check handler
-        setupToolbar(aiCheckHandler);
-        return editorInstance;
-    }
+  if (editorInstance) {
+    setupToolbar(aiCheckHandler);
+    return editorInstance;
+  }
 
-    // Example in milk.js or HTML <script>
-    const { Editor, rootCtx, defaultValueCtx, commands, nord, gfm, history, listener, listenerCtx, slashFactory, tooltipFactory, commonmark, getMarkdownUtil } = await getMilkdown();
-
-    const editor = await Editor.make()
-      .config((ctx) => {
-        ctx.set(rootCtx, document.querySelector('#editor'));
-        ctx.set(defaultValueCtx, '');
-        ctx.get(listenerCtx).markdownUpdated((ctx, markdown, prevMarkdown) => {
-          if (onChangeCallback) {
-            onChangeCallback(markdown);
-          }
-        });
-      })
-    .use(nord) // Theme
-    .use(commonmark) // Basic markdown support
-    .use(gfm) // GFM extension
-    .use(history) // Undo/redo
-    .use(listener) // Listener
-    .use(slashFactory()) // Slash commands (e.g., / for formatting)
-    .use(tooltipFactory()) // Tooltip toolbar (bold, italic, etc.)
+  const editor = await Editor.make()
+    .config((ctx) => {
+      ctx.set(rootCtx, document.querySelector('#editor'));
+      ctx.set(defaultValueCtx, '');
+      ctx.get(listenerCtx).markdownUpdated((ctx, markdown, prevMarkdown) => {
+        if (onChangeCallback) {
+          onChangeCallback(markdown);
+        }
+      });
+    })
+    .use(nord)
+    .use(commonmark)
+    .use(gfm)
+    .use(history)
+    .use(listener)
+    .use(slashFactory())
+    .use(tooltipFactory())
     .create();
 
-    editorInstance = editor;
-    setupToolbar(aiCheckHandler);
+  editorInstance = editor;
+  setupToolbar(aiCheckHandler);
 
-    return {
-        getMarkdown: () => editorInstance.action(getMarkdownUtil()),
-        setMarkdown: (markdown) => {
-            editorInstance.action(ctx => {
-                const view = ctx.get(rootCtx);
-                if (view) {
-                    editorInstance.action(commands.selectAll);
-                    editorInstance.action(commands.deleteSelection);
-                    editorInstance.action(commands.insert(markdown));
-                }
-            });
-        },
-        onChange: (callback) => {
-            onChangeCallback = callback;
-        },
-        setupAiCheck: setupToolbar // Expose setupToolbar to re-bind AI check
-    };
+  return {
+    getMarkdown: () => editorInstance.action(getMarkdownUtil()),
+    setMarkdown: (markdown) => {
+      editorInstance.action(ctx => {
+        const view = ctx.get(rootCtx);
+        if (view) {
+          editorInstance.action(commands.selectAll);
+          editorInstance.action(commands.deleteSelection);
+          editorInstance.action(commands.insert(markdown));
+        }
+      });
+    },
+    onChange: (callback) => {
+      onChangeCallback = callback;
+    },
+    setupAiCheck: setupToolbar
+  };
 }
 
 async function setupToolbar(aiCheckHandler) {
     const editor = editorInstance;
     if (!editor) return;
 
-    const {
-        commands
-    } = await getMilkdown();
 
     const h1 = document.getElementById('h1-btn');
     const h2 = document.getElementById('h2-btn');
