@@ -1,4 +1,4 @@
-// src/milkdown-entry.js
+// build_js_modules/milkdown-entry.js
 import { Editor, rootCtx, defaultValueCtx, commands } from '@milkdown/kit/core';
 import { nord } from '@milkdown/theme-nord';
 import { gfm } from '@milkdown/kit/preset/gfm';
@@ -8,6 +8,7 @@ import { SlashProvider, slashFactory } from '@milkdown/kit/plugin/slash';
 import { TooltipProvider, tooltipFactory } from '@milkdown/kit/plugin/tooltip';
 import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { getMarkdown as getMarkdownUtil } from '@milkdown/utils';
+import { replaceAll } from '@milkdown/kit/utils';
 
 import '@milkdown/theme-nord/style.css';
 
@@ -28,4 +29,5 @@ export {
   tooltipFactory,
   commonmark,
   getMarkdownUtil,
+  replaceAll // Export replaceAll macro
 };
