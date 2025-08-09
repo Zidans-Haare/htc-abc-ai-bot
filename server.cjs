@@ -14,6 +14,7 @@ const feedbackController = require('./controllers/feedbackController.cjs');
 const adminController = require('./controllers/adminController.cjs');
 const auth = require('./controllers/authController.cjs');
 const viewController = require('./controllers/viewController.cjs');
+const dashboardController = require('./controllers/dashboardController.cjs');
 
 // --- Initializations ---
 dotenv.config();
@@ -44,6 +45,13 @@ const apiLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+const dashboardApiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // Much higher limit for internal dashboard
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 const loginLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5,
@@ -57,7 +65,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com"],
+      scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:"],
       connectSrc: ["'self'"],
@@ -111,6 +119,7 @@ app.get('/api/suggestions', getSuggestions);
 app.use('/api/feedback', feedbackController);
 app.use('/api', auth.router);
 app.use('/api', adminController(auth.getSession, logAction));
+app.use('/api/dashboard', dashboardApiLimiter, dashboardController);
 app.get("/api/view/articles", viewController.getPublishedArticles);
 
 // --- Favicon & 404 ---

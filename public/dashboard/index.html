@@ -1,23 +1,99 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot Dashboard</title>
-    <link rel="stylesheet" href="dashboard.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Hochschul ABC</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="dashboard.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer type="module" src="dashboard.js"></script>
+  <link rel="icon" href="/favicon.ico">
 </head>
-<body>
-    <h1>Bot Dashboard</h1>
-    
-    <h2>Statistiken</h2>
-    <div id="stats-container"></div>
+<body class="flex h-screen bg-[var(--bg-color)] text-[var(--primary-text)]">
 
-    <h2>Unbeantwortete Fragen</h2>
-    <div id="unanswered-questions-container"></div>
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar" class="w-64 flex-shrink-0 bg-[var(--app-bg)] p-6 flex flex-col border-r border-[var(--border-color)] transition-all duration-300">
+    <div class="flex justify-center items-center mb-8">
+        <img src="/image/HTW.svg" alt="HTWD Logo" class="h-16">
+    </div>
+    <nav id="main-menu" class="flex-grow space-y-2">
+        <a href="/admin" id="btn-admin" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-pen-to-square w-5 text-center"></i>
+            <span class="sidebar-text">Admin</span>
+        </a>
+        <a href="#" id="btn-dashboard" class="nav-link active hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-chart-line w-5 text-center"></i>
+            <span class="sidebar-text">Dashboard</span>
+        </a>
+    </nav>
+    <div class="mt-auto">
+        <div id="user-session-info" class="px-4 py-2 mb-2 text-center text-sm text-[var(--secondary-text)] sidebar-text">
+            <!-- Session-Info wird hier per JS eingefügt -->
+        </div>
+        <a href="#" id="btn-logout" class="nav-link hover:bg-[var(--content-bg)] flex items-center justify-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors border-t border-[var(--border-color)]">
+            <i class="fa-solid fa-right-from-bracket w-5 text-center"></i>
+            <span class="sidebar-text">Logout</span>
+        </a>
+    </div>
+  </aside>
 
-    <h2>Feedback</h2>
-    <div id="feedback-container"></div>
+  <main class="flex-1 flex flex-col overflow-hidden bg-[var(--content-bg)]">
+    <div class="p-6">
+        <h1 class="text-2xl font-bold">Dashboard</h1>
+    </div>
+    <div id="dashboard-content" class="flex-1 overflow-y-auto p-6">
+        <!-- KPI Cards -->
+        <div id="kpi-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        </div>
 
-    <script src="dashboard.js"></script>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Unanswered Questions -->
+            <div class="lg:col-span-2">
+                <h2 class="text-xl font-semibold mb-4">Top 5 unbeantwortete Fragen</h2>
+                <div id="unanswered-questions-container" class="space-y-4"></div>
+            </div>
+
+            <!-- Recent Feedback -->
+            <div>
+                <h2 class="text-xl font-semibold mb-4">Letztes Feedback</h2>
+                <div id="feedback-container" class="space-y-4"></div>
+            </div>
+        </div>
+        
+        <!-- Sessions Chart -->
+        <div class="mt-6">
+            <h2 class="text-xl font-semibold mb-4">Sessions der letzten 7 Tage</h2>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <canvas id="sessions-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Most Viewed Articles -->
+        <div class="mt-6">
+            <h2 class="text-xl font-semibold mb-4">Meistaufgerufene Artikel</h2>
+            <div id="most-viewed-articles-container" class="space-y-4"></div>
+        </div>
+
+        <!-- Feedback and Content Stats -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div>
+                <h2 class="text-xl font-semibold mb-4">Feedback Analyse</h2>
+                <div id="feedback-stats-container" class="bg-white p-4 rounded-lg shadow"></div>
+                <div class="bg-white p-4 rounded-lg shadow mt-6">
+                    <canvas id="feedback-chart"></canvas>
+                </div>
+            </div>
+            <div>
+                <h2 class="text-xl font-semibold mb-4">Content Analyse</h2>
+                <div id="content-stats-container" class="bg-white p-4 rounded-lg shadow"></div>
+            </div>
+        </div>
+    </div>
+  </main>
 </body>
 </html>

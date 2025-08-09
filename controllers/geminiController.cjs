@@ -1,5 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { HochschuhlABC, Questions, Images } = require("./db.cjs");
+const { Op } = require('sequelize');
 const { getCached } = require("../utils/cache");
 const { estimateTokens, isWithinTokenLimit } = require("../utils/tokenizer");
 const { summarizeConversation } = require("../utils/summarizer");
@@ -17,7 +18,7 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-async function logUnansweredQuestion(newQuestion) {
+async function logUnansweredQuestion(newQuestion, conversationId) {
   try {
 
     const unansweredQuestions = await Questions.findAll({
@@ -59,6 +60,7 @@ async function logUnansweredQuestion(newQuestion) {
       translationToStore = translatedQuestion;
     }
       
+    console.log(`Logging unanswered question with conversationId: ${conversationId}`);
     await Questions.create({
       question: newQuestion,
       translation: translationToStore,
@@ -66,6 +68,7 @@ async function logUnansweredQuestion(newQuestion) {
       archived: false,
       deleted: false,
       spam: false,
+      conversationId: conversationId
     });
     console.log(`Unanswered question logged to database`);
   } catch (error) {
@@ -75,6 +78,22 @@ async function logUnansweredQuestion(newQuestion) {
     );
   }
   // console.log(`logUnansweredQuestion finished at: ${new Date().toISOString()}`);
+}
+
+async function logUserQuestion(prompt, convoId) {
+  try {
+    await Questions.create({
+      question: prompt,
+      conversationId: convoId,
+      answered: false, // Default to false, update later if answered
+      archived: false,
+      deleted: false,
+      spam: false,
+    });
+    console.log(`User question logged to database with conversationId: ${convoId}`);
+  } catch (error) {
+    console.error("Error logging user question:", error.message);
+  }
 }
 
 async function generateResponse(req, res) {
@@ -92,6 +111,9 @@ async function generateResponse(req, res) {
 
     const convoId = conversationId || new Date().toISOString() + Math.random().toString(36).slice(2);
     console.log(`Processing conversationId: ${convoId}`);
+
+    // Log the user's question immediately
+    await logUserQuestion(prompt, convoId);
 
     let messages = conversations.get(convoId) || [];
     if (messages.length === 0) {
@@ -197,24 +219,71 @@ async function generateResponse(req, res) {
       
       --user prompt--
       ${prompt}
+
+      --used articles--
+      After the response, add a line that says "USED_ARTICLES:" followed by a comma-separated list of the headlines of the articles you used to generate the response.
     `;
 
     const result = await model.generateContentStream(fullPrompt);
     
     let fullResponseText = '';
+    let usedArticlesEncountered = false;
     for await (const chunk of result.stream) {
+      if (usedArticlesEncountered) {
+        fullResponseText += chunk.text();
+        continue;
+      }
       const chunkText = chunk.text();
+      const usedArticlesIndex = chunkText.indexOf('USED_ARTICLES:');
+      if (usedArticlesIndex !== -1) {
+        const textToSend = chunkText.substring(0, usedArticlesIndex);
+        if (textToSend.length > 0) {
+          res.write(`data: ${JSON.stringify({ token: textToSend, conversationId: convoId })}\n\n`);
+        }
+        fullResponseText += chunkText;
+        usedArticlesEncountered = true;
+        res.write('data: [DONE]\n\n'); // End the stream for the client
+        res.end();
+        return; // Stop processing further chunks for the client
+      }
       fullResponseText += chunkText;
       res.write(`data: ${JSON.stringify({ token: chunkText, conversationId: convoId })}\n\n`);
     }
 
-    const aiMessage = { text: fullResponseText, isUser: false, timestamp: new Date().toISOString() };
+    // If the stream ended without USED_ARTICLES, send DONE
+    if (!usedArticlesEncountered) {
+      res.write('data: [DONE]\n\n');
+      res.end();
+    }
+
+    // Remove USED_ARTICLES from the response before saving it to the conversation history
+    const usedArticlesIndex = fullResponseText.indexOf('USED_ARTICLES:');
+    const cleanedResponseText = usedArticlesIndex !== -1 ? fullResponseText.substring(0, usedArticlesIndex).trim() : fullResponseText;
+
+    const aiMessage = { text: cleanedResponseText, isUser: false, timestamp: new Date().toISOString() };
     messages.push(aiMessage);
     conversations.set(convoId, messages);
-    console.log(`Saved AI response: ${fullResponseText.slice(0, 50)}...`);
+    console.log(`Saved AI response: ${cleanedResponseText.slice(0, 50)}...`);
 
     if (fullResponseText.includes("<+>")) {
-      logUnansweredQuestion(prompt);
+      logUnansweredQuestion(prompt, convoId);
+    } else {
+      // If the question was answered, update the corresponding entry in Questions table
+      await Questions.update(
+        { answered: true },
+        { where: { question: prompt, conversationId: convoId } }
+      );
+      console.log(`Question marked as answered for conversationId: ${convoId}`);
+    }
+
+    // Update view count
+    if (usedArticlesIndex !== -1) {
+        const usedArticlesStr = fullResponseText.substring(usedArticlesIndex + 'USED_ARTICLES:'.length).trim();
+        const usedArticles = usedArticlesStr.split(',').map(h => h.trim());
+        
+        if (usedArticles.length > 0) {
+            await HochschuhlABC.increment('views', { where: { headline: { [Op.in]: usedArticles } } });
+        }
     }
 
     res.write('data: [DONE]\n\n');
