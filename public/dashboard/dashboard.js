@@ -48,34 +48,100 @@ async function fetchSessions() {
     }
 }
 
+async function fetchMostViewedArticles() {
+    try {
+        const response = await fetch('/api/dashboard/most-viewed-articles');
+        const articles = await response.json();
+        renderMostViewedArticles(articles);
+    } catch (error) {
+        console.error('Fehler beim Abrufen der meistbesuchten Artikel:', error);
+    }
+}
+
+async function fetchFeedbackStats() {
+    try {
+        const response = await fetch('/api/dashboard/feedback-stats');
+        const stats = await response.json();
+        renderFeedbackStats(stats);
+        renderFeedbackChart(stats.feedbackOverTime);
+    } catch (error) {
+        console.error('Fehler beim Abrufen der Feedback-Statistiken:', error);
+    }
+}
+
+async function fetchContentStats() {
+    try {
+        const response = await fetch('/api/dashboard/content-stats');
+        const stats = await response.json();
+        renderContentStats(stats);
+    } catch (error) {
+        console.error('Fehler beim Abrufen der Content-Statistiken:', error);
+    }
+}
+
 function renderKpis(kpis) {
     const container = document.getElementById('kpi-container');
-    container.innerHTML = '';
-
-    const kpiCards = [
-        { title: 'Gesamt-Sessions', value: kpis.totalSessions, icon: 'fa-users' },
-        { title: 'Sessions heute', value: kpis.todaySessions, icon: 'fa-calendar-day' },
-        { title: 'Erfolgsquote', value: `${kpis.successRate}%`, icon: 'fa-check-circle' },
-        { title: 'Feedback-Score', value: `${kpis.feedbackScore}%`, icon: 'fa-star' },
-        { title: 'Offene neue Fragen', value: kpis.openQuestions, icon: 'fa-question-circle' }
-    ];
-
-    kpiCards.forEach(card => {
-        const cardElement = document.createElement('div');
-        cardElement.className = 'bg-white p-6 rounded-lg shadow';
-        cardElement.innerHTML = `
+    container.innerHTML = `
+        <!-- Gesamt Sessions -->
+        <div class="bg-white p-6 rounded-lg shadow">
             <div class="flex items-center">
-                <div class="bg-gray-200 rounded-full p-3">
-                    <i class="fas ${card.icon} text-2xl text-gray-600"></i>
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-users text-white text-sm"></i>
+                    </div>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-700">${card.title}</h3>
-                    <p class="text-2xl font-bold text-gray-900">${card.value}</p>
+                    <p class="text-sm font-medium text-gray-500">Gesamt Sessions</p>
+                    <p class="text-2xl font-bold text-gray-900">${kpis.totalSessions || 0}</p>
                 </div>
             </div>
-        `;
-        container.appendChild(cardElement);
-    });
+        </div>
+
+        <!-- Sessions Heute -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-calendar-day text-white text-sm"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Sessions Heute</p>
+                    <p class="text-2xl font-bold text-gray-900">${kpis.todaySessions || 0}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Erfolgsrate -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white text-sm"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Erfolgsrate</p>
+                    <p class="text-2xl font-bold text-gray-900">${kpis.successRate}%</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Offene Fragen -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-question-circle text-white text-sm"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Offene Fragen</p>
+                    <p class="text-2xl font-bold text-gray-900">${kpis.openQuestions || 0}</p>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function renderUnansweredQuestions(questions) {
@@ -87,32 +153,23 @@ function renderUnansweredQuestions(questions) {
         return;
     }
 
-    questions.forEach(question => {
-        const card = document.createElement('div');
-        card.className = 'bg-white p-4 rounded-lg shadow flex justify-between items-center';
-        card.innerHTML = `
-            <p class="text-gray-800">${question.question}</p>
-            <p class="text-lg font-bold text-gray-900">${question.count}</p>
-        `;
-        container.appendChild(card);
-    });
-}
-
-function renderRecentFeedback(feedback) {
-    const container = document.getElementById('feedback-container');
-    container.innerHTML = '';
-
-    if (feedback.length === 0) {
-        container.innerHTML = '<p>Kein Feedback gefunden.</p>';
-        return;
-    }
-
-    feedback.forEach(item => {
+    questions.forEach(questionGroup => {
         const card = document.createElement('div');
         card.className = 'bg-white p-4 rounded-lg shadow';
+        
+        // Show similar questions if available
+        const similarInfo = questionGroup.similar_questions && questionGroup.similar_questions.length > 1 
+            ? `<p class="text-sm text-gray-500 mt-2">Ähnliche Fragen: ${questionGroup.similar_questions.slice(1).join(', ')}</p>`
+            : '';
+        
         card.innerHTML = `
-            <p class="text-gray-800">${item.feedback_text}</p>
-            <p class="text-sm text-gray-500 mt-2">Rating: ${item.rating}</p>
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <p class="text-gray-800 font-medium">${questionGroup.question}</p>
+                    ${similarInfo}
+                </div>
+                <span class="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full ml-2">${questionGroup.count}</span>
+            </div>
         `;
         container.appendChild(card);
     });
@@ -131,29 +188,28 @@ function renderSessionsChart(sessions) {
             datasets: [{
                 label: 'Sessions',
                 data: data,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderWidth: 1
+                borderColor: 'rgba(59, 130, 246, 1)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4
             }]
         },
         options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
                 }
             }
         }
     });
-}
-
-async function fetchMostViewedArticles() {
-    try {
-        const response = await fetch('/api/dashboard/most-viewed-articles');
-        const articles = await response.json();
-        renderMostViewedArticles(articles);
-    } catch (error) {
-        console.error('Fehler beim Abrufen der meistaufgerufenen Artikel:', error);
-    }
 }
 
 function renderMostViewedArticles(articles) {
@@ -176,15 +232,38 @@ function renderMostViewedArticles(articles) {
     });
 }
 
-async function fetchFeedbackStats() {
-    try {
-        const response = await fetch('/api/dashboard/feedback-stats');
-        const stats = await response.json();
-        renderFeedbackStats(stats);
-        renderFeedbackChart(stats.feedbackOverTime);
-    } catch (error) {
-        console.error('Fehler beim Abrufen der Feedback-Statistiken:', error);
+function renderContentStats(stats) {
+    const container = document.getElementById('content-stats-container');
+    container.innerHTML = `
+        <div class="flex justify-between items-center">
+            <p class="text-gray-800">Aktive Artikel</p>
+            <p class="text-lg font-bold text-green-500">${stats.activeArticles}</p>
+        </div>
+        <div class="flex justify-between items-center mt-2">
+            <p class="text-gray-800">Archivierte Artikel</p>
+            <p class="text-lg font-bold text-gray-500">${stats.archivedArticles}</p>
+        </div>
+    `;
+}
+
+function renderRecentFeedback(feedback) {
+    const container = document.getElementById('recent-feedback-container');
+    container.innerHTML = '';
+
+    if (feedback.length === 0) {
+        container.innerHTML = '<p>Kein Feedback vorhanden.</p>';
+        return;
     }
+
+    feedback.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'bg-white p-4 rounded-lg shadow';
+        card.innerHTML = `
+            <p class="text-gray-800 text-sm mb-2">${item.feedback_text.substring(0, 100)}...</p>
+            <p class="text-gray-500 text-xs">${new Date(item.timestamp).toLocaleDateString('de-DE')}</p>
+        `;
+        container.appendChild(card);
+    });
 }
 
 function renderFeedbackStats(stats) {
@@ -214,50 +293,26 @@ function renderFeedbackChart(feedback) {
             datasets: [{
                 label: 'Feedback',
                 data: data,
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                borderColor: 'rgba(34, 197, 94, 1)',
                 borderWidth: 1
             }]
         },
         options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
                 }
             }
         }
     });
-}
-
-async function fetchContentStats() {
-    try {
-        const response = await fetch('/api/dashboard/content-stats');
-        const stats = await response.json();
-        renderContentStats(stats);
-    } catch (error) {
-        console.error('Fehler beim Abrufen der Content-Statistiken:', error);
-    }
-}
-
-function renderContentStats(stats) {
-    const container = document.getElementById('content-stats-container');
-    container.innerHTML = `
-        <div class="flex justify-between items-center">
-            <p class="text-gray-800">Aktive Artikel</p>
-            <p class="text-lg font-bold text-gray-900">${stats.activeArticles}</p>
-        </div>
-        <div class="flex justify-between items-center mt-2">
-            <p class="text-gray-800">Archivierte Artikel</p>
-            <p class="text-lg font-bold text-gray-900">${stats.archivedArticles}</p>
-        </div>
-        <h3 class="text-lg font-semibold mt-4">Top Editors</h3>
-        <div class="space-y-2 mt-2">
-            ${stats.topEditors.map(editor => `
-                <div class="flex justify-between items-center">
-                    <p class="text-gray-800">${editor.editor}</p>
-                    <p class="text-lg font-bold text-gray-900">${editor.count}</p>
-                </div>
-            `).join('')}
-        </div>
-    `;
 }

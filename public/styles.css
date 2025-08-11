@@ -245,7 +245,7 @@ body {
     right: 10rem;
     width: 150px;
     height: 150px;
-    background-image: url('/image/FarantoStura.png');
+    background-image: var(--faranto-stura-bg, url('/image/FarantoStura.png'));
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;

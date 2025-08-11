@@ -80,12 +80,12 @@ app.use(cookieParser());
 app.use(express.json());
 
 // --- Protection Middleware ---
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   if (useAdmin && (req.url.startsWith('/admin/') || req.url.startsWith('/dashboard'))) {
     console.log('ADMIN mode: Bypassing login and creating session for debug_admin');
-    const token = auth.createSession('debug_admin', 'admin');
+    const token = await auth.createSession('debug_admin', 'admin');
     res.cookie('sessionToken', token, { httpOnly: true, secure: useHttps, maxAge: 1000 * 60 * 60, sameSite: 'strict' });
-    req.session = auth.getSession(token);
+    req.session = await auth.getSession(token);
     return next();
   }
 
@@ -95,7 +95,7 @@ const protect = (req, res, next) => {
 
   if (req.url.startsWith('/admin/') || req.url.startsWith('/dashboard')) {
     const token = req.cookies.sessionToken;
-    const session = token && auth.getSession(token);
+    const session = token && await auth.getSession(token);
     if (session) {
       req.session = session;
       return next();
@@ -146,7 +146,7 @@ if (useHttps) {
   } catch (e) {
     console.error("Could not start HTTPS server. Do you have key.pem and cert.pem in your .ssh directory?", e);
     process.exit(1);
-  }
+  } 
 } else {
   app.listen(port, serverCallback);
 }

@@ -61,7 +61,11 @@ const HochschuhlABC = sequelize.define('HochschuhlABC', {
   archived: {
     type: DataTypes.DATE,
     allowNull: true
-  }
+  },
+  views: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+   }
 }, {
   tableName: 'hochschuhl_abc',
   timestamps: false
@@ -120,6 +124,10 @@ const Questions = sequelize.define('Questions', {
   feedback: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+   conversationId: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   tableName: 'questions',
@@ -151,6 +159,10 @@ const Feedback = sequelize.define('Feedback', {
   attached_chat_history: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  rating: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   }
 }, {
   tableName: 'feedback',
@@ -176,10 +188,32 @@ const Images = sequelize.define('Images', {
     timestamps: false
 });
 
+const Session = sequelize.define('Session', {
+  token: {
+    type: DataTypes.STRING,
+    primaryKey: true
+  },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  role: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  expires: {
+    type: DataTypes.DATE,
+    allowNull: false
+  }
+}, {
+  tableName: 'sessions',
+  timestamps: false
+});
+
 // Define associations
 Questions.belongsTo(HochschuhlABC, { foreignKey: 'linked_article_id' });
 
 // sequelize.sync({ alter: true })
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images };
+module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, Session };

@@ -216,6 +216,9 @@ export function applyUI(settings) {
     const isDarkMode = settings.theme === 'dark' || (settings.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     root.classList.toggle('dark-mode', isDarkMode);
     
+    // Update logos for dark mode
+    updateLogosForTheme(isDarkMode);
+    
     // Accent Color
     root.style.setProperty('--accent-color', settings.accentColor);
     
@@ -358,4 +361,25 @@ export function populateChatHistoryDropdown() {
         option.textContent = chat.title;
         select.appendChild(option);
     });
+}
+
+// Function to update logos based on theme
+function updateLogosForTheme(isDarkMode) {
+    // Update HTW logos
+    const htwLogos = document.querySelectorAll('img[src*="HTW.svg"], img[src*="HTW_hell.png"], img[alt*="HTW"], img[alt*="HTWD"]');
+    htwLogos.forEach(logo => {
+        if (isDarkMode) {
+            logo.src = '/image/HTW_hell.png';
+        } else {
+            logo.src = '/image/HTW.svg';
+        }
+    });
+    
+    // Update FarantoStura background images in CSS
+    const root = document.documentElement;
+    if (isDarkMode) {
+        root.style.setProperty('--faranto-stura-bg', 'url("/image/FarantoStura_hell.png")');
+    } else {
+        root.style.setProperty('--faranto-stura-bg', 'url("/image/FarantoStura.png")');
+    }
 }

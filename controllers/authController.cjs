@@ -2,36 +2,36 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { User } = require('./db.cjs');
+const { User, Session } = require('./db.cjs');
 
 const SESSION_TTL = 1000 * 60 * 60; // 1 hour
-const sessions = {};
 
-function createSession(username, role) {
+async function createSession(username, role) {
   const token = crypto.randomBytes(32).toString('hex');
-  sessions[token] = { username, role, created: Date.now(), expires: Date.now() + SESSION_TTL };
-  console.log('Created session:', { token, username, role, expires: new Date(sessions[token].expires).toISOString() });
+  const expires = new Date(Date.now() + SESSION_TTL);
+  await Session.create({ token, username, role, expires });
+  console.log('Created session:', { token, username, role, expires: expires.toISOString() });
   return token;
 }
 
-function destroySession(token) {
+async function destroySession(token) {
   console.log('Destroying session:', token);
-  delete sessions[token];
+  await Session.destroy({ where: { token } });
 }
 
-function getSession(token) {
-  const s = sessions[token];
-  if (!s) {
+async function getSession(token) {
+  const session = await Session.findByPk(token);
+  if (!session) {
     console.log('Session not found for token:', token);
     return null;
   }
-  if (Date.now() > s.expires) {
+  if (new Date() > session.expires) {
     console.log('Session expired for token:', token);
-    delete sessions[token];
+    await Session.destroy({ where: { token } });
     return null;
   }
-  console.log('Session retrieved:', { token, username: s.username, role: s.role });
-  return s;
+  console.log('Session retrieved:', { token, username: session.username, role: session.role });
+  return session;
 }
 
 async function verifyUser(username, password) {
@@ -97,7 +97,7 @@ router.post('/login', async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    const token = createSession(user.username, user.role);
+    const token = await createSession(user.username, user.role);
     // secure: true should be used in production when using HTTPS
     const secureCookie = req.app.get('env') === 'production';
     res.cookie('sessionToken', token, {
@@ -113,9 +113,9 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/validate', (req, res) => {
+router.get('/validate', async (req, res) => {
   const token = req.cookies.sessionToken;
-  const session = token && getSession(token);
+  const session = token && await getSession(token);
   if (session) {
     res.json({ valid: true, username: session.username, role: session.role });
   } else {
@@ -123,10 +123,10 @@ router.get('/validate', (req, res) => {
   }
 });
 
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
   const token = req.cookies.sessionToken;
   if (token) {
-    destroySession(token);
+    await destroySession(token);
   }
   res.clearCookie('sessionToken');
   res.json({ success: true });
