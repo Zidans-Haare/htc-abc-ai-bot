@@ -12,6 +12,10 @@
     z-index: 1100;
 }
 
+:root.dark-mode .hamburger-btn {
+    color: var(--primary-text);
+}
+
 /* --- Mobile Menu --- */
 .mobile-menu-container {
     position: fixed;
@@ -54,6 +58,10 @@
     right: 1.5rem; /* Positioniert den Button ganz rechts */
     top: 50%;
     transform: translateY(-50%);
+}
+
+:root.dark-mode .mobile-menu-header .close-btn {
+    color: var(--primary-text);
 }
 
 .mobile-menu-content {

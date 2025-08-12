@@ -11,6 +11,7 @@
     --ai-bubble-bg: var(--accent-color);
     --input-border: #d1d5db;
     --input-radius: 28px;
+    --shadow-color: rgba(0,0,0,0.1);
 
     /* Dynamic variables */
     --font-size: 16px;
@@ -28,6 +29,7 @@
     --border-color: #4b5563;
     --user-bubble-bg: #4b5563;
     --input-border: #6b7280;
+    --shadow-color: rgba(0,0,0,0.4);
 }
 
 /* High Contrast Mode Styles */
@@ -103,7 +105,7 @@ body {
     align-items: center;
     flex-shrink: 0;
     margin-bottom: 1rem;
-    height: 110px;
+    height: 70px;
 }
 
 /* Das HTW-Logo selbst */
@@ -139,7 +141,7 @@ body {
 .chat-history {
     margin-top: 2rem;
     padding-top: 1.5rem;                   /* Fügt Abstand über dem "Verlauf"-Titel hinzu */
-    border-top: 1px solid rgba(0,0,0,0.05); /* Fügt eine feine Trennlinie hinzu */
+    border-top: 1px solid var(--border-color); /* Fügt eine feine Trennlinie hinzu */
     flex-grow: 1;
     overflow-y: auto;
     display: flex;
@@ -210,12 +212,11 @@ body {
     flex-shrink: 0;
     position: relative;
     border-bottom: none;
-    top: 5px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 1.5rem;
-    height: 110px;
+    height: 70px;
 }
 
 .header-left {
@@ -237,23 +238,7 @@ body {
     height: 60px;
 }
 
-/* Das Maskottchen-Bild */
-.app-header::after {
-    content: '';
-    position: absolute;
-    bottom: -28px;
-    right: 10rem;
-    width: 150px;
-    height: 150px;
-    background-image: url('/image/FarantoStura.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    z-index: 20;
-    pointer-events: none;
-    transition-property: opacity;
-    transition-duration: calc(0.5s * var(--animation-speed-multiplier));
-}
+
 
 /* Wrapper für den weißen Inhaltsbereich */
 .content-wrapper {
@@ -275,8 +260,16 @@ body {
     transition-property: color;
 }
 
+:root.dark-mode #current-time {
+    color: var(--primary-text);
+}
+
 #settings-btn { background: transparent; border: none; color: var(--secondary-text); font-size: 1.5rem; cursor: pointer; transition: transform 0.2s, color 0.2s; }
 #settings-btn:hover { transform: scale(1.1); color: var(--primary-text); }
+
+:root.dark-mode #settings-btn {
+    color: var(--primary-text);
+}
 .chat-panel {
     flex: 1;
     display: flex;
@@ -331,7 +324,7 @@ body {
 .suggestion-card:hover {
     transform: translateY(-3px);
     background-color: var(--content-bg);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+    box-shadow: 0 4px 15px var(--shadow-color);
 }
 
 .suggestion-card h4 {
@@ -357,8 +350,8 @@ body {
     height: 2.8em; /* 2 lines * 1.4 line-height */
 }
 
-.input-area { background: var(--content-bg); border: 5px solid var(--input-border); border-radius: var(--input-radius); padding: 0.5rem; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); max-width: 1350px; margin: 0 auto; width: 100%; }
-.input-area:focus-within { border-color: var(--accent-color); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); }
+.input-area { background: var(--content-bg); border: 5px solid var(--input-border); border-radius: var(--input-radius); padding: 0.5rem; box-shadow: 0 8px 20px var(--shadow-color); max-width: 1350px; margin: 0 auto; width: 100%; }
+.input-area:focus-within { border-color: var(--accent-color); box-shadow: 0 8px 20px var(--shadow-color); }
 .wrapper { display: flex; gap: 0.5rem; align-items: center; }
 #chat-input { flex: 1; padding: 0.75rem 1rem; border: none; resize: none; font-size: 1rem; background: transparent; color: var(--primary-text); font-family: 'Roboto', sans-serif; max-height: 120px; /* Maximale Höhe, ca. 5 Zeilen */ line-height: 1.5; }
 #chat-input:focus, #chat-input:focus-visible { outline: none !important; }
@@ -400,7 +393,7 @@ button.send:hover { background-color: var(--accent-dark); }
 .bubble { padding: calc(0.8rem * var(--layout-density-multiplier)) calc(1.25rem * var(--layout-density-multiplier)); border-radius: 28px; line-height: 1.5; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); transition-property: background-color, color, border-radius; }
 .message.user .bubble { background: var(--user-bubble-bg); color: var(--primary-text); border: 1px solid var(--border-color); border-bottom-right-radius: 5px; }
 .message.ai .bubble { background: var(--ai-bubble-bg); color: #fff; border-bottom-left-radius: 5px; }
-.avatar { width: 70px; height: 70px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden; }
+.avatar { width: 70px; height: 70px; border-radius: 50%; background: var(--content-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden; }
 .avatar img { width: 100%; height: 100%; object-fit: contain; }
 #settings-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: none; opacity: 0; transition: opacity 0.2s ease-in-out; align-items: center; justify-content: center; z-index: 1000; }
 #settings-modal.open { display: flex; opacity: 1; }
@@ -525,6 +518,11 @@ input:checked + .slider:before { transform: translateX(22px); }
 /* --- Feedback Modal --- */
 #feedback-btn { background: transparent; border: none; color: var(--secondary-text); font-size: 1.4rem; cursor: pointer; transition: transform 0.2s, color 0.2s; }
 #feedback-btn:hover { transform: scale(1.1); color: var(--primary-text); }
+
+:root.dark-mode #feedback-btn {
+    color: var(--primary-text);
+}
+
 #feedback-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: none; opacity: 0; transition: opacity 0.2s ease-in-out; align-items: center; justify-content: center; z-index: 1000; }
 #feedback-modal.open { display: flex; opacity: 1; }
 .modal-description { font-size: 0.9rem; color: var(--secondary-text); margin-bottom: 1rem; line-height: 1.4; }
