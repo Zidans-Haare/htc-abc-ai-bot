@@ -124,6 +124,7 @@ app.get("/api/view/articles", viewController.getPublishedArticles);
 
 // --- Favicon & 404 ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());
+app.get('/dashboard.md', (req, res) => res.redirect('/dashboard'));
 app.use((req, res) => {
   res.status(404).json({ error: `Cannot ${req.method} ${req.url}` });
 });
