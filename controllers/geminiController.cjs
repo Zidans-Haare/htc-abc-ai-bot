@@ -3,6 +3,7 @@ const { HochschuhlABC, Questions, Images } = require("./db.cjs");
 const { getCached } = require("../utils/cache");
 const { estimateTokens, isWithinTokenLimit } = require("../utils/tokenizer");
 const { summarizeConversation } = require("../utils/summarizer");
+const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require("../utils/analytics");
 
 // In-memory conversation store
 const conversations = new Map();
@@ -78,11 +79,18 @@ async function logUnansweredQuestion(newQuestion) {
 }
 
 async function generateResponse(req, res) {
+  const startTime = Date.now();
+  let sessionId = null;
+  
   try {
     const { prompt, conversationId, timezoneOffset } = req.body;
     if (!prompt) {
       return res.status(400).json({ error: "Prompt ist erforderlich" });
     }
+
+    // Track session
+    sessionId = await trackSession(req);
+    req.res = res; // Make res available for cookie setting
 
     // Set headers for streaming
     res.setHeader('Content-Type', 'text/event-stream');
@@ -213,8 +221,21 @@ async function generateResponse(req, res) {
     conversations.set(convoId, messages);
     console.log(`Saved AI response: ${fullResponseText.slice(0, 50)}...`);
 
+    const responseTime = Date.now() - startTime;
+    const tokensUsed = estimateTokens(fullResponseText);
+    const wasSuccessful = !fullResponseText.includes("<+>");
+
     if (fullResponseText.includes("<+>")) {
       logUnansweredQuestion(prompt);
+    }
+
+    // Track the interaction
+    await trackChatInteraction(sessionId, prompt, fullResponseText, wasSuccessful, responseTime, tokensUsed);
+
+    // Track article views if any articles were referenced
+    const referencedArticleIds = extractArticleIds(fullResponseText);
+    for (const articleId of referencedArticleIds) {
+      await trackArticleView(articleId, sessionId, prompt);
     }
 
     res.write('data: [DONE]\n\n');
@@ -222,6 +243,11 @@ async function generateResponse(req, res) {
 
   } catch (error) {
     console.error("Fehler beim Generieren der Antwort:", error.message);
+    
+    // Track failed interaction
+    const responseTime = Date.now() - startTime;
+    await trackChatInteraction(sessionId, req.body.prompt || 'unknown', null, false, responseTime, 0, error.message);
+    
     // Ensure the connection is closed properly in case of an error
     if (!res.headersSent) {
       res.status(500).json({ error: "Interner Serverfehler" });

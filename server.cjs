@@ -14,6 +14,7 @@ const feedbackController = require('./controllers/feedbackController.cjs');
 const adminController = require('./controllers/adminController.cjs');
 const auth = require('./controllers/authController.cjs');
 const viewController = require('./controllers/viewController.cjs');
+const dashboardController = require('./controllers/dashboardController.cjs');
 
 // --- Initializations ---
 dotenv.config();
@@ -57,7 +58,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com"],
+      scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:"],
       connectSrc: ["'self'"],
@@ -73,8 +74,8 @@ app.use(express.json());
 
 // --- Protection Middleware ---
 const protect = (req, res, next) => {
-  if (useAdmin && (req.url.startsWith('/admin/') || req.url.startsWith('/dashboard'))) {
-    console.log('ADMIN mode: Bypassing login and creating session for debug_admin');
+  if (useAdmin && (req.url.startsWith('/admin/') || req.url.startsWith('/dashboard') || req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard'))) {
+    console.log(`ADMIN mode: Bypassing login for ${req.url}`);
     const token = auth.createSession('debug_admin', 'admin');
     res.cookie('sessionToken', token, { httpOnly: true, secure: useHttps, maxAge: 1000 * 60 * 60, sameSite: 'strict' });
     req.session = auth.getSession(token);
@@ -85,13 +86,19 @@ const protect = (req, res, next) => {
     return next();
   }
 
-  if (req.url.startsWith('/admin/') || req.url.startsWith('/dashboard')) {
+  if (req.url.startsWith('/admin/') || req.url.startsWith('/dashboard') || req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
     const token = req.cookies.sessionToken;
     const session = token && auth.getSession(token);
     if (session) {
       req.session = session;
       return next();
     }
+    
+    // For API calls, return JSON error instead of HTML login page
+    if (req.url.startsWith('/api/')) {
+      return res.status(401).json({ error: 'Session expired. Please refresh the page.' });
+    }
+    
     return res.status(401).sendFile(path.join(__dirname, 'public', 'login', 'login.html'));
   }
   next();
@@ -100,7 +107,6 @@ app.use(protect);
 
 // --- Static Files ---
 app.use(express.static('public'));
-app.use('/dashboard', express.static(path.join(__dirname, 'public', 'dashboard')));
 
 // --- API Routes ---
 app.use('/api', apiLimiter);
@@ -111,7 +117,14 @@ app.get('/api/suggestions', getSuggestions);
 app.use('/api/feedback', feedbackController);
 app.use('/api', auth.router);
 app.use('/api', adminController(auth.getSession, logAction));
+app.use('/api/dashboard', dashboardController);
 app.get("/api/view/articles", viewController.getPublishedArticles);
+
+// --- Dashboard Routes ---
+app.use('/dash', express.static(path.join(__dirname, 'public', 'dash')));
+app.get('/dash', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dash', 'index.html'));
+});
 
 // --- Favicon & 404 ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());

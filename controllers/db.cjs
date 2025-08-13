@@ -176,10 +176,130 @@ const Images = sequelize.define('Images', {
     timestamps: false
 });
 
+const UserSessions = sequelize.define('UserSessions', {
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    session_id: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+    },
+    ip_address: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    user_agent: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    started_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+    },
+    last_activity: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+    },
+    questions_count: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    successful_answers: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    ended_at: {
+        type: DataTypes.DATE,
+        allowNull: true
+    }
+}, {
+    tableName: 'user_sessions',
+    timestamps: false
+});
+
+const ArticleViews = sequelize.define('ArticleViews', {
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    article_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'hochschuhl_abc',
+            key: 'id'
+        }
+    },
+    session_id: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    viewed_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+    },
+    question_context: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    }
+}, {
+    tableName: 'article_views',
+    timestamps: false
+});
+
+const ChatInteractions = sequelize.define('ChatInteractions', {
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    session_id: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    question: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    answer: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    was_successful: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    response_time_ms: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    tokens_used: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    timestamp: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+    },
+    error_message: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    }
+}, {
+    tableName: 'chat_interactions',
+    timestamps: false
+});
+
 // Define associations
 Questions.belongsTo(HochschuhlABC, { foreignKey: 'linked_article_id' });
+ArticleViews.belongsTo(HochschuhlABC, { foreignKey: 'article_id' });
+ChatInteractions.belongsTo(UserSessions, { foreignKey: 'session_id', targetKey: 'session_id' });
 
 // sequelize.sync({ alter: true })
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images };
+module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, UserSessions, ArticleViews, ChatInteractions };

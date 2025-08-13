@@ -4,12 +4,14 @@ server.pid
 ai_fragen/offene_fragen.txt
 cron/cron.log
 logs/audit.log
-hochschuhl-abc.db*
+#hochschuhl-abc.db*
 chatbot.db*
 logs/
 ai_fragen/offene_fragen.txt
 ai_input/faq.txt
 .env
+.env.example
+.claude
 .vs/
 .vscode/
 .venv/
