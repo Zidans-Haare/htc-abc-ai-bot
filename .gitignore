@@ -10,6 +10,8 @@ logs/
 ai_fragen/offene_fragen.txt
 ai_input/faq.txt
 .env
+.env.example
+.claude
 .vs/
 .vscode/
 .venv/

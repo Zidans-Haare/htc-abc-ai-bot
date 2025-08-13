@@ -7,6 +7,7 @@ import { initExport } from './export.js';
 import { setupFeedback } from './feedback.js';
 import { renderMarkup } from '../js/markup.js';
 import { initImages } from './images.js';
+import { initCrawler } from './crawler.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const exportBtn = document.getElementById('btn-export');
   const logoutBtn = document.getElementById('btn-logout');
   const imagesBtn = document.getElementById('btn-images');
+  const crawlerBtn = document.getElementById('btn-crawler');
 
   const editorView = document.getElementById('editor-view');
   const questionsView = document.getElementById('questions-view');
@@ -48,6 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const userView = document.getElementById('user-view');
   const feedbackView = document.getElementById('feedback-view');
   const imagesView = document.getElementById('images-view');
+  const crawlerView = document.getElementById('crawler-view');
   
   const openCountSpan = document.getElementById('open-count');
   
@@ -86,6 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    crawlerView.classList.add('hidden');
     updateButtonStyles(editorBtn);
   }
 
@@ -96,6 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    crawlerView.classList.add('hidden');
     updateButtonStyles(questionsBtn);
   }
   
@@ -110,6 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    crawlerView.classList.add('hidden');
     updateButtonStyles(archiveBtn);
     loadArchive();
   }
@@ -121,6 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    crawlerView.classList.add('hidden');
     updateButtonStyles(userBtn);
     loadUsers();
   }
@@ -132,6 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    crawlerView.classList.add('hidden');
     updateButtonStyles(feedbackBtn);
   }
 
@@ -142,11 +150,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
+    crawlerView.classList.add('hidden');
     updateButtonStyles(imagesBtn);
   }
 
+  function showCrawler() {
+    crawlerView.classList.remove('hidden');
+    editorView.classList.add('hidden');
+    questionsView.classList.add('hidden');
+    archiveView.classList.add('hidden');
+    userView.classList.add('hidden');
+    feedbackView.classList.add('hidden');
+    imagesView.classList.add('hidden');
+    updateButtonStyles(crawlerBtn);
+  }
+
   function updateButtonStyles(activeButton) {
-    const buttons = [editorBtn, questionsBtn, archiveBtn, userBtn, feedbackBtn, exportBtn, imagesBtn];
+    const buttons = [editorBtn, questionsBtn, archiveBtn, userBtn, feedbackBtn, exportBtn, imagesBtn, crawlerBtn];
     buttons.forEach(btn => {
       if (btn) btn.classList.remove('active');
     });
@@ -163,6 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   userBtn.classList.add('hidden');
   feedbackBtn.classList.add('hidden');
   if(imagesBtn) imagesBtn.classList.add('hidden');
+  if(crawlerBtn) crawlerBtn.classList.add('hidden');
 
   switch (userRole) {
     case 'admin':
@@ -172,6 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       userBtn.classList.remove('hidden');
       feedbackBtn.classList.remove('hidden');
       if(imagesBtn) imagesBtn.classList.remove('hidden');
+      if(crawlerBtn) crawlerBtn.classList.remove('hidden');
       
       editorBtn.addEventListener('click', showEditor);
       questionsBtn.addEventListener('click', showQuestions);
@@ -179,6 +201,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       userBtn.addEventListener('click', showUserAdmin);
       feedbackBtn.addEventListener('click', showFeedback);
       if(imagesBtn) imagesBtn.addEventListener('click', showImages);
+      if(crawlerBtn) crawlerBtn.addEventListener('click', showCrawler);
       
       initUsers();
       showEditor();
@@ -199,8 +222,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     case 'entwickler':
       feedbackBtn.classList.remove('hidden');
       exportBtn.classList.remove('hidden');
+      if(crawlerBtn) crawlerBtn.classList.remove('hidden');
 
       feedbackBtn.addEventListener('click', showFeedback);
+      if(crawlerBtn) crawlerBtn.addEventListener('click', showCrawler);
       
       showFeedback();
       break;
@@ -212,6 +237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       userView.classList.add('hidden');
       feedbackView.classList.add('hidden');
       imagesView.classList.add('hidden');
+      crawlerView.classList.add('hidden');
       break;
   }
 
@@ -233,6 +259,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initExport();
   setupFeedback();
   initImages();
+  initCrawler();
   
   document.addEventListener('update-username', (e) => {
     const currentUserSpan = document.getElementById('current-user');

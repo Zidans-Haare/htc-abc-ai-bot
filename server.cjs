@@ -14,6 +14,7 @@ const feedbackController = require('./controllers/feedbackController.cjs');
 const adminController = require('./controllers/adminController.cjs');
 const auth = require('./controllers/authController.cjs');
 const viewController = require('./controllers/viewController.cjs');
+const crawlerController = require('./controllers/admin/crawler.cjs');
 
 // --- Initializations ---
 dotenv.config();
@@ -111,6 +112,7 @@ app.get('/api/suggestions', getSuggestions);
 app.use('/api/feedback', feedbackController);
 app.use('/api', auth.router);
 app.use('/api', adminController(auth.getSession, logAction));
+app.use('/api/admin/crawler', crawlerController);
 app.get("/api/view/articles", viewController.getPublishedArticles);
 
 // --- Favicon & 404 ---

@@ -32,7 +32,7 @@ const User = sequelize.define('User', {
   timestamps: false
 });
 
-const HochschuhlABC = sequelize.define('HochschuhlABC', {
+const Articles = sequelize.define('Articles', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -54,16 +54,16 @@ const HochschuhlABC = sequelize.define('HochschuhlABC', {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
   },
-  active: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
-  },
-  archived: {
-    type: DataTypes.DATE,
+  source: {
+    type: DataTypes.STRING,
     allowNull: true
+  },
+  status: {
+    type: DataTypes.STRING,
+    defaultValue: 'draft'
   }
 }, {
-  tableName: 'hochschuhl_abc',
+  tableName: 'articles',
   timestamps: false
 });
 
@@ -97,7 +97,7 @@ const Questions = sequelize.define('Questions', {
     type: DataTypes.INTEGER,
     allowNull: true,
     references: {
-      model: 'hochschuhl_abc',
+      model: 'articles', // Changed from 'hochschuhl_abc'
       key: 'id'
     }
   },
@@ -173,9 +173,9 @@ const Images = sequelize.define('Images', {
 });
 
 // Define associations
-Questions.belongsTo(HochschuhlABC, { foreignKey: 'linked_article_id' });
+Questions.belongsTo(Articles, { foreignKey: 'linked_article_id' });
 
 // sequelize.sync({ alter: true })
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images };
+module.exports = { sequelize, User, Articles, Questions, Feedback, Images };

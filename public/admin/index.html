@@ -167,6 +167,10 @@
             <i class="fa-solid fa-file-export w-5 text-center"></i>
             <span class="sidebar-text">Export</span>
         </a>
+        <a href="#" id="btn-crawler" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-robot w-5 text-center"></i>
+            <span class="sidebar-text">Crawler</span>
+        </a>
         <a href="#" id="btn-user" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors hidden">
             <i class="fa-solid fa-users w-5 text-center"></i>
             <span class="sidebar-text">Benutzer</span>
@@ -280,6 +284,36 @@
     <div id="feedback-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
       <div id="feedback-list" class="space-y-4"></div>
     </div>
+    <!-- Crawler Control View -->
+    <div id="crawler-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
+      <div class="p-6 space-y-4 border border-[var(--border-color)] rounded-lg">
+        <h2 class="font-semibold text-lg">Crawler Steuerung</h2>
+        <p class="text-[var(--secondary-text)]">
+          Starten Sie den Crawler, um die Wissensdatenbank mit den neuesten Informationen von der HTW Dresden Webseite zu aktualisieren.
+          Dieser Prozess kann einige Minuten dauern.
+        </p>
+        <button id="run-crawler-btn" class="px-4 py-2 btn-primary rounded-md">Crawling & Update jetzt starten</button>
+        <div id="crawler-status" class="mt-4 p-4 bg-gray-100 rounded-md hidden"></div>
+      </div>
+      <div class="p-6 space-y-4 border border-[var(--border-color)] rounded-lg">
+        <h2 class="font-semibold text-lg">Gecrawlte Einträge</h2>
+        <div id="crawled-articles-list" class="space-y-2">
+          <!-- Crawled articles will be listed here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Crawled Article Modal -->
+    <div id="crawled-article-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl flex flex-col" style="height: 90vh;">
+        <h3 id="crawled-article-headline" class="text-lg font-medium mb-4"></h3>
+        <div id="crawled-article-content" class="flex-grow p-4 bg-gray-100 rounded-md overflow-y-auto"></div>
+        <div class="flex justify-end mt-6">
+          <button id="crawled-article-close" class="px-4 py-2 rounded-md btn-secondary">Schließen</button>
+        </div>
+      </div>
+    </div>
+
     <!-- User Management View -->
     <div id="user-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
       <div id="user-admin" class="p-6 space-y-4 border border-[var(--border-color)] rounded-lg">
