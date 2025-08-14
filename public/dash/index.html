@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics Dashboard - HTC ABC AI Bot</title>
+  
+  <!-- External Libraries -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom Styles -->
+  <link href="style.css" rel="stylesheet">
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body class="bg-gray-50 font-sans">
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-4">
+          <img src="/image/HTW.svg" alt="HTW Logo" class="h-10">
+          <div>
+            <h1 class="text-xl font-semibold text-gray-900">HTC ABC Analytics</h1>
+            <p class="text-sm text-gray-500">Dashboard & Insights</p>
+          </div>
+        </div>
+        <nav class="flex items-center space-x-4">
+          <a href="/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <i class="fas fa-home mr-2"></i>Chat
+          </a>
+          <a href="/admin" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <i class="fas fa-cog mr-2"></i>Admin
+          </a>
+          <button id="refresh-btn" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
+            <i class="fas fa-refresh mr-2"></i>Aktualisieren
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Loading State -->
+    <div id="loading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+      <span class="ml-3 text-gray-600">Dashboard wird geladen...</span>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div id="dashboard" class="hidden">
+      
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div class="flex items-center">
+            <div class="bg-blue-100 p-3 rounded-lg">
+              <i class="fas fa-users text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Gesamt Sessions</p>
+              <p id="total-sessions" class="text-2xl font-bold text-gray-900">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div class="flex items-center">
+            <div class="bg-green-100 p-3 rounded-lg">
+              <i class="fas fa-calendar-day text-green-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Sessions Heute</p>
+              <p id="today-sessions" class="text-2xl font-bold text-gray-900">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div class="flex items-center">
+            <div class="bg-purple-100 p-3 rounded-lg">
+              <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Erfolgsrate</p>
+              <p id="success-rate" class="text-2xl font-bold text-gray-900">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div class="flex items-center">
+            <div class="bg-red-100 p-3 rounded-lg">
+              <i class="fas fa-question-circle text-red-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Offene Fragen</p>
+              <p id="open-questions" class="text-2xl font-bold text-gray-900">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts and Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        
+        <!-- Sessions Chart -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              <i class="fas fa-chart-area text-blue-600 mr-2"></i>
+              Sessions der letzten 7 Tage
+            </h3>
+            <div id="sessions-chart" class="h-64 flex items-center justify-center">
+              <div id="sessions-bars" class="w-full flex items-end justify-between space-x-2 h-48">
+                <!-- Chart bars will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="space-y-6">
+          <!-- Content Stats -->
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              <i class="fas fa-file-alt text-green-600 mr-2"></i>
+              Content Übersicht
+            </h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Aktive Artikel</span>
+                <span id="active-articles" class="font-semibold text-green-600">-</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Archivierte Artikel</span>
+                <span id="archived-articles" class="font-semibold text-gray-400">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feedback Stats -->
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              <i class="fas fa-thumbs-up text-purple-600 mr-2"></i>
+              Feedback Übersicht
+            </h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Positives Feedback</span>
+                <span id="positive-feedback" class="font-semibold text-green-600">-</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Negatives Feedback</span>
+                <span id="negative-feedback" class="font-semibold text-red-600">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tables Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Unbeantwortete Fragen -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900">
+              <i class="fas fa-exclamation-circle text-orange-600 mr-2"></i>
+              Unbeantwortete Fragen
+            </h3>
+          </div>
+          <div class="p-6">
+            <div id="unanswered-questions" class="space-y-4">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Top 5 häufigste Fragen -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900">
+              <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
+              Häufigste Fragen
+            </h3>
+          </div>
+          <div class="p-6">
+            <div id="top-questions" class="space-y-4">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Meistgesuchte Artikel -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900">
+              <i class="fas fa-fire text-red-600 mr-2"></i>
+              Meistaufgerufene Artikel
+            </h3>
+          </div>
+          <div class="p-6">
+            <div id="most-viewed-articles" class="space-y-4">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Feedback -->
+      <div class="mt-8">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900">
+              <i class="fas fa-comments text-blue-600 mr-2"></i>
+              Letztes Feedback
+            </h3>
+          </div>
+          <div class="p-6">
+            <div id="recent-feedback" class="space-y-4">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex justify-between items-center">
+        <p class="text-sm text-gray-500">
+          © 2025 HTW Dresden - HTC ABC AI Bot Analytics Dashboard
+        </p>
+        <div class="flex items-center space-x-4">
+          <span class="text-sm text-gray-500">Letzte Aktualisierung:</span>
+          <span id="last-update" class="text-sm font-medium text-gray-900">-</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="dashboard.js"></script>
+</body>
+</html>
