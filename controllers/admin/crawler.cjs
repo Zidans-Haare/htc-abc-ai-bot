@@ -7,7 +7,7 @@ const router = express.Router();
 const CRAWLER_PASSWORD = '-cliforthewin657-';
 
 // POST /api/admin/crawler/run
-// Runs the import_crawled_data.py script
+// Runs the crawl_and_update.py script
 router.post('/run', (req, res) => {
     const { password } = req.body;
 
@@ -15,9 +15,9 @@ router.post('/run', (req, res) => {
         return res.status(401).json({ message: 'Falsches Passwort.' });
     }
 
-    const scriptPath = path.join(__dirname, '../../scripts/import_crawled_data.py');
+    const scriptPath = path.join(__dirname, '../../scripts/crawl_and_update.py');
     
-    console.log(`[Crawler] Starting import_crawled_data.py script...`);
+    console.log(`[Crawler] Starting crawl_and_update.py script...`);
 
     const pythonProcess = spawn('python', [scriptPath]);
 
