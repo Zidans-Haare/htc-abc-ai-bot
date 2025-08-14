@@ -12,8 +12,30 @@ class DashboardManager {
     }
 
     setupEventListeners() {
-        document.getElementById('refresh-btn').addEventListener('click', () => {
+        const refreshButton = document.getElementById('refresh-btn');
+        
+        refreshButton.addEventListener('click', () => {
             this.loadDashboard();
+
+            // Disable button and start cooldown
+            refreshButton.disabled = true;
+            refreshButton.classList.add('bg-gray-400', 'cursor-not-allowed');
+            refreshButton.classList.remove('bg-orange-600', 'hover:bg-orange-700');
+
+            let countdown = 60;
+            refreshButton.innerHTML = `<i class="fas fa-clock mr-2"></i>Bitte warten (${countdown}s)`;
+
+            const interval = setInterval(() => {
+                countdown--;
+                refreshButton.innerHTML = `<i class="fas fa-clock mr-2"></i>Bitte warten (${countdown}s)`;
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    refreshButton.disabled = false;
+                    refreshButton.innerHTML = '<i class="fas fa-refresh mr-2"></i>Aktualisieren';
+                    refreshButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    refreshButton.classList.add('bg-orange-600', 'hover:bg-orange-700');
+                }
+            }, 1000);
         });
 
         // Auto-refresh every 2 minutes
