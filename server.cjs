@@ -81,7 +81,8 @@ app.use(express.json());
 
 // --- Protection Middleware ---
 const protect = (req, res, next) => {
-  if (useAdmin && (req.url.startsWith('/admin/') || req.url.startsWith('/dashboard') || req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard'))) {
+  // --- Debug Mode Bypass ---
+  if (useAdmin && (req.url.startsWith('/admin') || req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard'))) {
     console.log(`ADMIN mode: Bypassing login for ${req.url}`);
     const token = auth.createSession('debug_admin', 'admin');
     res.cookie('sessionToken', token, { httpOnly: true, secure: useHttps, maxAge: 1000 * 60 * 60, sameSite: 'strict' });
@@ -89,31 +90,52 @@ const protect = (req, res, next) => {
     return next();
   }
 
-  if (req.url.startsWith('/login/')) {
+  // --- Allow access to login pages ---
+  if (req.url.startsWith('/login') || req.url.startsWith('/dash/login')) {
     return next();
   }
 
-  if (req.url.startsWith('/admin/') || req.url.startsWith('/dashboard') || req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
-    const token = req.cookies.sessionToken;
-    const session = token && auth.getSession(token);
+  const token = req.cookies.sessionToken;
+  const session = token && auth.getSession(token);
+
+  // --- Dashboard Protection ---
+  if (req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
+    if (session) {
+      if (session.role === 'admin') {
+        req.session = session;
+        return next(); // User is admin, allow access
+      } else {
+        // User is logged in but not an admin
+        return res.status(403).send('Forbidden: You do not have permission to view this page.');
+      }
+    }
+    // Not logged in, redirect to dashboard login
+    if (req.url.startsWith('/api/')) {
+      return res.status(401).json({ error: 'Session expired. Please log in.' });
+    }
+    return res.redirect('/dash/login/');
+  }
+
+  // --- Admin Panel Protection ---
+  if (req.url.startsWith('/admin')) {
     if (session) {
       req.session = session;
-      return next();
+      return next(); // User is logged in, allow access
     }
-    
-    // For API calls, return JSON error instead of HTML login page
+    // Not logged in, redirect to admin login
     if (req.url.startsWith('/api/')) {
-      return res.status(401).json({ error: 'Session expired. Please refresh the page.' });
+      return res.status(401).json({ error: 'Session expired. Please log in.' });
     }
-    
-    return res.status(401).sendFile(path.join(__dirname, 'public', 'login', 'login.html'));
+    return res.redirect('/login/');
   }
+
   next();
 };
 app.use(protect);
 
 // --- Static Files ---
 app.use(express.static('public'));
+app.use('/dash/login', express.static(path.join(__dirname, 'public', 'dash', 'login')));
 
 // --- API Routes ---
 app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
@@ -129,6 +151,9 @@ app.use('/api/dashboard', dashboardController);
 app.get("/api/view/articles", viewController.getPublishedArticles);
 
 // --- Dashboard Routes ---
+app.get('/dash/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dash', 'login', 'login.html'));
+});
 app.use('/dash', express.static(path.join(__dirname, 'public', 'dash')));
 app.get('/dash', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dash', 'index.html'));
