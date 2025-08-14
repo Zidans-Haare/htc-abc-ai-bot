@@ -216,6 +216,16 @@ export function applyUI(settings) {
     const isDarkMode = settings.theme === 'dark' || (settings.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     root.classList.toggle('dark-mode', isDarkMode);
     
+    // Logo switching for dark theme
+    const logos = document.querySelectorAll('.logo, .header-logo');
+    logos.forEach(logo => {
+        if (isDarkMode) {
+            logo.src = logo.src.replace('HTW.svg', 'HTW_hell.png');
+        } else {
+            logo.src = logo.src.replace('HTW_hell.png', 'HTW.svg');
+        }
+    });
+    
     // Accent Color
     root.style.setProperty('--accent-color', settings.accentColor);
     

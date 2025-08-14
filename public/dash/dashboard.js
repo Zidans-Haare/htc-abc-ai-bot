@@ -16,7 +16,7 @@ class DashboardManager {
             this.loadDashboard();
         });
 
-        // Auto-refresh every 30 seconds
+        // Auto-refresh every 2 minutes
         this.startAutoRefresh();
     }
 
@@ -27,7 +27,7 @@ class DashboardManager {
         
         this.refreshInterval = setInterval(() => {
             this.loadDashboard(false); // Silent refresh
-        }, 30000);
+        }, 120000); // Refresh every 2 minutes (120 seconds)
     }
 
     async loadDashboard(showLoading = true) {
@@ -70,6 +70,15 @@ class DashboardManager {
                 setTimeout(() => {
                     window.location.reload();
                 }, 2000);
+            } else if (error.message.includes('429') || error.message.includes('Too Many Requests')) {
+                this.showError('Zu viele Anfragen. Auto-Refresh pausiert für 5 Minuten.', 'warning');
+                // Pause auto-refresh for 5 minutes
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                    setTimeout(() => {
+                        this.startAutoRefresh();
+                    }, 300000); // 5 minutes
+                }
             } else {
                 this.showError('Fehler beim Laden der Dashboard-Daten. Bitte versuchen Sie es später erneut.');
             }
@@ -80,7 +89,12 @@ class DashboardManager {
     // API Fetch Methods
     async fetchKpis() {
         const response = await fetch('/api/dashboard/kpis');
-        if (!response.ok) throw new Error('KPI fetch failed');
+        if (!response.ok) {
+            if (response.status === 429) {
+                throw new Error('429 Too Many Requests');
+            }
+            throw new Error('KPI fetch failed');
+        }
         return response.json();
     }
 

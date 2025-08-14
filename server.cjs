@@ -45,6 +45,13 @@ const apiLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+const dashboardLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500, // Higher limit for dashboard API calls
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 const loginLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5,
@@ -109,8 +116,9 @@ app.use(protect);
 app.use(express.static('public'));
 
 // --- API Routes ---
-app.use('/api', apiLimiter);
+app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
 app.use('/api/login', loginLimiter);
+app.use('/api', apiLimiter); // General limiter LAST
 
 app.post('/api/chat', generateResponse);
 app.get('/api/suggestions', getSuggestions);
