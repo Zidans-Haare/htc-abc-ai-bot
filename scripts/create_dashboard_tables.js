@@ -1,6 +1,6 @@
 const { sequelize, UserSessions, ArticleViews, ChatInteractions } = require('../controllers/db.cjs');
 
-async function createDashboardTables() {
+async function createDashboardTables(closeConnection = true) {
     try {
         console.log('Creating dashboard tables...');
         
@@ -24,7 +24,9 @@ async function createDashboardTables() {
         console.error('Error creating dashboard tables:', error);
         throw error;
     } finally {
-        await sequelize.close();
+        if (closeConnection) {
+            await sequelize.close();
+        }
     }
 }
 

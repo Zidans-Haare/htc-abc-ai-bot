@@ -133,7 +133,16 @@ app.use((req, res) => {
 });
 
 // --- Server Start ---
-const serverCallback = () => {
+const serverCallback = async () => {
+  // Ensure dashboard tables exist
+  try {
+    const createDashboardTables = require('./scripts/create_dashboard_tables.js');
+    await createDashboardTables(false); // Don't close connection
+    console.log('✓ Dashboard tables initialized');
+  } catch (error) {
+    console.error('Warning: Could not initialize dashboard tables:', error.message);
+  }
+  
   console.log(`Server is running with ${useHttps ? 'HTTPS' : 'HTTP'} on port ${port}`);
   fs.writeFile('server.pid', pid.toString(), err => {
     if (err) console.error('Error writing PID to server.pid:', err);
