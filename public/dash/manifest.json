@@ -1,0 +1,27 @@
+{
+  "name": "HTC ABC Analytics",
+  "short_name": "Analytics",
+  "start_url": "/dash/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#ec6608",
+  "description": "Analytics Dashboard for the HTC ABC AI Bot.",
+  "icons": [
+    {
+      "src": "/image/HTW.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/image/icons/WebApp_icon_192px.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/image/icons/WebApp_icon_512px.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

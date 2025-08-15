@@ -17,6 +17,15 @@
   <!-- Custom Styles -->
   <link href="style.css" rel="stylesheet">
   <link rel="icon" href="/favicon.ico">
+
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- iOS-specific tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Analytics">
+  <link rel="apple-touch-icon" href="/image/icons/WebApp_icon_192px.png">
 </head>
 <body class="bg-gray-50 font-sans">
 
@@ -27,11 +36,11 @@
         <div class="flex items-center space-x-4">
           <img src="/image/HTW.svg" alt="HTW Logo" class="h-10">
           <div>
-            <h1 class="text-xl font-semibold text-gray-900">HTC ABC Analytics</h1>
-            <p class="text-sm text-gray-500">Dashboard & Insights</p>
+            <h1 class="text-lg sm:text-xl font-semibold text-gray-900">HTC ABC Analytics</h1>
+            <p class="text-xs sm:text-sm text-gray-500">Dashboard & Insights</p>
           </div>
         </div>
-        <nav class="flex items-center space-x-4">
+        <nav class="hidden md:flex items-center space-x-4">
           <a href="/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
             <i class="fas fa-home mr-2"></i>Chat
           </a>
@@ -42,12 +51,27 @@
             <i class="fas fa-refresh mr-2"></i>Aktualisieren
           </button>
         </nav>
+        <div class="md:hidden flex items-center">
+          <button id="mobile-menu-button" class="text-gray-600 hover:text-gray-900">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="md:hidden hidden bg-white border-t border-gray-200">
+      <a href="/" class="block text-gray-600 hover:text-gray-900 px-4 py-3 hover:bg-gray-100 transition-colors"><i class="fas fa-home mr-2"></i>Chat</a>
+      <a href="/admin" class="block text-gray-600 hover:text-gray-900 px-4 py-3 hover:bg-gray-100 transition-colors"><i class="fas fa-cog mr-2"></i>Admin</a>
+      <div class="px-4 py-3">
+        <button id="refresh-btn-mobile" class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
+          <i class="fas fa-refresh mr-2"></i>Aktualisieren
+        </button>
       </div>
     </div>
   </header>
 
   <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
     
     <!-- Loading State -->
     <div id="loading" class="flex justify-center items-center py-12">
@@ -59,68 +83,68 @@
     <div id="dashboard" class="hidden">
       
       <!-- KPI Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div class="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
           <div class="flex items-center">
             <div class="bg-blue-100 p-3 rounded-lg">
-              <i class="fas fa-users text-blue-600 text-xl"></i>
+              <i class="fas fa-users text-blue-600 text-lg sm:text-xl"></i>
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-500">Gesamt Sessions</p>
-              <p id="total-sessions" class="text-2xl font-bold text-gray-900">-</p>
+              <p id="total-sessions" class="text-xl sm:text-2xl font-bold text-gray-900">-</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div class="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
           <div class="flex items-center">
             <div class="bg-green-100 p-3 rounded-lg">
-              <i class="fas fa-calendar-day text-green-600 text-xl"></i>
+              <i class="fas fa-calendar-day text-green-600 text-lg sm:text-xl"></i>
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-500">Sessions Heute</p>
-              <p id="today-sessions" class="text-2xl font-bold text-gray-900">-</p>
+              <p id="today-sessions" class="text-xl sm:text-2xl font-bold text-gray-900">-</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div class="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
           <div class="flex items-center">
             <div class="bg-purple-100 p-3 rounded-lg">
-              <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+              <i class="fas fa-chart-line text-purple-600 text-lg sm:text-xl"></i>
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-500">Erfolgsrate</p>
-              <p id="success-rate" class="text-2xl font-bold text-gray-900">-</p>
+              <p id="success-rate" class="text-xl sm:text-2xl font-bold text-gray-900">-</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div class="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
           <div class="flex items-center">
             <div class="bg-red-100 p-3 rounded-lg">
-              <i class="fas fa-question-circle text-red-600 text-xl"></i>
+              <i class="fas fa-question-circle text-red-600 text-lg sm:text-xl"></i>
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-500">Offene Fragen</p>
-              <p id="open-questions" class="text-2xl font-bold text-gray-900">-</p>
+              <p id="open-questions" class="text-xl sm:text-2xl font-bold text-gray-900">-</p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Charts and Content Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-6 sm:mb-8">
         
         <!-- Sessions Chart -->
         <div class="lg:col-span-2">
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          <div class="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">
               <i class="fas fa-chart-area text-blue-600 mr-2"></i>
               Sessions der letzten 7 Tage
             </h3>
-            <div id="sessions-chart" class="h-64 flex items-center justify-center">
-              <div id="sessions-bars" class="w-full flex items-end justify-between space-x-2 h-48">
+            <div id="sessions-chart" class="h-48 sm:h-64 flex items-center justify-center">
+              <div id="sessions-bars" class="w-full flex items-end justify-between space-x-1 sm:space-x-2 h-40 sm:h-48">
                 <!-- Chart bars will be populated here -->
               </div>
             </div>
@@ -130,8 +154,8 @@
         <!-- Quick Stats -->
         <div class="space-y-6">
           <!-- Content Stats -->
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          <div class="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">
               <i class="fas fa-file-alt text-green-600 mr-2"></i>
               Content Übersicht
             </h3>
@@ -148,8 +172,8 @@
           </div>
 
           <!-- Feedback Stats -->
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          <div class="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">
               <i class="fas fa-thumbs-up text-purple-600 mr-2"></i>
               Feedback Übersicht
             </h3>
@@ -168,17 +192,17 @@
       </div>
 
       <!-- Tables Section -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         
         <!-- Unbeantwortete Fragen -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div class="p-6 border-b border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-900">
+          <div class="p-4 sm:p-6 border-b border-gray-100">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
               <i class="fas fa-exclamation-circle text-orange-600 mr-2"></i>
               Unbeantwortete Fragen
             </h3>
           </div>
-          <div class="p-6">
+          <div class="p-4 sm:p-6">
             <div id="unanswered-questions" class="space-y-4">
               <!-- Dynamic content -->
             </div>
@@ -187,13 +211,13 @@
 
         <!-- Top 5 häufigste Fragen -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div class="p-6 border-b border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-900">
+          <div class="p-4 sm:p-6 border-b border-gray-100">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
               <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
               Häufigste Fragen
             </h3>
           </div>
-          <div class="p-6">
+          <div class="p-4 sm:p-6">
             <div id="top-questions" class="space-y-4">
               <!-- Dynamic content -->
             </div>
@@ -202,13 +226,13 @@
 
         <!-- Meistgesuchte Artikel -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div class="p-6 border-b border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-900">
+          <div class="p-4 sm:p-6 border-b border-gray-100">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
               <i class="fas fa-fire text-red-600 mr-2"></i>
               Meistaufgerufene Artikel
             </h3>
           </div>
-          <div class="p-6">
+          <div class="p-4 sm:p-6">
             <div id="most-viewed-articles" class="space-y-4">
               <!-- Dynamic content -->
             </div>
@@ -217,15 +241,15 @@
       </div>
 
       <!-- Recent Feedback -->
-      <div class="mt-8">
+      <div class="mt-6 sm:mt-8">
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div class="p-6 border-b border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-900">
+          <div class="p-4 sm:p-6 border-b border-gray-100">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
               <i class="fas fa-comments text-blue-600 mr-2"></i>
               Letztes Feedback
             </h3>
           </div>
-          <div class="p-6">
+          <div class="p-4 sm:p-6">
             <div id="recent-feedback" class="space-y-4">
               <!-- Dynamic content -->
             </div>
@@ -236,15 +260,15 @@
   </main>
 
   <!-- Footer -->
-  <footer class="bg-white border-t border-gray-200 mt-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div class="flex justify-between items-center">
-        <p class="text-sm text-gray-500">
+  <footer class="bg-white border-t border-gray-200 mt-8 sm:mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div class="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
+        <p class="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-0">
           © 2025 HTW Dresden - HTC ABC AI Bot Analytics Dashboard
         </p>
-        <div class="flex items-center space-x-4">
-          <span class="text-sm text-gray-500">Letzte Aktualisierung:</span>
-          <span id="last-update" class="text-sm font-medium text-gray-900">-</span>
+        <div class="flex items-center space-x-2 sm:space-x-4">
+          <span class="text-xs sm:text-sm text-gray-500">Letzte Aktualisierung:</span>
+          <span id="last-update" class="text-xs sm:text-sm font-medium text-gray-900">-</span>
         </div>
       </div>
     </div>

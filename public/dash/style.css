@@ -180,6 +180,10 @@ body {
   }
 }
 
+#mobile-menu {
+  transition: all 0.3s ease-in-out;
+}
+
 /* Success/Error Messages */
 .alert {
   padding: 0.75rem 1rem;

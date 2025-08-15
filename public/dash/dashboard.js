@@ -13,30 +13,63 @@ class DashboardManager {
 
     setupEventListeners() {
         const refreshButton = document.getElementById('refresh-btn');
-        
-        refreshButton.addEventListener('click', () => {
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const refreshButtonMobile = document.getElementById('refresh-btn-mobile');
+
+        const handleRefresh = () => {
             this.loadDashboard();
 
-            // Disable button and start cooldown
-            refreshButton.disabled = true;
-            refreshButton.classList.add('bg-gray-400', 'cursor-not-allowed');
-            refreshButton.classList.remove('bg-orange-600', 'hover:bg-orange-700');
+            // Disable buttons and start cooldown
+            const buttons = [refreshButton, refreshButtonMobile];
+            buttons.forEach(button => {
+                if (button) {
+                    button.disabled = true;
+                    button.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    button.classList.remove('bg-orange-600', 'hover:bg-orange-700');
+                }
+            });
 
             let countdown = 60;
-            refreshButton.innerHTML = `<i class="fas fa-clock mr-2"></i>Bitte warten (${countdown}s)`;
+            const updateButtonText = () => {
+                buttons.forEach(button => {
+                    if (button) {
+                        button.innerHTML = `<i class="fas fa-clock mr-2"></i>Bitte warten (${countdown}s)`;
+                    }
+                });
+            };
+
+            updateButtonText();
 
             const interval = setInterval(() => {
                 countdown--;
-                refreshButton.innerHTML = `<i class="fas fa-clock mr-2"></i>Bitte warten (${countdown}s)`;
+                updateButtonText();
                 if (countdown <= 0) {
                     clearInterval(interval);
-                    refreshButton.disabled = false;
-                    refreshButton.innerHTML = '<i class="fas fa-refresh mr-2"></i>Aktualisieren';
-                    refreshButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                    refreshButton.classList.add('bg-orange-600', 'hover:bg-orange-700');
+                    buttons.forEach(button => {
+                        if (button) {
+                            button.disabled = false;
+                            button.innerHTML = '<i class="fas fa-refresh mr-2"></i>Aktualisieren';
+                            button.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                            button.classList.add('bg-orange-600', 'hover:bg-orange-700');
+                        }
+                    });
                 }
             }, 1000);
-        });
+        };
+
+        if (refreshButton) {
+            refreshButton.addEventListener('click', handleRefresh);
+        }
+        if (refreshButtonMobile) {
+            refreshButtonMobile.addEventListener('click', handleRefresh);
+        }
+
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
 
         // Auto-refresh every 2 minutes
         this.startAutoRefresh();
