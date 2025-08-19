@@ -48,8 +48,11 @@
 
 .mobile-menu-header .logo {
     height: 80px; /* Logo deutlich vergrößert */
+    width: auto;
+    max-width: 100%;
     flex-grow: 1;
     text-align: center;
+    object-fit: contain;
     /* Kein Padding mehr, das die Zentrierung stört */
 }
 
@@ -152,6 +155,11 @@
         text-align: center;
     }
 
+    .mobile-menu-header .logo {
+        height: 60px;
+        max-width: 90%;
+    }
+
     #welcome-container .welcome-logo {
         width: 120px;
     }
@@ -172,5 +180,23 @@
 
     .suggestion-card {
         width: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-menu-header .logo {
+        height: 50px;
+        max-width: 85%;
+    }
+    
+    .mobile-menu-header {
+        padding: 1rem 1rem 1rem 1rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .mobile-menu-header .logo {
+        height: 45px;
+        max-width: 80%;
     }
 }
