@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <img src="/image/smoky_klein.png" alt="Bot Avatar">
                         </div>
                         <div class="bubble">
-                            <span>Hallo! Ich bin Alex, dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?</span>
+                            <span>Hallo! Ich bin dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?</span>
                         </div>
                     </div>
                 </div>`;
