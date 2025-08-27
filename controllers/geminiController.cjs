@@ -8,19 +8,18 @@ const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds 
 // In-memory conversation store
 const conversations = new Map();
 
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
+const defaultApiKey = process.env.GEMINI_API_KEY;
+if (!defaultApiKey) {
   console.error(
     "Fehler: Kein API-Key gefunden. Bitte setze die Umgebungsvariable GEMINI_API_KEY."
   );
   process.exit(1);
 }
-const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const genAI = new GoogleGenerativeAI(defaultApiKey);
 
 async function logUnansweredQuestion(newQuestion) {
   try {
-
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const unansweredQuestions = await Questions.findAll({
       where: { answered: false, spam: false, deleted: false },
       attributes: ['question'],
@@ -75,10 +74,9 @@ async function logUnansweredQuestion(newQuestion) {
       error.message
     );
   }
-  // console.log(`logUnansweredQuestion finished at: ${new Date().toISOString()}`);
 }
 
-async function generateResponse(req, res) {
+async function streamChat(req, res) {
   const startTime = Date.now();
   let sessionId = null;
   
@@ -88,6 +86,15 @@ async function generateResponse(req, res) {
       return res.status(400).json({ error: "Prompt ist erforderlich" });
     }
 
+    const userApiKey = req.headers['x-user-api-key'];
+    let currentGenAI = genAI;
+
+    if (userApiKey) {
+      console.log("Using user-provided API key.");
+      currentGenAI = new GoogleGenerativeAI(userApiKey);
+    }
+    const model = currentGenAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
     // Track session
     sessionId = await trackSession(req);
     req.res = res; // Make res available for cookie setting
@@ -96,7 +103,7 @@ async function generateResponse(req, res) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders(); // Flush the headers to establish the connection
+    res.flushHeaders();
 
     const convoId = conversationId || new Date().toISOString() + Math.random().toString(36).slice(2);
     console.log(`Processing conversationId: ${convoId}`);
@@ -137,7 +144,6 @@ async function generateResponse(req, res) {
     
     let timezoneInfo = '';
     try {
-        // Get German offset in minutes from UTC
         const germanOffsetString = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Berlin', timeZoneName: 'shortOffset' }).format(now);
         const gmtMatch = germanOffsetString.match(/GMT([+-]\d+)/);
         if (!gmtMatch) throw new Error("Could not parse German timezone offset.");
@@ -145,7 +151,6 @@ async function generateResponse(req, res) {
         const germanOffsetHours = parseInt(gmtMatch[1], 10);
         const germanOffsetMinutes = germanOffsetHours * 60;
 
-        // Get user offset in minutes from UTC (it's inverted from the client)
         const userOffsetMinutes = -timezoneOffset;
 
         const offsetDifferenceHours = (userOffsetMinutes - germanOffsetMinutes) / 60;
@@ -156,7 +161,6 @@ async function generateResponse(req, res) {
         }
     } catch (e) {
         console.error("Could not determine timezone offset:", e.message);
-        // Silently fail, timezoneInfo will be empty
     }
     const fullPrompt = `
       --system prompt--
@@ -201,7 +205,7 @@ async function generateResponse(req, res) {
       --
       
       **Conversation History**:
-      ${messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n")}
+      ${messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n")} 
       
       --user prompt--
       ${prompt}
@@ -229,10 +233,8 @@ async function generateResponse(req, res) {
       logUnansweredQuestion(prompt);
     }
 
-    // Track the interaction
     await trackChatInteraction(sessionId, prompt, fullResponseText, wasSuccessful, responseTime, tokensUsed);
 
-    // Track article views if any articles were referenced
     const referencedArticleIds = extractArticleIds(fullResponseText);
     for (const articleId of referencedArticleIds) {
       await trackArticleView(articleId, sessionId, prompt);
@@ -244,11 +246,9 @@ async function generateResponse(req, res) {
   } catch (error) {
     console.error("Fehler beim Generieren der Antwort:", error.message);
     
-    // Track failed interaction
     const responseTime = Date.now() - startTime;
     await trackChatInteraction(sessionId, req.body.prompt || 'unknown', null, false, responseTime, 0, error.message);
     
-    // Ensure the connection is closed properly in case of an error
     if (!res.headersSent) {
       res.status(500).json({ error: "Interner Serverfehler" });
     } else {
@@ -280,4 +280,5 @@ async function getSuggestions(req, res) {
   }
 }
 
-module.exports = { generateResponse, getSuggestions };
+module.exports = { streamChat, getSuggestions };
+

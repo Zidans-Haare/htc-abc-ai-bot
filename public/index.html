@@ -28,6 +28,7 @@
     <script src="/js/marked.min.js"></script>
     <script src="/js/purify.min.js"></script>
     <script type="module"  src="bot.js"></script>
+    <script src="/js/api_guide.js"></script>
 </head>
 <body>
 
@@ -226,10 +227,63 @@
                         <button id="delete-all-chats-btn" class="btn-danger" data-i18n="delete_all_chats_button">Jetzt löschen</button>
                     </div>
                 </div>
+
+                <!-- API Key Section -->
+                <div class="settings-section">
+                    <h4 class="section-title" data-i18n="section_api_title">API-Nutzung</h4>
+                    <div class="form-group">
+                        <label data-i18n="api_key_label">Persönlicher API-Schlüssel</label>
+                        <p class="api-key-status" id="api-key-status" data-i18n="api_key_status_not_set">Nicht konfiguriert</p>
+                        <button id="configure-api-key-btn" class="btn" data-i18n="api_key_configure_button">Konfigurieren & Limits aufheben</button>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button id="reset-settings-btn" data-i18n="reset_settings_button">Auf Standard zurücksetzen</button>
                 <button id="save-settings-btn" class="btn-primary" data-i18n="save_settings_button">Speichern & Anwenden</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="api-key-modal" class="modal-hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Persönlichen API-Schlüssel einrichten</h3>
+                <button id="close-api-key-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="api-guide-container">
+                    <!-- Step 1: Introduction -->
+                    <div class="api-guide-step active" id="api-step-1">
+                        <h4 class="step-title">Schritt 1: Höhere Limits freischalten!</h4>
+                        <p>Um die Kosten für alle niedrig zu halten, haben wir ein allgemeines Limit für Anfragen. Du kannst dieses Limit umgehen, indem du deinen eigenen, kostenlosen Google AI API-Schlüssel verwendest.</p>
+                        <p>Wir führen dich in wenigen Schritten durch den Prozess.</p>
+                    </div>
+                    <!-- Step 2: Visit Google AI Studio -->
+                    <div class="api-guide-step" id="api-step-2">
+                        <h4 class="step-title">Schritt 2: Deinen Schlüssel holen</h4>
+                        <p>Klicke auf den folgenden Link, um das Google AI Studio in einem neuen Tab zu öffnen. Melde dich mit deinem Google-Konto an, falls nötig.</p>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn-link">Google AI Studio öffnen</a>
+                    </div>
+                    <!-- Step 3: Create API Key -->
+                    <div class="api-guide-step" id="api-step-3">
+                        <h4 class="step-title">Schritt 3: API-Schlüssel erstellen</h4>
+                        <p>Klicke im Google AI Studio auf die Schaltfläche: <strong>+ Create API key in new project</strong></p>
+                        <p>Es wird eine lange Zeichenkette generiert. Das ist dein persönlicher Schlüssel.</p>
+                    </div>
+                    <!-- Step 4: Insert Key -->
+                    <div class="api-guide-step" id="api-step-4">
+                        <h4 class="step-title">Schritt 4: Fast geschafft!</h4>
+                        <p>Kopiere den generierten API-Schlüssel und füge ihn in das Feld unten ein.</p>
+                        <input type="text" id="api-key-input" placeholder="API-Schlüssel hier einfügen" class="api-key-input-field">
+                        <p id="api-key-error" class="error-message"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer api-guide-footer">
+                <button id="api-guide-prev" class="btn" disabled>Zurück</button>
+                <button id="api-guide-next" class="btn-primary">Weiter</button>
+                <button id="api-guide-save" class="btn-primary modal-hidden">Speichern & Aktivieren</button>
             </div>
         </div>
     </div>

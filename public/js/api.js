@@ -50,9 +50,15 @@ export async function sendMsg(app, promptText) {
     }
 
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        const userApiKey = localStorage.getItem('user_api_key');
+        if (userApiKey) {
+            headers['X-User-API-Key'] = userApiKey;
+        }
+
         const response = await fetch('/api/chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({ 
                 prompt: txt, 
                 conversationId: currentConversationId,

@@ -9,7 +9,7 @@ const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 
 // --- Controller Imports ---
-const { generateResponse, getSuggestions } = require('./controllers/geminiController.cjs');
+const { streamChat, getSuggestions } = require('./controllers/geminiController.cjs');
 const feedbackController = require('./controllers/feedbackController.cjs');
 const adminController = require('./controllers/adminController.cjs');
 const auth = require('./controllers/authController.cjs');
@@ -142,7 +142,7 @@ app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
 app.use('/api/login', loginLimiter);
 app.use('/api', apiLimiter); // General limiter LAST
 
-app.post('/api/chat', generateResponse);
+app.post('/api/chat', streamChat);
 app.get('/api/suggestions', getSuggestions);
 app.use('/api/feedback', feedbackController);
 app.use('/api', auth.router);
