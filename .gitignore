@@ -5,6 +5,7 @@ ai_fragen/offene_fragen.txt
 cron/cron.log
 logs/audit.log
 hochschuhl-abc.db*
+.hochschuhl-abc.db.swp
 chatbot.db*
 logs/
 ai_fragen/offene_fragen.txt
