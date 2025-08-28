@@ -1,93 +1,111 @@
 # HTC ABC AI Bot
 
-This project provides a simple Node.js server that exposes an API endpoint for answering questions using the Gemini API.
+Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assistenten über eine API bereitstellt. Es umfasst ein umfassendes Admin-Panel zur Verwaltung von Inhalten und ein Dashboard zur Überwachung von Analysen.
 
-## Environment Setup
+## ✨ Features
 
-1. **Install dependencies**
-   ```bash
-   npm install
-   ```
-   Ensure that Node.js (version 18 or newer) and npm are available on your machine.
+- **KI-Chat:** Eine öffentliche Schnittstelle (`/api/chat`), die Anfragen über das Gemini API von Google beantwortet.
+- **Admin-Panel:** Eine passwortgeschützte Weboberfläche zur Verwaltung von Hochschul-ABC-Einträgen, Benutzern, Bildern und zur Überprüfung von Feedback.
+- **Dashboard:** Ein separates, geschütztes Dashboard zur Anzeige von Nutzungsstatistiken und Anwendungsdaten.
+- **Sicherheit:** Die Anwendung verwendet `helmet` zur Absicherung von HTTP-Headern und `express-rate-limit` zum Schutz vor Brute-Force-Angriffen.
+- **Authentifizierung:** Admin- und Dashboard-Bereiche sind durch eine sitzungsbasierte Authentifizierung geschützt.
 
-2. **Configuration**
-   Create a `.env` file in the project root containing the API key for the Gemini API and an optional port:
-   ```env
-   GEMINI_API_KEY=your-google-api-key
-  PORT=3000 # optional, defaults to 3000
-   ```
+## 💻 Technologie-Stack
 
-  The admin interface now requires login with a username and password.
-  A default user `admin` with password `admin` is created when the
-  database is initialized. After logging in, the browser stores a session
-  token which is sent with all admin requests.
+- **Backend:** Node.js, Express.js
+- **Datenbank:** SQLite mit Sequelize ORM
+- **Frontend:** Statisches HTML, CSS und JavaScript
+- **KI:** Google Gemini API
 
-## Running `server.cjs`
+## 🚀 Setup & Konfiguration
 
-Start the application with:
+### Voraussetzungen
+
+- Node.js (Version 18 oder neuer)
+- npm (wird mit Node.js installiert)
+
+### Installation
+
+1.  **Abhängigkeiten installieren:**
+    ```bash
+    npm install
+    ```
+
+2.  **Konfiguration:**
+    Erstellen Sie eine `.env`-Datei im Projektstammverzeichnis. Diese Datei sollte Ihren API-Schlüssel für die Gemini API und optional einen Port für den Server enthalten.
+
+    ```env
+    GEMINI_API_KEY=your-google-api-key
+    PORT=3000 # Optional, Standard ist 3000
+    ```
+
+## ▶️ Anwendung starten
+
+Führen Sie den folgenden Befehl im Projektverzeichnis aus, um den Server zu starten:
+
+```bash
+npm start
+```
+
+Oder direkt:
+
 ```bash
 node server.cjs
 ```
-Alternatively you can run `npm start`. When running on systems like all-inkl.com you may want to start the process in the background:
+
+Der Server schreibt seine Prozess-ID in die Datei `server.pid`, sodass Sie ihn bei Bedarf gezielt beenden können:
+
 ```bash
-nohup node server.cjs &
-```
-The server writes its process id to `server.pid` so you can stop it using:
-```bash
+# Für Linux/macOS
 kill -9 $(cat server.pid)
 ```
 
-The server listens on `/api/chat` for POST requests and serves the static files from the `public` directory. Conversation history is stored only in memory and disappears when the server restarts, so chats are private to each session.
+### Start-Optionen
 
-## Handling Unanswered Questions
+-   `-https`: Startet den Server im HTTPS-Modus. Erfordert, dass `key.pem` und `cert.pem` in Ihrem `.ssh`-Verzeichnis im Home-Ordner vorhanden sind.
+-   `-admin`: Startet den Server in einem Debug-Modus, der die Authentifizierung für die Admin- und Dashboard-Bereiche umgeht. **Nur für Entwicklungszwecke verwenden.**
 
-If the Gemini API responds with
-"Diese Frage kann basierend auf den bereitgestellten Informationen nicht beantwortet werden",
-this question is logged to `ai_fragen/offene_fragen.txt` for later review.
-The log entry includes a timestamp and the original prompt.
+## 🔐 Authentifizierung
 
-## Verwalten unbeantworteter Fragen
+Der Zugriff auf das Admin-Panel (`/admin/`) und das Dashboard (`/dash/`) erfordert eine Anmeldung. Die Anwendung verwendet ein In-Memory-Session-Management.
 
-Zur Auflistung aller noch offenen Fragen kann `GET /api/unanswered` verwendet werden. Eine Antwort 
-kann – zusammen mit der ursprünglichen Frage – 
-mittels `POST /api/answer` im JSON-Body übermittelt werden. Eine einfache Administrationsoberfläche
-befindet sich unter `public/admin.html`.
+-   **Wichtiger Hinweis:** Da die Sitzungen im Speicher gehalten werden, gehen alle Anmeldungen verloren, wenn der Server neu gestartet wird.
+-   Ein Standardbenutzer `admin` mit dem Passwort `admin` wird beim ersten Start und der Initialisierung der Datenbank angelegt.
 
-## Admin2 Interface
+## 📁 Projektstruktur
 
-The folder `public/admin2/` contains a more modern interface for editing the
-content of the Hochschul‑ABC. Open `public/admin2/index.html` in a browser or
-visit `/admin2/` on the running server to use it.
+```
+.
+├── controllers/     # Anwendungslogik (API-Endpunkte, Datenbankinteraktionen)
+├── logs/            # Log-Dateien (z.B. audit.log)
+├── public/          # Statische Dateien (HTML, CSS, JS für Frontend, Admin, Dashboard)
+├── scripts/         # Skripte für Datenbankmigration und -initialisierung
+├── utils/           # Hilfsfunktionen (z.B. Caching, Tokenizer)
+├── .env             # Konfigurationsdatei (muss manuell erstellt werden)
+├── package.json     # Projektabhängigkeiten und Skripte
+└── server.cjs       # Hauptanwendungsdatei (Server-Setup, Middleware, Routen)
+```
 
-### API routes
+## 📝 API-Endpunkte (Übersicht)
 
-The page communicates with several JSON endpoints:
+Die Anwendung stellt verschiedene API-Endpunkte bereit:
 
-* `GET /api/admin/headlines` – list headlines of all **active** entries. The response
-  also includes the text of each entry so the admin interface can search
-  through both headline and content.
-* `GET /api/admin/entries/:id` – retrieve a single entry by id.
-* `POST /api/admin/entries` – create a new entry. Provide `headline` and `text`
-  in the request body.
-* `PUT /api/admin/entries/:id` – update an entry. The previous version is marked
-  as inactive and timestamped in the `archived` field while a new record is
-  created and returned.
-* `DELETE /api/admin/entries/:id` – archive an entry by setting `active` to
-  `false` and recording the time in `archived`.
-* `GET /api/admin/archive` – return all archived entries ordered by the time they
-  were archived.
+-   **Öffentliche API:**
+    -   `POST /api/chat`: Sendet eine Anfrage an den KI-Chatbot.
+    -   `GET /api/suggestions`: Ruft Vorschläge für den Chat ab.
+-   **Admin-API (`/api/admin/`):**
+    -   Endpunkte zur Verwaltung von Einträgen, Benutzern, Feedback, Bildern und mehr. Erfordert Authentifizierung.
+-   **Dashboard-API (`/api/dashboard/`):**
+    -   Endpunkte zur Bereitstellung von Daten für das Monitoring-Dashboard. Erfordert Authentifizierung.
+-   **Authentifizierungs-API:**
+    -   `POST /api/login`: Authentifiziert einen Benutzer und startet eine Sitzung.
+    -   `POST /api/logout`: Beendet die aktuelle Sitzung.
 
-* `POST /api/admin/restore/:id` – restore an archived entry. The current active
-  version (if any) is archived and a new entry is created from the archived data.
+## 🛡️ Sicherheit
 
+-   **Helmet:** Schützt die Anwendung durch das Setzen verschiedener sicherheitsrelevanter HTTP-Header.
+-   **Rate Limiting:** Begrenzt die Anzahl der Anfragen an die API, um Missbrauch zu verhindern. Für die Anmelde-Endpunkte gelten strengere Limits.
 
+## 🪵 Logging
 
-Only active records are served by the API. Archived entries remain in the
-database for reference and history tracking.
-
-Each entry also stores the name of the editor in the `editor` field which is
-archived together with older versions.
-
-If the unanswered‑question workflow from `public/admin.html` is added to this
-interface, you can review questions logged in
-`ai_fragen/offene_fragen.txt` and submit answers via `/api/answer`.
+Benutzeraktionen im Admin-Panel (wie Anmeldungen, Inhaltserstellung und -löschung) werden in der Datei `logs/audit.log` protokolliert, um die Nachverfolgbarkeit zu gewährleisten.
