@@ -62,6 +62,7 @@ export async function sendMsg(app, promptText) {
             body: JSON.stringify({ 
                 prompt: txt, 
                 conversationId: currentConversationId,
+                anonymousUserId: app.anonymousUserId, // Add this line
                 timezoneOffset: new Date().getTimezoneOffset() 
             })
         });

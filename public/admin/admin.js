@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const exportBtn = document.getElementById('btn-export');
   const logoutBtn = document.getElementById('btn-logout');
   const imagesBtn = document.getElementById('btn-images');
+  const conversationsBtn = document.getElementById('btn-conversations');
 
   const editorView = document.getElementById('editor-view');
   const questionsView = document.getElementById('questions-view');
@@ -48,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const userView = document.getElementById('user-view');
   const feedbackView = document.getElementById('feedback-view');
   const imagesView = document.getElementById('images-view');
+  const conversationsView = document.getElementById('conversations-view');
   
   const openCountSpan = document.getElementById('open-count');
   
@@ -86,6 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(editorBtn);
   }
 
@@ -96,6 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(questionsBtn);
   }
   
@@ -110,6 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(archiveBtn);
     loadArchive();
   }
@@ -121,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(userBtn);
     loadUsers();
   }
@@ -132,6 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(feedbackBtn);
   }
 
@@ -142,11 +149,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
+    if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(imagesBtn);
   }
 
+  function showConversations() {
+    if (conversationsView) conversationsView.classList.remove('hidden');
+    editorView.classList.add('hidden');
+    questionsView.classList.add('hidden');
+    archiveView.classList.add('hidden');
+    userView.classList.add('hidden');
+    feedbackView.classList.add('hidden');
+    imagesView.classList.add('hidden');
+    updateButtonStyles(conversationsBtn);
+  }
+
   function updateButtonStyles(activeButton) {
-    const buttons = [editorBtn, questionsBtn, archiveBtn, userBtn, feedbackBtn, exportBtn, imagesBtn];
+    const buttons = [editorBtn, questionsBtn, archiveBtn, userBtn, feedbackBtn, exportBtn, imagesBtn, conversationsBtn];
     buttons.forEach(btn => {
       if (btn) btn.classList.remove('active');
     });
@@ -163,6 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   userBtn.classList.add('hidden');
   feedbackBtn.classList.add('hidden');
   if(imagesBtn) imagesBtn.classList.add('hidden');
+  if(conversationsBtn) conversationsBtn.classList.add('hidden');
 
   switch (userRole) {
     case 'admin':
@@ -172,6 +192,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       userBtn.classList.remove('hidden');
       feedbackBtn.classList.remove('hidden');
       if(imagesBtn) imagesBtn.classList.remove('hidden');
+      if(conversationsBtn) conversationsBtn.classList.remove('hidden');
       
       editorBtn.addEventListener('click', showEditor);
       questionsBtn.addEventListener('click', showQuestions);
@@ -199,6 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     case 'entwickler':
       feedbackBtn.classList.remove('hidden');
       exportBtn.classList.remove('hidden');
+      if(conversationsBtn) conversationsBtn.classList.remove('hidden');
 
       feedbackBtn.addEventListener('click', showFeedback);
       
@@ -212,6 +234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       userView.classList.add('hidden');
       feedbackView.classList.add('hidden');
       imagesView.classList.add('hidden');
+      if(conversationsView) conversationsView.classList.add('hidden');
       break;
   }
 
@@ -233,6 +256,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initExport();
   setupFeedback();
   initImages();
+  if (window.initConversations) {
+    initConversations(showConversations);
+  }
   
   document.addEventListener('update-username', (e) => {
     const currentUserSpan = document.getElementById('last-edited-by');

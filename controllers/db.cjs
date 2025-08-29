@@ -299,7 +299,61 @@ Questions.belongsTo(HochschuhlABC, { foreignKey: 'linked_article_id' });
 ArticleViews.belongsTo(HochschuhlABC, { foreignKey: 'article_id' });
 ChatInteractions.belongsTo(UserSessions, { foreignKey: 'session_id', targetKey: 'session_id' });
 
+// --- New Chat History Models ---
+const Conversation = sequelize.define('Conversation', {
+  id: {
+    type: DataTypes.TEXT,
+    primaryKey: true,
+  },
+  anonymous_user_id: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
+}, {
+  tableName: 'conversations',
+  timestamps: true,
+  updatedAt: false,
+  createdAt: 'created_at'
+});
+
+const Message = sequelize.define('Message', {
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  },
+  conversation_id: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    references: {
+      model: 'conversations',
+      key: 'id',
+    },
+  },
+  role: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['user', 'model']],
+    },
+  },
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
+}, {
+  tableName: 'messages',
+  timestamps: true,
+  updatedAt: false,
+  createdAt: 'created_at'
+});
+
+// Associations for Chat History
+Conversation.hasMany(Message, { foreignKey: 'conversation_id' });
+Message.belongsTo(Conversation, { foreignKey: 'conversation_id' });
+
+
 // sequelize.sync({ alter: true })
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, UserSessions, ArticleViews, ChatInteractions };
+module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, UserSessions, ArticleViews, ChatInteractions, Conversation, Message };

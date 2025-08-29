@@ -16,6 +16,7 @@
   <script src="../js/marked.min.js"></script>
   <script src="../js/purify.min.js"></script>
   <script defer type="module" src="/admin/admin.js"></script>
+  <script src="/admin/conversations.js"></script>
   <link rel="icon" href="/favicon.ico">
   
 </head>
@@ -49,6 +50,10 @@
         <a href="#" id="btn-feedback" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
             <i class="fa-solid fa-comment-dots w-5 text-center"></i>
             <span class="sidebar-text">Feedback</span>
+        </a>
+        <a href="#" id="btn-conversations" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-comments w-5 text-center"></i>
+            <span class="sidebar-text">Conversations</span>
         </a>
         <a href="#" id="btn-export" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
             <i class="fa-solid fa-file-export w-5 text-center"></i>
@@ -171,6 +176,25 @@
       <div id="feedback-detail-container" class="hidden p-6 space-y-4 overflow-y-auto">
         <!-- Details will be rendered here by JS -->
       </div>
+    </div>
+    <!-- Conversations View -->
+    <div id="conversations-view" class="flex flex-1 hidden overflow-hidden">
+        <div class="w-1/3 bg-[var(--app-bg)] border-r border-[var(--border-color)] flex flex-col">
+            <div class="p-4 border-b border-[var(--border-color)]">
+                <h2 class="text-lg font-semibold">Conversations</h2>
+            </div>
+            <div id="conversations-list" class="flex-1 overflow-y-auto p-4 space-y-2">
+                <!-- Conversation list will be populated here -->
+            </div>
+        </div>
+        <div class="w-2/3 flex flex-col bg-white">
+            <div class="p-4 border-b border-[var(--border-color)]">
+                <h2 id="conversation-detail-title" class="text-lg font-semibold">Select a conversation</h2>
+            </div>
+            <div id="conversation-detail-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Messages will be populated here -->
+            </div>
+        </div>
     </div>
     <!-- User Management View -->
     <div id="user-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">

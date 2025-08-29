@@ -3,9 +3,20 @@ import { loadSettings, saveSettings, resetSettings, handleSettingChange, getSett
 import { deleteAllChats, autoDeleteOldChats, loadChat, saveMessageToHistory, getChatHistory } from './js/history.js';
 import { sendMsg, sendFeedback } from './js/api.js';
 
+// Function to get or create an anonymous user ID
+function getAnonymousUserId() {
+    let userId = localStorage.getItem('anonymousUserId');
+    if (!userId) {
+        userId = self.crypto.randomUUID();
+        localStorage.setItem('anonymousUserId', userId);
+    }
+    return userId;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const app = {
         conversationId: null,
+        anonymousUserId: getAnonymousUserId(), // Get the user ID on init
         expectedCaptcha: null,
         useFirstAvatar: true,
         settings: getSettings(),

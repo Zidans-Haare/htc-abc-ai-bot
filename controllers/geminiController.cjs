@@ -1,12 +1,12 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { HochschuhlABC, Questions, Images } = require("./db.cjs");
+const { HochschuhlABC, Questions, Images, Conversation, Message } = require("./db.cjs"); // Import new models from db.cjs
 const { getCached } = require("../utils/cache");
 const { estimateTokens, isWithinTokenLimit } = require("../utils/tokenizer");
 const { summarizeConversation } = require("../utils/summarizer");
 const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require("../utils/analytics");
 
-// In-memory conversation store
-const conversations = new Map();
+// In-memory conversation store is no longer needed
+// const conversations = new Map();
 
 const defaultApiKey = process.env.GEMINI_API_KEY;
 if (!defaultApiKey) {
@@ -81,7 +81,7 @@ async function streamChat(req, res) {
   let sessionId = null;
   
   try {
-    const { prompt, conversationId, timezoneOffset } = req.body;
+    const { prompt, conversationId, anonymousUserId, timezoneOffset } = req.body;
     if (!prompt) {
       return res.status(400).json({ error: "Prompt ist erforderlich" });
     }
@@ -108,15 +108,34 @@ async function streamChat(req, res) {
     const convoId = conversationId || new Date().toISOString() + Math.random().toString(36).slice(2);
     console.log(`Processing conversationId: ${convoId}`);
 
-    let messages = conversations.get(convoId) || [];
-    if (messages.length === 0) {
-      conversations.set(convoId, messages);
-      console.log(`Created new conversation: ${convoId}`);
+    // --- Database-backed conversation history ---
+    const [conversation, created] = await Conversation.findOrCreate({
+      where: { id: convoId },
+      defaults: { anonymous_user_id: anonymousUserId || 'unknown' }
+    });
+    if (created) {
+      console.log(`Created new conversation in DB: ${convoId}`);
     }
 
-    const userMessage = { text: prompt, isUser: true, timestamp: new Date().toISOString() };
-    messages.push(userMessage);
-    console.log(`Saved user message: ${prompt}`);
+    await Message.create({
+      conversation_id: conversation.id,
+      role: 'user',
+      content: prompt
+    });
+    console.log(`Saved user message to DB: ${prompt}`);
+
+    // Fetch history from DB
+    const history = await Message.findAll({
+      where: { conversation_id: conversation.id },
+      order: [['created_at', 'ASC']]
+    });
+
+    // Map DB messages to the format expected by the rest of the function
+    let messages = history.map(msg => ({
+      text: msg.content,
+      isUser: msg.role === 'user'
+    }));
+    // --- End of new DB logic ---
 
     const entries = await HochschuhlABC.findAll({
       where: { active: true, archived: null },
@@ -135,7 +154,8 @@ async function streamChat(req, res) {
 
     if (!isWithinTokenLimit(fullTextForTokenCheck, 6000)) {
       messages = await summarizeConversation(messages);
-      conversations.set(convoId, messages);
+      // The next two lines are removed as 'conversations' is no longer used
+      // conversations.set(convoId, messages); 
       console.log(`Summarized conversation, new message count: ${messages.length}`);
     }
 
@@ -220,10 +240,14 @@ async function streamChat(req, res) {
       res.write(`data: ${JSON.stringify({ token: chunkText, conversationId: convoId })}\n\n`);
     }
 
-    const aiMessage = { text: fullResponseText, isUser: false, timestamp: new Date().toISOString() };
-    messages.push(aiMessage);
-    conversations.set(convoId, messages);
-    console.log(`Saved AI response: ${fullResponseText.slice(0, 50)}...`);
+    // --- Save AI response to DB ---
+    await Message.create({
+      conversation_id: convoId,
+      role: 'model',
+      content: fullResponseText
+    });
+    console.log(`Saved AI response to DB: ${fullResponseText.slice(0, 50)}...`);
+    // --- End of new DB logic ---
 
     const responseTime = Date.now() - startTime;
     const tokensUsed = estimateTokens(fullResponseText);
