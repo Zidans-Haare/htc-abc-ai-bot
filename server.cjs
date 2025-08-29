@@ -126,7 +126,7 @@ const protect = (req, res, next) => {
     if (req.url.startsWith('/api/')) {
       return res.status(401).json({ error: 'Session expired. Please log in.' });
     }
-    return res.redirect('/login/');
+    return res.redirect('/login');
   }
 
   next();
