@@ -15,8 +15,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (res.ok) {
         const data = await res.json();
         console.log('Login successful, role:', data.role);
-        sessionStorage.setItem('userRole', data.role); // Nur Rolle speichern
-        window.location.href = '/admin/index.html';
+        if (data.role === 'admin') {
+          window.location.href = '/admin/';
+        } else {
+          alert('Zugriff verweigert: Sie haben keine Berechtigung, auf den Admin-Bereich zuzugreifen.');
+        }
       } else {
         const error = await res.json();
         console.error('Login failed:', error);
@@ -33,18 +36,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     doLogin(userInput.value, passInput.value);
   });
 
-  // Prüfe, ob eine gültige Sitzung existiert
+  // Check for a valid session
   try {
     const res = await fetch('/api/validate');
     if (res.ok) {
-      console.log('Session valid, redirecting to admin...');
-      window.location.href = '/admin/index.html';
+      const data = await res.json();
+      if (data.role === 'admin') {
+        console.log('Session valid and user is admin, redirecting to admin area...');
+        window.location.href = '/admin/';
+      } else {
+        console.log('Session valid but user is not admin, staying on login page.');
+      }
     } else {
       console.log('No valid session, staying on login page...');
-      sessionStorage.removeItem('userRole');
     }
   } catch (err) {
     console.error('Validation error:', err);
-    sessionStorage.removeItem('userRole');
   }
 });

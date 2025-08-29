@@ -150,6 +150,14 @@ app.use('/api', adminController(auth.getSession, logAction));
 app.use('/api/dashboard', dashboardController);
 app.get("/api/view/articles", viewController.getPublishedArticles);
 
+// --- Admin Login Route ---
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login', 'login.html'));
+});
+app.get('/login/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login', 'login.html'));
+});
+
 // --- Dashboard Routes ---
 app.get('/dash/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dash', 'login', 'login.html'));
