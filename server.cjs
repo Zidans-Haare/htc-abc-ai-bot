@@ -159,6 +159,15 @@ app.get('/dash', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dash', 'index.html'));
 });
 
+// --- Admin Routes ---
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login', 'login.html'));
+});
+app.use('/admin', express.static(path.join(__dirname, 'public', 'admin')));
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+});
+
 // --- Favicon & 404 ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.use((req, res) => {
