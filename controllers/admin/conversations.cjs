@@ -10,6 +10,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const conversations = await Conversation.findAll({
+      attributes: ['id', 'anonymous_user_id', 'created_at', 'category', 'ai_confidence'],
       order: [['created_at', 'DESC']],
       limit: 100, // Limit to the last 100 conversations for performance
     });

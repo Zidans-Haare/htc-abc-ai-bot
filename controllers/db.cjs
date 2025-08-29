@@ -309,6 +309,15 @@ const Conversation = sequelize.define('Conversation', {
     type: DataTypes.TEXT,
     allowNull: false,
   },
+  category: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    defaultValue: 'Unkategorisiert'
+  },
+  ai_confidence: {
+    type: DataTypes.REAL,
+    allowNull: true
+  }
 }, {
   tableName: 'conversations',
   timestamps: true,
@@ -352,8 +361,8 @@ const Message = sequelize.define('Message', {
 Conversation.hasMany(Message, { foreignKey: 'conversation_id' });
 Message.belongsTo(Conversation, { foreignKey: 'conversation_id' });
 
-
 // sequelize.sync({ alter: true })
+//   .then(() => console.log('✓ All models were synchronized successfully.'))
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
 module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, UserSessions, ArticleViews, ChatInteractions, Conversation, Message };

@@ -4,6 +4,7 @@ const { getCached } = require("../utils/cache");
 const { estimateTokens, isWithinTokenLimit } = require("../utils/tokenizer");
 const { summarizeConversation } = require("../utils/summarizer");
 const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require("../utils/analytics");
+const { categorizeConversation } = require("../utils/categorizer");
 
 // In-memory conversation store is no longer needed
 // const conversations = new Map();
@@ -111,7 +112,11 @@ async function streamChat(req, res) {
     // --- Database-backed conversation history ---
     const [conversation, created] = await Conversation.findOrCreate({
       where: { id: convoId },
-      defaults: { anonymous_user_id: anonymousUserId || 'unknown' }
+      defaults: { 
+        anonymous_user_id: anonymousUserId || 'unknown',
+        category: 'Unkategorisiert',
+        ai_confidence: 0.0
+      }
     });
     if (created) {
       console.log(`Created new conversation in DB: ${convoId}`);
@@ -266,6 +271,33 @@ async function streamChat(req, res) {
 
     res.write('data: [DONE]\n\n');
     res.end();
+
+    // --- Start categorization in the background (fire and forget) ---
+    // We do this after the response has been fully sent to the user.
+    (async () => {
+        try {
+            const finalHistory = await Message.findAll({
+                where: { conversation_id: convoId },
+                order: [['created_at', 'ASC']],
+                attributes: ['role', 'content']
+            });
+
+            const categorizationResult = await categorizeConversation(finalHistory);
+
+            if (categorizationResult) {
+                await Conversation.update(
+                    {
+                        category: categorizationResult.category,
+                        ai_confidence: categorizationResult.confidence
+                    },
+                    { where: { id: convoId } }
+                );
+            }
+        } catch (e) {
+            console.error(`[Categorizer] Background task failed for conversation ${convoId}:`, e.message);
+        }
+    })();
+    // --- End of categorization ---
 
   } catch (error) {
     console.error("Fehler beim Generieren der Antwort:", error.message);
