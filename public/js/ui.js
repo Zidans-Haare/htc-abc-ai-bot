@@ -369,3 +369,41 @@ export function populateChatHistoryDropdown() {
         select.appendChild(option);
     });
 }
+
+export function showCreditsAnimation() {
+    const messagesContainer = document.getElementById('messages');
+    messagesContainer.innerHTML = ''; // Clear the chat
+
+    const credits = [
+        { name: 'Dieses Projekt wurde in Zusammenarbeit von StuRa und Faranto entwickelt, danke an alle Untersützer:', avatar: '/image/HTW.svg' },
+        { name: 'Nick', avatar: '/image/stu_klein.png' },
+        { name: 'Jan', avatar: '/image/smoky_klein.png' },
+        { name: 'Hannes', avatar: '/image/smoky_klein.png' },
+        { name: 'Nina', avatar: '/image/smoky_klein.png' },
+        { name: 'Sally', avatar: '/image/smoky_klein.png' },
+        { name: 'Tommy', avatar: '/image/stu_klein.png' },
+        { name: 'Danke für die tolle Zusammenarbeit!', avatar: '/image/FarantoStura.png' }
+    ];
+
+    let delay = 500; // Start delay
+    credits.forEach((credit, index) => {
+        setTimeout(() => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai credit-message';
+            // Stagger the animation delay for each message
+            messageDiv.style.animationDelay = `${index * 0.2}s`;
+
+            messageDiv.innerHTML = `
+                <div class="avatar">
+                    <img src="${credit.avatar}" alt="Avatar">
+                </div>
+                <div class="bubble">
+                    <span>${credit.name}</span>
+                </div>
+            `;
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }, delay);
+        delay += 700; // Increase delay for the next message
+    });
+}

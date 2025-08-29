@@ -894,3 +894,14 @@ input:checked + .slider:before { transform: translateX(22px); }
     font-size: 0.9rem;
     margin-top: 0.5rem;
 }
+
+/* Credits Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.credit-message {
+    animation: fadeIn 0.5s ease-out forwards;
+    opacity: 0; /* Start invisible */
+}

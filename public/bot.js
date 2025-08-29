@@ -1,4 +1,4 @@
-import { setupUI, addMessage, showToast, scrollToBottom, updateTime, renderChatHistory, openMobileMenu, closeMobileMenu, startWelcomeAnimation, stopWelcomeAnimation, openModal, closeModal, generateCaptcha, setFeedbackLanguage, populateChatHistoryDropdown } from './js/ui.js';
+import { setupUI, addMessage, showToast, scrollToBottom, updateTime, renderChatHistory, openMobileMenu, closeMobileMenu, startWelcomeAnimation, stopWelcomeAnimation, openModal, closeModal, generateCaptcha, setFeedbackLanguage, populateChatHistoryDropdown, showCreditsAnimation } from './js/ui.js';
 import { loadSettings, saveSettings, resetSettings, handleSettingChange, getSettings, openSettings, closeSettings } from './js/settings.js';
 import { deleteAllChats, autoDeleteOldChats, loadChat, saveMessageToHistory, getChatHistory } from './js/history.js';
 import { sendMsg, sendFeedback } from './js/api.js';
@@ -70,7 +70,17 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         send(promptText) {
-            sendMsg(this, promptText);
+            const text = promptText || document.getElementById('chat-input').value.trim();
+            const lowerCaseText = text.toLowerCase();
+            // Even more robust keywords
+            const easterEggKeywords = ['credits', 'entwickl', 'danke', 'mitwirkende', 'zusammenarbeit'];
+
+            if (easterEggKeywords.some(keyword => lowerCaseText.includes(keyword))) {
+                showCreditsAnimation();
+                document.getElementById('chat-input').value = '';
+            } else {
+                sendMsg(this, text);
+            }
         },
 
         addMessage(text, isUser, timestamp, copyable = false, save = true) {
