@@ -153,13 +153,14 @@ router.get('/sessions', async (req, res) => {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         // First try user_sessions, then fallback to feedback data as proxy for activity
+        // Use local timezone for date grouping
         let sessions = await sequelize.query(`
             SELECT 
-                DATE(started_at) as date,
+                DATE(datetime(started_at, 'localtime')) as date,
                 COUNT(*) as count
             FROM user_sessions 
-            WHERE started_at >= ?
-            GROUP BY DATE(started_at)
+            WHERE datetime(started_at, 'localtime') >= datetime(?, 'localtime')
+            GROUP BY DATE(datetime(started_at, 'localtime'))
             ORDER BY date ASC
         `, {
             replacements: [sevenDaysAgo.toISOString()],
@@ -170,11 +171,11 @@ router.get('/sessions', async (req, res) => {
         if (sessions.length === 0) {
             sessions = await sequelize.query(`
                 SELECT 
-                    DATE(timestamp) as date,
+                    DATE(datetime(timestamp, 'localtime')) as date,
                     COUNT(DISTINCT conversation_id) as count
                 FROM feedback 
-                WHERE timestamp >= ?
-                GROUP BY DATE(timestamp)
+                WHERE datetime(timestamp, 'localtime') >= datetime(?, 'localtime')
+                GROUP BY DATE(datetime(timestamp, 'localtime'))
                 ORDER BY date ASC
             `, {
                 replacements: [sevenDaysAgo.toISOString()],
@@ -186,13 +187,13 @@ router.get('/sessions', async (req, res) => {
         if (sessions.length === 0) {
             sessions = await sequelize.query(`
                 SELECT 
-                    DATE(lastUpdated) as date,
+                    DATE(datetime(lastUpdated, 'localtime')) as date,
                     COUNT(*) as count
                 FROM questions 
-                WHERE lastUpdated >= ?
+                WHERE datetime(lastUpdated, 'localtime') >= datetime(?, 'localtime')
                     AND spam = 0 
                     AND deleted = 0
-                GROUP BY DATE(lastUpdated)
+                GROUP BY DATE(datetime(lastUpdated, 'localtime'))
                 ORDER BY date ASC
             `, {
                 replacements: [sevenDaysAgo.toISOString()],
@@ -217,6 +218,84 @@ router.get('/sessions', async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error('Error fetching sessions:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.get('/sessions/hourly', async (req, res) => {
+    try {
+        const { date } = req.query;
+        
+        if (!date) {
+            return res.status(400).json({ error: 'Date parameter is required (YYYY-MM-DD format)' });
+        }
+
+        // Parse the date and create start/end of day in local timezone
+        const targetDate = new Date(date + 'T00:00:00');
+        const nextDay = new Date(date + 'T23:59:59.999');
+
+        // First try user_sessions for hourly data (SQLite syntax with local timezone)
+        // Convert UTC timestamps to local time for grouping
+        let hourlyData = await sequelize.query(`
+            SELECT 
+                CAST(strftime('%H', datetime(started_at, 'localtime')) AS INTEGER) as hour,
+                COUNT(*) as count
+            FROM user_sessions 
+            WHERE DATE(datetime(started_at, 'localtime')) = ?
+            GROUP BY strftime('%H', datetime(started_at, 'localtime'))
+            ORDER BY hour ASC
+        `, {
+            replacements: [date],
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        // If no user_sessions data, use feedback as activity proxy
+        if (hourlyData.length === 0) {
+            hourlyData = await sequelize.query(`
+                SELECT 
+                    CAST(strftime('%H', datetime(timestamp, 'localtime')) AS INTEGER) as hour,
+                    COUNT(DISTINCT conversation_id) as count
+                FROM feedback 
+                WHERE DATE(datetime(timestamp, 'localtime')) = ?
+                GROUP BY strftime('%H', datetime(timestamp, 'localtime'))
+                ORDER BY hour ASC
+            `, {
+                replacements: [date],
+                type: sequelize.QueryTypes.SELECT
+            });
+        }
+
+        // If still no data, use questions as activity proxy
+        if (hourlyData.length === 0) {
+            hourlyData = await sequelize.query(`
+                SELECT 
+                    CAST(strftime('%H', datetime(lastUpdated, 'localtime')) AS INTEGER) as hour,
+                    COUNT(*) as count
+                FROM questions 
+                WHERE DATE(datetime(lastUpdated, 'localtime')) = ?
+                    AND spam = 0 
+                    AND deleted = 0
+                GROUP BY strftime('%H', datetime(lastUpdated, 'localtime'))
+                ORDER BY hour ASC
+            `, {
+                replacements: [date],
+                type: sequelize.QueryTypes.SELECT
+            });
+        }
+
+        // Fill missing hours with 0 (0-23)
+        const result = [];
+        for (let hour = 0; hour < 24; hour++) {
+            const existingHour = hourlyData.find(h => parseInt(h.hour) === hour);
+            result.push({
+                hour: hour,
+                count: existingHour ? parseInt(existingHour.count) : 0
+            });
+        }
+
+        res.json(result);
+    } catch (error) {
+        console.error('Error fetching hourly sessions:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

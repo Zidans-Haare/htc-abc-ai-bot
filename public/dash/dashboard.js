@@ -197,26 +197,29 @@ class DashboardManager {
 
     // Render Methods
     renderKpis(kpis) {
-        document.getElementById('total-sessions').textContent = kpis.totalSessions || 0;
-        document.getElementById('today-sessions').textContent = kpis.todaySessions || 0;
-        document.getElementById('success-rate').textContent = `${kpis.successRate || 0}%`;
-        document.getElementById('open-questions').textContent = kpis.openQuestions || 0;
+        const totalSessions = document.getElementById('total-sessions');
+        const todaySessions = document.getElementById('today-sessions');
+        const successRate = document.getElementById('success-rate');
+        const openQuestions = document.getElementById('open-questions');
+        
+        if (totalSessions) totalSessions.textContent = kpis.totalSessions || 0;
+        if (todaySessions) todaySessions.textContent = kpis.todaySessions || 0;
+        if (successRate) successRate.textContent = 'Under Construction';
+        if (openQuestions) openQuestions.textContent = kpis.openQuestions || 0;
     }
 
     renderUnansweredQuestions(questions) {
         const container = document.getElementById('unanswered-questions');
+        if (!container) return;
         
-        
-        if (!questions || questions.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-check-circle text-green-500 text-3xl mb-3"></i>
-                    <p class="font-semibold">Keine unbeantworteten Fragen gefunden!</p>
-                    <p class="text-sm">Alle Fragen wurden erfolgreich beantwortet.</p>
-                </div>
-            `;
-            return;
-        }
+        // Always show Under Construction for now
+        container.innerHTML = `
+            <div class="text-center">
+                <i class="fas fa-tools text-orange-600 text-2xl mb-2"></i>
+                <p class="text-orange-600 font-semibold">Under Construction</p>
+            </div>
+        `;
+        return;
 
         container.innerHTML = questions.map((q, index) => `
             <div class="question-item">
@@ -299,14 +302,15 @@ class DashboardManager {
             const isToday = new Date(session.date).toDateString() === new Date().toDateString();
             
             return `
-                <div class="flex flex-col items-center flex-1 group relative">
+                <div class="flex flex-col items-center flex-1 group relative cursor-pointer session-bar" 
+                     data-date="${session.date}" data-count="${session.count}">
                     <!-- Value label -->
                     <div class="text-xs font-bold text-gray-800 mb-1 ${session.count === 0 ? 'text-gray-400' : ''}">${session.count}</div>
                     
                     <!-- Bar -->
                     <div class="relative w-12 flex flex-col justify-end bg-gray-100 rounded-lg overflow-hidden shadow-inner" 
                          style="height: 120px;" 
-                         title="${this.formatDateShort(session.date)}: ${session.count} Aktivitäten">
+                         title="Klicken für Stundenansicht - ${this.formatDateShort(session.date)}: ${session.count} Sessions">
                         <div class="w-full ${session.count === 0 ? 'bg-gray-300' : 'bg-gradient-to-t from-orange-600 via-orange-500 to-orange-400'} 
                                     transition-all duration-500 ease-out hover:brightness-110 rounded-t-lg" 
                              style="height: ${height}%;">
@@ -321,13 +325,31 @@ class DashboardManager {
                     
                     <!-- Hover effect -->
                     <div class="absolute inset-0 bg-orange-100 opacity-0 group-hover:opacity-20 transition-opacity duration-200 rounded-lg"></div>
+                    
+                    <!-- Click indicator -->
+                    <div class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="fas fa-clock text-xs text-orange-600"></i>
+                    </div>
                 </div>
             `;
         }).join('');
+
+        // Add event listeners for session bars after rendering
+        setTimeout(() => {
+            const sessionBars = document.querySelectorAll('.session-bar');
+            sessionBars.forEach(bar => {
+                bar.addEventListener('click', (e) => {
+                    const date = bar.dataset.date;
+                    const count = parseInt(bar.dataset.count);
+                    this.showHourlyView(date, count);
+                });
+            });
+        }, 0);
     }
 
     renderMostViewedArticles(articles) {
         const container = document.getElementById('most-viewed-articles');
+        if (!container) return; // Element was removed
         
         if (!articles || articles.length === 0) {
             container.innerHTML = `
@@ -355,29 +377,25 @@ class DashboardManager {
     }
 
     renderFeedbackStats(stats) {
-        document.getElementById('positive-feedback').textContent = stats.positiveFeedback || 0;
-        document.getElementById('negative-feedback').textContent = stats.negativeFeedback || 0;
+        // These elements were removed from HTML, so skip this
     }
 
     renderContentStats(stats) {
-        document.getElementById('active-articles').textContent = stats.activeArticles || 0;
-        document.getElementById('archived-articles').textContent = stats.archivedArticles || 0;
+        // These elements were removed from HTML, so skip this
     }
 
     renderTopQuestions(questions) {
         const container = document.getElementById('top-questions');
+        if (!container) return;
         
-        
-        if (!questions || questions.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-comments text-blue-500 text-3xl mb-3"></i>
-                    <p class="font-semibold">Noch keine Fragen gestellt!</p>
-                    <p class="text-sm">Sobald Nutzer Fragen stellen, erscheinen hier die häufigsten.</p>
-                </div>
-            `;
-            return;
-        }
+        // Always show Under Construction for now
+        container.innerHTML = `
+            <div class="text-center">
+                <i class="fas fa-tools text-orange-600 text-2xl mb-2"></i>
+                <p class="text-orange-600 font-semibold">Under Construction</p>
+            </div>
+        `;
+        return;
 
         container.innerHTML = questions.map((q, index) => `
             <div class="question-item ${q.is_answered ? 'border-green-200 bg-green-50' : 'border-gray-200'}">
@@ -456,6 +474,149 @@ class DashboardManager {
 
     updateLastRefresh() {
         document.getElementById('last-update').textContent = new Date().toLocaleString('de-DE');
+    }
+
+    async showHourlyView(date, dayTotal) {
+        try {
+            // Fetch hourly data for the specific date
+            const response = await fetch(`/api/dashboard/sessions/hourly?date=${date}`);
+            if (!response.ok) {
+                throw new Error('Failed to load hourly data');
+            }
+            
+            const hourlyData = await response.json();
+            this.renderHourlyModal(date, dayTotal, hourlyData);
+            
+        } catch (error) {
+            console.error('❌ Fehler beim Laden der Stunden-Daten:', error);
+            // Show modal with error message
+            this.renderHourlyModal(date, dayTotal, null, error.message);
+        }
+    }
+
+    renderHourlyModal(date, dayTotal, hourlyData, errorMessage = null) {
+        // Remove existing modal if any
+        const existingModal = document.getElementById('hourly-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const formattedDate = new Date(date).toLocaleDateString('de-DE', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long', 
+            day: 'numeric'
+        });
+
+        let modalContent = '';
+        
+        if (errorMessage) {
+            modalContent = `
+                <div class="text-center py-8">
+                    <i class="fas fa-exclamation-triangle text-orange-500 text-3xl mb-4"></i>
+                    <p class="text-gray-600 mb-2">Stunden-Daten konnten nicht geladen werden</p>
+                    <p class="text-sm text-gray-500">${errorMessage}</p>
+                </div>
+            `;
+        } else if (!hourlyData || hourlyData.length === 0) {
+            modalContent = `
+                <div class="text-center py-8">
+                    <i class="fas fa-calendar-times text-gray-400 text-3xl mb-4"></i>
+                    <p class="text-gray-600 mb-2">Keine Sessions an diesem Tag</p>
+                    <p class="text-sm text-gray-500">Für diesen Tag wurden keine Session-Daten gefunden.</p>
+                </div>
+            `;
+        } else {
+            // Create hourly chart
+            const maxHourlyCount = Math.max(...hourlyData.map(h => h.count), 1);
+            
+            modalContent = `
+                <div class="mb-6">
+                    <div class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-2">
+                        ${hourlyData.map(hour => {
+                            const percentage = maxHourlyCount > 0 ? (hour.count / maxHourlyCount) * 100 : 0;
+                            const height = Math.max(percentage, hour.count > 0 ? 20 : 10);
+                            
+                            return `
+                                <div class="flex flex-col items-center">
+                                    <div class="text-xs font-bold text-gray-800 mb-1">${hour.count}</div>
+                                    <div class="w-8 bg-gray-100 rounded overflow-hidden flex flex-col justify-end" style="height: 80px;">
+                                        <div class="w-full ${hour.count === 0 ? 'bg-gray-300' : 'bg-gradient-to-t from-blue-600 via-blue-500 to-blue-400'} rounded-t" 
+                                             style="height: ${height}%;" 
+                                             title="${hour.hour.toString().padStart(2, '0')}:00 Uhr - ${hour.count} Sessions"></div>
+                                    </div>
+                                    <div class="text-xs text-gray-600 mt-1 font-medium">${hour.hour.toString().padStart(2, '0')}:00 Uhr</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-900 mb-3">Zusammenfassung</h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-600">Gesamt Sessions:</span>
+                            <span class="font-semibold ml-2">${dayTotal}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Aktivste Stunde:</span>
+                            <span class="font-semibold ml-2">${this.getPeakHour(hourlyData)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const modal = document.createElement('div');
+        modal.id = 'hourly-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+        modal.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900">Sessions nach Uhrzeit</h3>
+                            <p class="text-gray-600 mt-1">${formattedDate}</p>
+                        </div>
+                        <button id="close-hourly-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    ${modalContent}
+                </div>
+            </div>
+        `;
+
+        // Add event listeners after appending to DOM
+        document.body.appendChild(modal);
+        
+        // Close modal on background click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        // Close modal on close button click
+        const closeButton = modal.querySelector('#close-hourly-modal');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+    }
+
+    getPeakHour(hourlyData) {
+        if (!hourlyData || hourlyData.length === 0) return 'N/A';
+        
+        const peak = hourlyData.reduce((max, hour) => 
+            hour.count > max.count ? hour : max, hourlyData[0]
+        );
+        
+        return peak.count > 0 ? `${peak.hour.toString().padStart(2, '0')}:00 Uhr (${peak.count})` : 'Keine Sessions';
     }
 
     escapeHtml(text) {
