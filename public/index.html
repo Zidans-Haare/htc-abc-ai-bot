@@ -247,44 +247,51 @@
 
     <div id="api-key-modal" class="modal-hidden">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Persönlichen API-Schlüssel einrichten</h3>
-                <button id="close-api-key-modal" class="close-btn">&times;</button>
-            </div>
+             <div class="modal-header">
+                 <h3 class="modal-title" data-lang-key="modal_title">Persönlichen API-Schlüssel einrichten</h3>
+                 <button id="close-api-key-modal" class="close-btn">&times;</button>
+             </div>
             <div class="modal-body">
                 <div class="api-guide-container">
-                    <!-- Step 1: Introduction -->
-                    <div class="api-guide-step active" id="api-step-1">
-                        <h4 class="step-title">Schritt 1: Höhere Limits freischalten!</h4>
-                        <p>Um die Kosten für alle niedrig zu halten, haben wir ein allgemeines Limit für Anfragen. Du kannst dieses Limit umgehen, indem du deinen eigenen, kostenlosen Google AI API-Schlüssel verwendest.</p>
-                        <p>Wir führen dich in wenigen Schritten durch den Prozess.</p>
-                    </div>
-                    <!-- Step 2: Visit Google AI Studio -->
-                    <div class="api-guide-step" id="api-step-2">
-                        <h4 class="step-title">Schritt 2: Deinen Schlüssel holen</h4>
-                        <p>Klicke auf den folgenden Link, um das Google AI Studio in einem neuen Tab zu öffnen. Melde dich mit deinem Google-Konto an, falls nötig.</p>
-                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn-link">Google AI Studio öffnen</a>
-                    </div>
-                    <!-- Step 3: Create API Key -->
-                    <div class="api-guide-step" id="api-step-3">
-                        <h4 class="step-title">Schritt 3: API-Schlüssel erstellen</h4>
-                        <p>Klicke im Google AI Studio auf die Schaltfläche: <strong>+ Create API key in new project</strong></p>
-                        <p>Es wird eine lange Zeichenkette generiert. Das ist dein persönlicher Schlüssel.</p>
-                    </div>
-                    <!-- Step 4: Insert Key -->
-                    <div class="api-guide-step" id="api-step-4">
-                        <h4 class="step-title">Schritt 4: Fast geschafft!</h4>
-                        <p>Kopiere den generierten API-Schlüssel und füge ihn in das Feld unten ein.</p>
-                        <input type="text" id="api-key-input" placeholder="API-Schlüssel hier einfügen" class="api-key-input-field">
-                        <p id="api-key-error" class="error-message"></p>
-                    </div>
+                     <!-- Step 1: Introduction -->
+                     <div class="api-guide-step active" id="api-step-1">
+                         <div class="form-group language-selection">
+                             <label for="api-language-select">Sprache / Language</label>
+                             <select id="api-language-select">
+                                 <option value="de">Deutsch</option>
+                                 <option value="en">English</option>
+                             </select>
+                         </div>
+                         <h4 class="step-title" data-lang-key="step1_title">Schritt 1: Höhere Limits freischalten!</h4>
+                         <p data-lang-key="step1_description1">Um die Kosten für alle niedrig zu halten, haben wir ein allgemeines Limit für Anfragen. Du kannst dieses Limit umgehen, indem du deinen eigenen, kostenlosen Google AI API-Schlüssel verwendest.</p>
+                         <p data-lang-key="step1_description2">Wir führen dich in wenigen Schritten durch den Prozess.</p>
+                     </div>
+                     <!-- Step 2: Visit Google AI Studio -->
+                     <div class="api-guide-step" id="api-step-2">
+                         <h4 class="step-title" data-lang-key="step2_title">Schritt 2: Deinen Schlüssel holen</h4>
+                         <p data-lang-key="step2_description">Klicke auf den folgenden Link, um das Google AI Studio in einem neuen Tab zu öffnen. Melde dich mit deinem Google-Konto an, falls nötig.</p>
+                         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn-link" data-lang-key="step2_link">Google AI Studio öffnen</a>
+                     </div>
+                     <!-- Step 3: Create API Key -->
+                     <div class="api-guide-step" id="api-step-3">
+                         <h4 class="step-title" data-lang-key="step3_title">Schritt 3: API-Schlüssel erstellen</h4>
+                         <p data-lang-key="step3_description1">Klicke im Google AI Studio auf die Schaltfläche: <strong data-lang-key="step3_button">+ Create API key in new project</strong></p>
+                         <p data-lang-key="step3_description2">Es wird eine lange Zeichenkette generiert. Das ist dein persönlicher Schlüssel.</p>
+                     </div>
+                     <!-- Step 4: Insert Key -->
+                     <div class="api-guide-step" id="api-step-4">
+                         <h4 class="step-title" data-lang-key="step4_title">Schritt 4: Fast geschafft!</h4>
+                         <p data-lang-key="step4_description">Kopiere den generierten API-Schlüssel und füge ihn in das Feld unten ein.</p>
+                         <input type="text" id="api-key-input" data-lang-placeholder="step4_placeholder" placeholder="API-Schlüssel hier einfügen" class="api-key-input-field">
+                         <p id="api-key-error" class="error-message"></p>
+                     </div>
                 </div>
             </div>
-            <div class="modal-footer api-guide-footer">
-                <button id="api-guide-prev" class="btn" disabled>Zurück</button>
-                <button id="api-guide-next" class="btn-primary">Weiter</button>
-                <button id="api-guide-save" class="btn-primary modal-hidden">Speichern & Aktivieren</button>
-            </div>
+             <div class="modal-footer api-guide-footer">
+                 <button id="api-guide-prev" class="btn" disabled data-lang-key="btn_back">Zurück</button>
+                 <button id="api-guide-next" class="btn-primary" data-lang-key="btn_next">Weiter</button>
+                 <button id="api-guide-save" class="btn-primary modal-hidden" data-lang-key="btn_save">Speichern & Aktivieren</button>
+             </div>
         </div>
     </div>
 

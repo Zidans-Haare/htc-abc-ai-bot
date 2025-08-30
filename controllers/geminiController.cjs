@@ -20,7 +20,7 @@ const genAI = new GoogleGenerativeAI(defaultApiKey);
 
 async function logUnansweredQuestion(newQuestion) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const unansweredQuestions = await Questions.findAll({
       where: { answered: false, spam: false, deleted: false },
       attributes: ['question'],
@@ -94,7 +94,7 @@ async function streamChat(req, res) {
       console.log("Using user-provided API key.");
       currentGenAI = new GoogleGenerativeAI(userApiKey);
     }
-    const model = currentGenAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = currentGenAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Track session
     sessionId = await trackSession(req);
@@ -336,5 +336,68 @@ async function getSuggestions(req, res) {
   }
 }
 
-module.exports = { streamChat, getSuggestions };
+// Backend translations for API key validation
+const backendTranslations = {
+  de: {
+    api_key_required: 'API-Schlüssel ist erforderlich.',
+    api_key_valid: 'API-Schlüssel ist gültig.',
+    unknown_error: 'Ein unbekannter Fehler ist bei der Validierung aufgetreten.',
+    invalid_api_key: 'Der API-Schlüssel ist ungültig. Bitte überprüfen Sie Ihren Schlüssel und versuchen Sie es erneut.',
+    quota_exceeded: 'API-Kontingent überschritten. Bitte versuchen Sie es später erneut.',
+    network_error: 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.'
+  },
+  en: {
+    api_key_required: 'API key is required.',
+    api_key_valid: 'API key is valid.',
+    unknown_error: 'An unknown error occurred during validation.',
+    invalid_api_key: 'The API key is invalid. Please check your key and try again.',
+    quota_exceeded: 'API quota exceeded. Please try again later.',
+    network_error: 'Network error. Please check your internet connection and try again.'
+  }
+};
+
+async function testApiKey(req, res) {
+  const { apiKey, language = 'de' } = req.body;
+  const trans = backendTranslations[language] || backendTranslations.de;
+
+  if (!apiKey) {
+    return res.status(400).json({ message: trans.api_key_required });
+  }
+
+  try {
+    const userGenAI = new GoogleGenerativeAI(apiKey);
+    const model = userGenAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    await model.generateContent("hello");
+
+    res.status(200).json({ message: trans.api_key_valid });
+  } catch (error) {
+    console.error("API-Schlüssel-Validierungsfehler:", error);
+
+    let clientMessage = trans.unknown_error;
+    let statusCode = 500;
+
+    if (error.message) {
+      // Check for various API key related errors
+      if (error.message.toLowerCase().includes('api key not valid') ||
+          error.message.toLowerCase().includes('api_key_invalid') ||
+          error.message.toLowerCase().includes('invalid api key')) {
+        clientMessage = trans.invalid_api_key;
+        statusCode = 400;
+      } else if (error.message.toLowerCase().includes('quota exceeded') ||
+                 error.message.toLowerCase().includes('rate limit')) {
+        clientMessage = trans.quota_exceeded;
+        statusCode = 429;
+      } else if (error.message.toLowerCase().includes('network') ||
+                 error.message.toLowerCase().includes('timeout')) {
+        clientMessage = trans.network_error;
+        statusCode = 503;
+      }
+    }
+
+    res.status(statusCode).json({ message: clientMessage });
+  }
+}
+
+module.exports = { streamChat, getSuggestions, testApiKey };
 

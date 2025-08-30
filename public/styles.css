@@ -428,6 +428,25 @@ button.send:hover { background-color: var(--accent-dark); }
 .form-group .btn-danger { background-color: #ef4444; color: #fff; }
 .form-group .btn-danger:hover { background-color: #dc2626; }
 
+/* Language selection styling */
+.language-selection {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: var(--secondary-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.language-selection label {
+    font-weight: 600;
+    color: var(--primary-text);
+    margin-bottom: 0.5rem;
+}
+
+.language-selection select {
+    max-width: 200px;
+}
+
 .image-picker {
     display: flex;
     gap: 1rem;
