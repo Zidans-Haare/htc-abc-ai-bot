@@ -153,17 +153,21 @@ router.get('/sessions', async (req, res) => {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         // First try user_sessions, then fallback to feedback data as proxy for activity
-        // Use local timezone for date grouping
+        // Use German timezone for date grouping
+        const currentMonth = new Date().getMonth() + 1; // 1-12
+        const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
+        const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
+        
         let sessions = await sequelize.query(`
             SELECT 
-                DATE(datetime(started_at, 'localtime')) as date,
+                DATE(datetime(started_at, ?)) as date,
                 COUNT(*) as count
             FROM user_sessions 
-            WHERE datetime(started_at, 'localtime') >= datetime(?, 'localtime')
-            GROUP BY DATE(datetime(started_at, 'localtime'))
+            WHERE datetime(started_at, ?) >= datetime(?, ?)
+            GROUP BY DATE(datetime(started_at, ?))
             ORDER BY date ASC
         `, {
-            replacements: [sevenDaysAgo.toISOString()],
+            replacements: [timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset],
             type: sequelize.QueryTypes.SELECT
         });
 
@@ -171,14 +175,14 @@ router.get('/sessions', async (req, res) => {
         if (sessions.length === 0) {
             sessions = await sequelize.query(`
                 SELECT 
-                    DATE(datetime(timestamp, 'localtime')) as date,
+                    DATE(datetime(timestamp, ?)) as date,
                     COUNT(DISTINCT conversation_id) as count
                 FROM feedback 
-                WHERE datetime(timestamp, 'localtime') >= datetime(?, 'localtime')
-                GROUP BY DATE(datetime(timestamp, 'localtime'))
+                WHERE datetime(timestamp, ?) >= datetime(?, ?)
+                GROUP BY DATE(datetime(timestamp, ?))
                 ORDER BY date ASC
             `, {
-                replacements: [sevenDaysAgo.toISOString()],
+                replacements: [timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset],
                 type: sequelize.QueryTypes.SELECT
             });
         }
@@ -187,16 +191,16 @@ router.get('/sessions', async (req, res) => {
         if (sessions.length === 0) {
             sessions = await sequelize.query(`
                 SELECT 
-                    DATE(datetime(lastUpdated, 'localtime')) as date,
+                    DATE(datetime(lastUpdated, ?)) as date,
                     COUNT(*) as count
                 FROM questions 
-                WHERE datetime(lastUpdated, 'localtime') >= datetime(?, 'localtime')
+                WHERE datetime(lastUpdated, ?) >= datetime(?, ?)
                     AND spam = 0 
                     AND deleted = 0
-                GROUP BY DATE(datetime(lastUpdated, 'localtime'))
+                GROUP BY DATE(datetime(lastUpdated, ?))
                 ORDER BY date ASC
             `, {
-                replacements: [sevenDaysAgo.toISOString()],
+                replacements: [timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset],
                 type: sequelize.QueryTypes.SELECT
             });
         }
@@ -234,18 +238,22 @@ router.get('/sessions/hourly', async (req, res) => {
         const targetDate = new Date(date + 'T00:00:00');
         const nextDay = new Date(date + 'T23:59:59.999');
 
-        // First try user_sessions for hourly data (SQLite syntax with local timezone)
-        // Convert UTC timestamps to local time for grouping
+        // First try user_sessions for hourly data (SQLite syntax with German timezone)
+        // Germany is UTC+1 (winter) or UTC+2 (summer), so we add 2 hours to be safe for summer time
+        const currentMonth = new Date().getMonth() + 1; // 1-12
+        const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
+        const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
+        
         let hourlyData = await sequelize.query(`
             SELECT 
-                CAST(strftime('%H', datetime(started_at, 'localtime')) AS INTEGER) as hour,
+                CAST(strftime('%H', datetime(started_at, ?)) AS INTEGER) as hour,
                 COUNT(*) as count
             FROM user_sessions 
-            WHERE DATE(datetime(started_at, 'localtime')) = ?
-            GROUP BY strftime('%H', datetime(started_at, 'localtime'))
+            WHERE DATE(datetime(started_at, ?)) = ?
+            GROUP BY strftime('%H', datetime(started_at, ?))
             ORDER BY hour ASC
         `, {
-            replacements: [date],
+            replacements: [timezoneOffset, timezoneOffset, date, timezoneOffset],
             type: sequelize.QueryTypes.SELECT
         });
 
@@ -253,14 +261,14 @@ router.get('/sessions/hourly', async (req, res) => {
         if (hourlyData.length === 0) {
             hourlyData = await sequelize.query(`
                 SELECT 
-                    CAST(strftime('%H', datetime(timestamp, 'localtime')) AS INTEGER) as hour,
+                    CAST(strftime('%H', datetime(timestamp, ?)) AS INTEGER) as hour,
                     COUNT(DISTINCT conversation_id) as count
                 FROM feedback 
-                WHERE DATE(datetime(timestamp, 'localtime')) = ?
-                GROUP BY strftime('%H', datetime(timestamp, 'localtime'))
+                WHERE DATE(datetime(timestamp, ?)) = ?
+                GROUP BY strftime('%H', datetime(timestamp, ?))
                 ORDER BY hour ASC
             `, {
-                replacements: [date],
+                replacements: [timezoneOffset, timezoneOffset, date, timezoneOffset],
                 type: sequelize.QueryTypes.SELECT
             });
         }
@@ -269,16 +277,16 @@ router.get('/sessions/hourly', async (req, res) => {
         if (hourlyData.length === 0) {
             hourlyData = await sequelize.query(`
                 SELECT 
-                    CAST(strftime('%H', datetime(lastUpdated, 'localtime')) AS INTEGER) as hour,
+                    CAST(strftime('%H', datetime(lastUpdated, ?)) AS INTEGER) as hour,
                     COUNT(*) as count
                 FROM questions 
-                WHERE DATE(datetime(lastUpdated, 'localtime')) = ?
+                WHERE DATE(datetime(lastUpdated, ?)) = ?
                     AND spam = 0 
                     AND deleted = 0
-                GROUP BY strftime('%H', datetime(lastUpdated, 'localtime'))
+                GROUP BY strftime('%H', datetime(lastUpdated, ?))
                 ORDER BY hour ASC
             `, {
-                replacements: [date],
+                replacements: [timezoneOffset, timezoneOffset, date, timezoneOffset],
                 type: sequelize.QueryTypes.SELECT
             });
         }
