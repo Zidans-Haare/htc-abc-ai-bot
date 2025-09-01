@@ -75,10 +75,25 @@ export function setupFeedback(userRole) {
                 
                 ${item.attached_chat_history ? `
                     <h3 class="text-lg font-semibold mb-2">Angehängter Chat-Verlauf</h3>
-                    <pre class="mt-2 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap">${item.attached_chat_history}</pre>
+                    <div id="chat-history-content" class="mt-2 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap"></div>
                 ` : ''}
             </div>
         `;
+
+        // --- New logic to parse and display chat history with images ---
+        if (item.attached_chat_history) {
+            const chatContainer = document.getElementById('chat-history-content');
+            if (chatContainer) {
+                // Sanitize and parse the markdown content
+                chatContainer.innerHTML = DOMPurify.sanitize(marked.parse(item.attached_chat_history));
+                
+                // Style images within the chat history
+                chatContainer.querySelectorAll('img').forEach(img => {
+                    img.classList.add('max-w-full', 'h-auto', 'rounded-lg', 'mt-2');
+                });
+            }
+        }
+        // --- End of new logic ---
 
         document.getElementById('back-to-list').addEventListener('click', showListView);
         document.getElementById('delete-feedback').addEventListener('click', () => deleteFeedback(item.id));
