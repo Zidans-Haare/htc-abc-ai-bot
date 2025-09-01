@@ -85,7 +85,7 @@ const protect = (req, res, next) => {
   if (useAdmin && (req.url.startsWith('/admin') || req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard'))) {
     console.log(`ADMIN mode: Bypassing login for ${req.url}`);
     const token = auth.createSession('debug_admin', 'admin');
-    res.cookie('sessionToken', token, { httpOnly: true, secure: useHttps, maxAge: 1000 * 60 * 60, sameSite: 'strict' });
+    res.cookie('sessionToken', token, { httpOnly: true, secure: useHttps, maxAge: auth.SESSION_TTL, sameSite: 'strict' });
     req.session = auth.getSession(token);
     return next();
   }
@@ -98,11 +98,25 @@ const protect = (req, res, next) => {
   const token = req.cookies.sessionToken;
   const session = token && auth.getSession(token);
 
+  // Helper to refresh the cookie with a new expiry date
+  const refreshCookie = () => {
+    if (token) {
+      const secureCookie = req.app.get('env') === 'production';
+      res.cookie('sessionToken', token, {
+        httpOnly: true,
+        secure: secureCookie,
+        maxAge: auth.SESSION_TTL, // Use the same TTL to extend the session
+        sameSite: 'strict'
+      });
+    }
+  };
+
   // --- Dashboard Protection ---
   if (req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
     if (session) {
       if (session.role === 'admin') {
         req.session = session;
+        refreshCookie(); // Refresh the cookie on each valid request
         return next(); // User is admin, allow access
       } else {
         // User is logged in but not an admin
@@ -120,6 +134,7 @@ const protect = (req, res, next) => {
   if (req.url.startsWith('/admin')) {
     if (session) {
       req.session = session;
+      refreshCookie(); // Refresh the cookie on each valid request
       return next(); // User is logged in, allow access
     }
     // Not logged in, redirect to admin login

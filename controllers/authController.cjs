@@ -30,7 +30,13 @@ function getSession(token) {
     delete sessions[token];
     return null;
   }
-  console.log('Session retrieved:', { token, username: s.username, role: s.role });
+  // --- Sliding Session Logic ---
+  // Extend the session's lifetime on every valid request.
+  s.expires = Date.now() + SESSION_TTL;
+  sessions[token] = s; // Update the session in the store
+  // --- End of Sliding Session Logic ---
+
+  console.log('Session retrieved and refreshed:', { token, username: s.username, role: s.role, new_expires: new Date(s.expires).toISOString() });
   return s;
 }
 
@@ -140,5 +146,6 @@ module.exports = {
     createUser,
     listUsers,
     updateUserPassword,
-    deleteUser
+    deleteUser,
+    SESSION_TTL
 };
