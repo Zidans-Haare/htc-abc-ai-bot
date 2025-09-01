@@ -114,8 +114,17 @@ function renderMessages(messages) {
         const bubble = document.createElement('div');
         const isUser = msg.role === 'user';
         
-        const content = document.createElement('p');
-        content.textContent = msg.content;
+        const content = document.createElement('div');
+        // content.textContent = msg.content; // OLD
+        if (isUser) {
+            content.textContent = msg.content;
+        } else {
+            // For bot messages, parse markdown and sanitize
+            content.innerHTML = DOMPurify.sanitize(marked.parse(msg.content));
+            content.querySelectorAll('img').forEach(img => {
+                img.classList.add('max-w-full', 'h-auto', 'rounded-lg', 'mt-2');
+            });
+        }
         
         const timestamp = document.createElement('p');
         timestamp.className = 'text-xs mt-1';
