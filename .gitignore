@@ -20,3 +20,5 @@ scripts/*.txt
 server.log
 .venv_htc/
 public/uploads/
+public/admin/milkdown_editor/
+cache/

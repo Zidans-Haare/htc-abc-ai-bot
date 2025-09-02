@@ -1,6 +1,7 @@
 import { i18n, i18n_feedback } from './config.js';
 import { renderMarkup } from './markup.js';
 import { getChatHistory } from './history.js';
+import { processImagesInBubble } from './imageLightbox.js';
 
 // --- DOM Element References ---
 const messagesEl = document.getElementById('messages');
@@ -91,6 +92,9 @@ export function addMessage(text, isUser, timestamp, copyable = false, save = tru
         c.addEventListener('click', () => navigator.clipboard.writeText(text));
         bubble.appendChild(c);
     }
+    
+    // Post-process images
+    processImagesInBubble(bubble);
 
     const md = document.createElement('div');
     md.className = 'metadata';

@@ -7,6 +7,10 @@ const dotenv = require("dotenv");
 const rateLimit = require("express-rate-limit");
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
+const sharp = require('sharp');
+
+
+
 
 // --- Controller Imports ---
 const { streamChat, getSuggestions, testApiKey } = require('./controllers/geminiController.cjs');
@@ -15,6 +19,7 @@ const adminController = require('./controllers/adminController.cjs');
 const auth = require('./controllers/authController.cjs');
 const viewController = require('./controllers/viewController.cjs');
 const dashboardController = require('./controllers/dashboardController.cjs');
+const imageController = require('./controllers/imageController.cjs');
 
 // --- Initializations ---
 dotenv.config();
@@ -78,6 +83,10 @@ app.use(helmet({
 }));
 app.use(cookieParser());
 app.use(express.json());
+
+
+// Attach image controller routes
+imageController(app);
 
 // --- Protection Middleware ---
 const protect = (req, res, next) => {
