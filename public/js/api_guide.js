@@ -111,7 +111,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update button texts that don't have data-lang-key
         saveBtn.textContent = trans.btn_save;
-        openBtn.textContent = storedKey ? trans.btn_change : trans.btn_configure;
+        if (typeof storedKey !== 'undefined') {
+            openBtn.textContent = trans.btn_change 
+        } else {
+             trans.btn_configure;
+        }
     }
 
     function updateButtonStates() {

@@ -20,7 +20,7 @@ const genAI = new GoogleGenerativeAI(defaultApiKey);
 
 async function logUnansweredQuestion(newQuestion) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const unansweredQuestions = await Questions.findAll({
       where: { answered: false, spam: false, deleted: false },
       attributes: ['question'],
@@ -94,7 +94,7 @@ async function streamChat(req, res) {
       console.log("Using user-provided API key.");
       currentGenAI = new GoogleGenerativeAI(userApiKey);
     }
-    const model = currentGenAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = currentGenAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Track session
     sessionId = await trackSession(req);
@@ -366,7 +366,7 @@ async function testApiKey(req, res) {
 
   try {
     const userGenAI = new GoogleGenerativeAI(apiKey);
-    const model = userGenAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = userGenAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     await model.generateContent("hello");
 
