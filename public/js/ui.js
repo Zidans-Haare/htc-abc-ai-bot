@@ -93,16 +93,18 @@ export function addMessage(text, isUser, timestamp, copyable = false, save = tru
         bubble.appendChild(c);
     }
     
-    // Post-process images
-    processImagesInBubble(bubble);
-
     const md = document.createElement('div');
     md.className = 'metadata';
     md.textContent = new Date(timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     bubble.appendChild(md);
 
     m.appendChild(bubble);
+   
     messagesEl.appendChild(m);
+
+    // Post-process images (resize images to be max the width of the prompt bubble)
+    processImagesInBubble(bubble);
+
     scrollToBottom();
 }
 
