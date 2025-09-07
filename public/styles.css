@@ -14,7 +14,6 @@
     --shadow-color: rgba(0,0,0,0.1);
 
     /* Dynamic variables */
-    --font-size: 16px;
     --layout-density-multiplier: 1;
     --animation-speed-multiplier: 1;
 }
@@ -50,6 +49,7 @@
 }
 :root.contrast-mode .message.ai .bubble {
      border-color: var(--accent-color);
+     color: var(--accent-color);
 }
 
 /* Basis-Reset für alle Elemente */
@@ -69,7 +69,6 @@ body {
     color: var(--primary-text);
     height: 100dvh; /* Use vh unit for full viewport height */
     overflow: hidden;
-    font-size: var(--font-size);
     transition-property: background-color, color;
 }
 
@@ -768,7 +767,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 }
 
 /* Keyboard navigation focus */
-:focus-visible {
+.keyboard-nav-active :focus-visible {
     outline: 3px solid var(--accent-color) !important;
     outline-offset: 2px;
     border-radius: 4px;

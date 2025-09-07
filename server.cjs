@@ -193,6 +193,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
 });
 
+// --- Root Route ---
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // --- Favicon & 404 ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.use((req, res) => {

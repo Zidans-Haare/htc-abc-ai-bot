@@ -237,7 +237,7 @@ export function applyUI(settings) {
     
     // Font Size
     const fontSizes = { small: '14px', medium: '16px', large: '18px' };
-    root.style.setProperty('--font-size', fontSizes[settings.fontSize] || '16px');
+    root.style.fontSize = fontSizes[settings.fontSize] || '16px';
     
     // Layout Density
     const densities = { compact: '0.8', standard: '1', spacious: '1.2' };
