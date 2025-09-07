@@ -88,6 +88,10 @@ app.use(express.json());
 // Attach image controller routes
 imageController(app);
 
+// --- Static Files ---
+// IMPORTANT: Serve static files before any protection middleware
+app.use(express.static(path.join(__dirname, 'public')));
+
 // --- Protection Middleware ---
 const protect = (req, res, next) => {
   // --- Debug Mode Bypass ---
@@ -158,7 +162,7 @@ const protect = (req, res, next) => {
 app.use(protect);
 
 // --- Static Files ---
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use('/dash/login', express.static(path.join(__dirname, 'public', 'dash', 'login')));
 
 // --- API Routes ---

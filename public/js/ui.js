@@ -1,7 +1,8 @@
 import { i18n, i18n_feedback } from './config.js';
 import { renderMarkup } from './markup.js';
-import { getChatHistory } from './history.js';
+import { getChatHistory, exportHistory, importHistory } from './history.js';
 import { processImagesInBubble } from './imageLightbox.js';
+import { getSettings } from './settings.js';
 
 // --- DOM Element References ---
 const messagesEl = document.getElementById('messages');
@@ -20,7 +21,6 @@ const closeFeedbackBtn = document.getElementById("close-feedback");
 const sendFeedbackBtn = document.getElementById('send-feedback');
 const feedbackLanguageSelect = document.getElementById('feedback-language-select');
 const newChatBtn = document.getElementById('new-chat');
-const deleteAllChatsBtn = document.getElementById('delete-all-chats-btn');
 const hamburgerBtn = document.getElementById('hamburger-menu');
 const mobileMenu = document.getElementById('mobile-menu');
 const closeMobileMenuBtn = document.getElementById('close-mobile-menu');
@@ -57,14 +57,21 @@ export function scrollToBottom() {
 }
 
 export function updateTime() {
+    const settings = getSettings();
     const timeEl = document.getElementById('current-time');
     if (timeEl) {
         const now = new Date();
-        timeEl.textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        const timeOptions = {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: settings.timestampFormat === '12h',
+        };
+        timeEl.textContent = now.toLocaleTimeString('de-DE', timeOptions);
     }
 }
 
 export function addMessage(text, isUser, timestamp, copyable = false, save = true) {
+    const settings = getSettings();
     const m = document.createElement('div');
     m.className = `message ${isUser ? 'user' : 'ai'}`;
     
@@ -95,7 +102,12 @@ export function addMessage(text, isUser, timestamp, copyable = false, save = tru
     
     const md = document.createElement('div');
     md.className = 'metadata';
-    md.textContent = new Date(timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const timeOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: settings.timestampFormat === '12h',
+    };
+    md.textContent = new Date(timestamp).toLocaleTimeString('de-DE', timeOptions);
     bubble.appendChild(md);
 
     m.appendChild(bubble);
@@ -111,7 +123,16 @@ export function addMessage(text, isUser, timestamp, copyable = false, save = tru
 export function setupUI(app) {
     // Event Listeners
     sendBtnEl.addEventListener('click', () => app.send()); 
-    chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); app.send(); } });
+    chatInput.addEventListener('keydown', (e) => {
+        const settings = getSettings();
+        if (settings.sendWithEnter && e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            app.send();
+        } else if (!settings.sendWithEnter && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            app.send();
+        }
+    });
     
     chatInput.addEventListener('input', () => {
         chatInput.style.height = 'auto';
@@ -127,7 +148,29 @@ export function setupUI(app) {
     resetSettingsBtn.addEventListener('click', () => app.resetSettings());
     
     newChatBtn.addEventListener('click', () => app.startNewChat());
-    deleteAllChatsBtn.addEventListener('click', () => app.deleteAllChats());
+
+    const deleteAllChatsBtn = document.getElementById('delete-all-chats-btn');
+    const exportBtn = document.getElementById('export-history-btn');
+    const importBtn = document.getElementById('import-history-btn');
+    const importInput = document.getElementById('import-history-input');
+
+    if (deleteAllChatsBtn) {
+        deleteAllChatsBtn.addEventListener('click', () => app.deleteAllChats());
+    }
+
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => exportHistory());
+    }
+
+    if (importBtn && importInput) {
+        importBtn.addEventListener('click', () => importInput.click());
+        importInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                importHistory(e.target.files[0], app);
+            }
+            e.target.value = null; // Reset file input
+        });
+    }
     
     feedbackBtn.addEventListener("click", () => {
         app.openFeedback();
@@ -247,6 +290,10 @@ export function applyUI(settings) {
     const speeds = { normal: '1', reduced: '0.5', none: '0' };
     root.style.setProperty('--animation-speed-multiplier', speeds[settings.animationSpeed] || '1');
     
+    // Max Chat Width
+    const widths = { default: '1350px', medium: '1000px', small: '800px', full: '100%' };
+    root.style.setProperty('--max-chat-width', widths[settings.maxChatWidth] || '1350px');
+
     // Contrast Mode
     root.classList.toggle('contrast-mode', settings.contrastMode);
 
@@ -263,6 +310,9 @@ export function applyUI(settings) {
             icon.href = settings.homeScreenIcon;
         }
     });
+
+    // Update the clock to reflect potential format changes
+    updateTime();
 }
 
 export function setSettingsLanguage(lang) {
