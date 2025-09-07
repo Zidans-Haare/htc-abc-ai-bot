@@ -1,13 +1,20 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// This should be the same API key used in the main controller
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
-  // This check is a safeguard. In production, the main app would already have exited.
-  throw new Error("GEMINI_API_KEY environment variable not set.");
+// Lazy initialization - only check API key when actually needed
+let genAI = null;
+let model = null;
+
+function initializeGemini() {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        throw new Error("GEMINI_API_KEY environment variable not set.");
+    }
+    if (!genAI) {
+        genAI = new GoogleGenerativeAI(apiKey);
+        model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    }
+    return model;
 }
-const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 const CATEGORIES = [
     "Immatrikulation & Bewerbung",
@@ -55,7 +62,8 @@ async function categorizeConversation(messages) {
     `;
 
     try {
-        const result = await model.generateContent(prompt);
+        const currentModel = initializeGemini();
+        const result = await currentModel.generateContent(prompt);
         const response = await result.response;
         const text = response.text().trim();
 

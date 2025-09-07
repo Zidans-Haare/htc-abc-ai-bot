@@ -12,7 +12,10 @@ const sharp = require('sharp');
 
 
 
-// --- Controller Imports ---
+// --- Initializations ---
+dotenv.config();
+
+// --- Controller Imports (after dotenv) ---
 const { streamChat, getSuggestions, testApiKey } = require('./controllers/geminiController.cjs');
 const feedbackController = require('./controllers/feedbackController.cjs');
 const adminController = require('./controllers/adminController.cjs');
@@ -20,9 +23,6 @@ const auth = require('./controllers/authController.cjs');
 const viewController = require('./controllers/viewController.cjs');
 const dashboardController = require('./controllers/dashboardController.cjs');
 const imageController = require('./controllers/imageController.cjs');
-
-// --- Initializations ---
-dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 const useHttps = process.argv.includes('-https');

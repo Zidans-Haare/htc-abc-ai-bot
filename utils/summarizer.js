@@ -1,9 +1,21 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { estimateTokens } = require('./tokenizer');
 
-const apiKey = process.env.GEMINI_API_KEY || 'Nicht gefunden';
-const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+// Lazy initialization - only check API key when actually needed
+let genAI = null;
+let model = null;
+
+function initializeGemini() {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        throw new Error("GEMINI_API_KEY environment variable not set.");
+    }
+    if (!genAI) {
+        genAI = new GoogleGenerativeAI(apiKey);
+        model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    }
+    return model;
+}
 
 async function summarizeConversation(messages) {
   const historyText = messages.map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`).join('\n');
@@ -18,7 +30,8 @@ async function summarizeConversation(messages) {
   `;
 
   try {
-    const result = await model.generateContent(prompt);
+    const currentModel = initializeGemini();
+    const result = await currentModel.generateContent(prompt);
     const summary = (await result.response).text();
     const summaryMessage = {
       text: `Summary: ${summary}`,

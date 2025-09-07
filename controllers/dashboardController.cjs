@@ -1,6 +1,18 @@
 const express = require('express');
 const { Op } = require('sequelize');
-const { sequelize, UserSessions, ChatInteractions, ArticleViews, HochschuhlABC, Questions, Feedback } = require('./db.cjs');
+const { sequelize, UserSessions, ChatInteractions, ArticleViews, HochschuhlABC, Questions, Feedback, Conversation, Message, QuestionAnalysisCache } = require('./db.cjs');
+
+// Optional import for question grouper (requires GEMINI_API_KEY)
+let groupSimilarQuestions, extractQuestions;
+try {
+    const questionGrouper = require('../utils/questionGrouper');
+    groupSimilarQuestions = questionGrouper.groupSimilarQuestions;
+    extractQuestions = questionGrouper.extractQuestions;
+} catch (error) {
+    console.warn('Question grouper not available (GEMINI_API_KEY not set)');
+    groupSimilarQuestions = null;
+    extractQuestions = null;
+}
 
 const router = express.Router();
 
@@ -67,70 +79,7 @@ router.get('/kpis', async (req, res) => {
     }
 });
 
-router.get('/unanswered-questions', async (req, res) => {
-    try {
-        // Group similar questions with better normalization (multilingual)
-        const questions = await sequelize.query(`
-            SELECT 
-                MIN(q.question) as question,
-                COUNT(*) as count,
-                GROUP_CONCAT(DISTINCT q.question) as similar_questions
-            FROM questions q
-            WHERE q.answered = 0 
-                AND q.spam = 0 
-                AND q.deleted = 0
-            GROUP BY 
-                LOWER(
-                    REPLACE(
-                        REPLACE(
-                            REPLACE(
-                                REPLACE(
-                                    REPLACE(
-                                        REPLACE(
-                                            REPLACE(
-                                                REPLACE(
-                                                    REPLACE(
-                                                        REPLACE(
-                                                            REPLACE(TRIM(q.question), '?', ''),
-                                                            '.', ''
-                                                        ),
-                                                        '!', ''
-                                                    ),
-                                                    'where is', 'wo ist'
-                                                ),
-                                                'how is', 'wie ist'
-                                            ),
-                                            'what is', 'was ist'
-                                        ),
-                                        'when is', 'wann ist'
-                                    ),
-                                    'canteen', 'mensa'
-                                ),
-                                'cafeteria', 'mensa'
-                            ),
-                            'library', 'bibliothek'
-                        ),
-                        '  ', ' '
-                    )
-                )
-            ORDER BY count DESC
-            LIMIT 5
-        `, {
-            type: sequelize.QueryTypes.SELECT
-        });
-
-        const formattedQuestions = questions.map(q => ({
-            question: q.question,
-            count: q.count,
-            similar_questions: q.similar_questions ? q.similar_questions.split(',').filter(sq => sq.trim()) : [q.question]
-        }));
-
-        res.json(formattedQuestions);
-    } catch (error) {
-        console.error('Error fetching unanswered questions:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+// Old duplicate endpoint removed - using the new AI-powered one below at line ~838
 
 router.get('/recent-feedback', async (req, res) => {
     try {
@@ -479,6 +428,719 @@ router.get('/top-questions', async (req, res) => {
         res.json(formattedQuestions);
     } catch (error) {
         console.error('Error fetching top questions:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Function to detect language of text
+function detectLanguage(text) {
+    if (!text || typeof text !== 'string') return 'unknown';
+    
+    const normalizedText = text.toLowerCase().trim();
+    
+    // Pattern-based detection for non-Latin scripts
+    const chinesePattern = /[\u4e00-\u9fff]/;
+    const arabicPattern = /[\u0600-\u06ff]/;
+    const russianPattern = /[\u0400-\u04ff]/;
+    const japanesePattern = /[\u3040-\u309f\u30a0-\u30ff]/;
+    const koreanPattern = /[\uac00-\ud7af]/;
+    const thaiPattern = /[\u0e00-\u0e7f]/;
+    const hindiPattern = /[\u0900-\u097f]/;
+    
+    if (chinesePattern.test(normalizedText)) return 'chinese';
+    if (arabicPattern.test(normalizedText)) return 'arabic';
+    if (russianPattern.test(normalizedText)) return 'russian';
+    if (japanesePattern.test(normalizedText)) return 'japanese';
+    if (koreanPattern.test(normalizedText)) return 'korean';
+    if (thaiPattern.test(normalizedText)) return 'thai';
+    if (hindiPattern.test(normalizedText)) return 'hindi';
+    
+    const words = normalizedText.split(/\s+/);
+    
+    // Language word indicators
+    const languageWords = {
+        german: ['ist', 'das', 'die', 'der', 'wie', 'wo', 'was', 'wann', 'ich', 'und', 'oder', 'mit', 'von', 'zu', 'im', 'am', 'für', 'sind', 'haben', 'kann', 'mensa', 'bibliothek', 'studium', 'vorlesung', 'prüfung'],
+        english: ['is', 'the', 'and', 'how', 'what', 'where', 'when', 'can', 'library', 'study', 'exam', 'lecture', 'university', 'campus', 'student', 'hello', 'thank', 'please'],
+        spanish: ['es', 'el', 'la', 'y', 'como', 'que', 'donde', 'cuando', 'puedo', 'biblioteca', 'estudio', 'examen', 'universidad', 'hola', 'gracias', 'por favor'],
+        french: ['est', 'le', 'la', 'et', 'comment', 'que', 'où', 'quand', 'puis', 'bibliothèque', 'étude', 'examen', 'université', 'bonjour', 'merci', 'sil vous plaît'],
+        italian: ['è', 'il', 'la', 'e', 'come', 'che', 'dove', 'quando', 'posso', 'biblioteca', 'studio', 'esame', 'università', 'ciao', 'grazie', 'per favore'],
+        portuguese: ['é', 'o', 'a', 'e', 'como', 'que', 'onde', 'quando', 'posso', 'biblioteca', 'estudo', 'exame', 'universidade', 'olá', 'obrigado', 'por favor'],
+        dutch: ['is', 'de', 'het', 'en', 'hoe', 'wat', 'waar', 'wanneer', 'kan', 'bibliotheek', 'studie', 'examen', 'universiteit', 'hallo', 'dank', 'alstublieft'],
+        polish: ['jest', 'to', 'i', 'jak', 'co', 'gdzie', 'kiedy', 'mogę', 'biblioteka', 'nauka', 'egzamin', 'uniwersytet', 'cześć', 'dziękuję', 'proszę'],
+        turkish: ['bu', 've', 'nasıl', 'ne', 'nerede', 'ne zaman', 'kütüphane', 'çalışma', 'sınav', 'üniversite', 'merhaba', 'teşekkür', 'lütfen']
+    };
+    
+    const scores = {};
+    Object.keys(languageWords).forEach(lang => {
+        scores[lang] = 0;
+        words.forEach(word => {
+            if (languageWords[lang].includes(word)) {
+                scores[lang]++;
+            }
+        });
+    });
+    
+    const maxScore = Math.max(...Object.values(scores));
+    if (maxScore === 0) return 'unknown';
+    
+    const detectedLang = Object.keys(scores).find(lang => scores[lang] === maxScore);
+    return detectedLang || 'unknown';
+}
+
+router.get('/category-stats', async (req, res) => {
+    try {
+        // Get limit parameter, default to 5
+        const limit = parseInt(req.query.limit) || 5;
+        
+        // Get category distribution from conversations
+        // Use German timezone (UTC+1/UTC+2) for proper "today" calculation
+        const currentMonth = new Date().getMonth() + 1; // 1-12
+        const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
+        const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
+        
+        const categories = await sequelize.query(`
+            SELECT 
+                c.category,
+                COUNT(*) as count,
+                COUNT(CASE WHEN date(datetime(c.created_at, ?)) = date('now', ?) THEN 1 END) as today_count
+            FROM conversations c
+            WHERE c.category != 'Unkategorisiert' OR c.category IS NOT NULL
+            GROUP BY c.category
+            ORDER BY count DESC
+            LIMIT ?
+        `, {
+            replacements: [timezoneOffset, timezoneOffset, limit],
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        // Get total conversations for percentage calculation
+        const totalConversations = await Conversation.count();
+
+        const categoryStats = categories.map(cat => ({
+            category: cat.category || 'Unkategorisiert',
+            count: cat.count,
+            today_count: cat.today_count,
+            percentage: totalConversations > 0 ? Math.round((cat.count / totalConversations) * 100) : 0
+        }));
+
+        res.json(categoryStats);
+    } catch (error) {
+        console.error('Error fetching category stats:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.get('/language-stats', async (req, res) => {
+    try {
+        // Get limit parameter, default to 5
+        const limit = parseInt(req.query.limit) || 5;
+        
+        // Get recent messages (user messages only) and detect their language
+        const recentMessages = await Message.findAll({
+            where: {
+                role: 'user'
+            },
+            order: [['created_at', 'DESC']],
+            limit: 1000, // Analyze last 1000 user messages for language detection
+            raw: true
+        });
+
+        const languageCount = {};
+        const languageToday = {};
+        const today = new Date().toISOString().split('T')[0];
+
+        recentMessages.forEach(message => {
+            const language = detectLanguage(message.content);
+            const messageDate = message.created_at.split('T')[0];
+            
+            languageCount[language] = (languageCount[language] || 0) + 1;
+            
+            if (messageDate === today) {
+                languageToday[language] = (languageToday[language] || 0) + 1;
+            }
+        });
+
+        // Convert to array and sort by count
+        const languageStats = Object.keys(languageCount)
+            .map(lang => ({
+                language: lang,
+                count: languageCount[lang],
+                today_count: languageToday[lang] || 0,
+                percentage: recentMessages.length > 0 ? Math.round((languageCount[lang] / recentMessages.length) * 100) : 0
+            }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, limit);
+
+        res.json(languageStats);
+    } catch (error) {
+        console.error('Error fetching language stats:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.get('/frequent-messages', async (req, res) => {
+    try {
+        // Get limit parameter, default to 5
+        const limit = parseInt(req.query.limit) || 5;
+        
+        // Get most frequent user messages - simplified approach
+        const frequentMessages = await sequelize.query(`
+            SELECT 
+                content,
+                COUNT(*) as count,
+                MIN(created_at) as first_seen,
+                MAX(created_at) as last_seen
+            FROM messages 
+            WHERE role = 'user' 
+            AND LENGTH(TRIM(content)) > 3
+            AND content NOT LIKE '%<%'
+            AND content NOT LIKE '%undefined%'
+            GROUP BY LOWER(TRIM(content))
+            HAVING count > 1
+            ORDER BY count DESC, last_seen DESC
+            LIMIT ?
+        `, {
+            replacements: [limit],
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        // Simple post-processing for similar messages
+        const processedMessages = [];
+        const seenNormalized = new Set();
+
+        for (const msg of frequentMessages) {
+            // Basic normalization
+            let normalized = msg.content.toLowerCase().trim()
+                .replace(/[?.!]/g, '')
+                .replace(/\s+/g, ' ')
+                .replace(/where is/g, 'wo ist')
+                .replace(/what is/g, 'was ist')
+                .replace(/canteen/g, 'mensa')
+                .replace(/library/g, 'bibliothek');
+
+            if (!seenNormalized.has(normalized)) {
+                seenNormalized.add(normalized);
+                processedMessages.push({
+                    message: msg.content,
+                    count: msg.count,
+                    first_seen: msg.first_seen,
+                    last_seen: msg.last_seen,
+                    examples: [msg.content] // Single example for now
+                });
+            }
+        }
+
+        res.json(processedMessages);
+    } catch (error) {
+        console.error('Error fetching frequent messages:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.get('/frequent-questions', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 5;
+
+        // Try to get pre-computed daily statistics first (fast path)
+        const today = new Date().toISOString().split('T')[0];
+        
+        try {
+            const dailyStats = await sequelize.query(`
+                SELECT 
+                    normalized_question,
+                    question_count,
+                    topic,
+                    languages_detected,
+                    original_questions
+                FROM daily_question_stats
+                WHERE analysis_date = ?
+                ORDER BY question_count DESC
+                LIMIT ?
+            `, {
+                replacements: [today, limit],
+                type: sequelize.QueryTypes.SELECT
+            });
+
+            if (dailyStats && dailyStats.length > 0) {
+                // Use pre-computed statistics (fast!)
+                const formattedQuestions = dailyStats.map(stat => ({
+                    question: stat.normalized_question,
+                    count: stat.question_count,
+                    topic: stat.topic,
+                    languages: JSON.parse(stat.languages_detected || '[]'),
+                    examples: JSON.parse(stat.original_questions || '[]').slice(0, 3).map(q => {
+                        return q.replace(/^\d+\.\s*/, '');
+                    }),
+                    multilingual: JSON.parse(stat.languages_detected || '[]').length > 1
+                }));
+
+                console.log(`[Dashboard] Using pre-computed daily statistics: ${formattedQuestions.length} questions`);
+                
+                return res.json({
+                    questions: formattedQuestions,
+                    isProcessing: false,
+                    progress: 100,
+                    message: `Vorberechnete Analyse von ${today}`,
+                    lastUpdated: today,
+                    source: 'daily_cache'
+                });
+            }
+        } catch (err) {
+            console.log('[Dashboard] No daily statistics available, falling back to real-time analysis');
+        }
+
+        // Fallback to real-time analysis (slower, but still works)
+        // Check if question grouper is available
+        if (!groupSimilarQuestions || !extractQuestions) {
+            return res.json({
+                questions: [],
+                isProcessing: false,
+                progress: 100,
+                message: 'Tägliche Analyse läuft um Mitternacht. Manuelle Analyse nicht verfügbar (GEMINI_API_KEY nicht konfiguriert)',
+                source: 'unavailable'
+            });
+        }
+
+        console.log('[Dashboard] Starting real-time frequent questions analysis...');
+        
+        // Get recent user messages (limit to avoid performance issues)
+        const recentMessages = await Message.findAll({
+            where: {
+                role: 'user',
+                created_at: {
+                    [Op.gte]: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Reduce to 7 days for real-time
+                }
+            },
+            attributes: ['content', 'role', 'created_at'],
+            order: [['created_at', 'DESC']],
+            limit: 200, // Reduce limit for real-time analysis
+            raw: true
+        });
+
+        console.log(`[Dashboard] Found ${recentMessages.length} recent messages`);
+
+        // Extract questions from messages
+        const questions = extractQuestions(recentMessages);
+        
+        if (questions.length === 0) {
+            return res.json({
+                questions: [],
+                isProcessing: false,
+                progress: 100,
+                message: 'Keine Fragen in den letzten 7 Tagen gefunden',
+                source: 'realtime_empty'
+            });
+        }
+
+        console.log(`[Dashboard] Extracted ${questions.length} questions`);
+
+        // Group similar questions using AI with caching
+        const groupingResult = await groupSimilarQuestions(questions, true);
+        
+        if (!groupingResult) {
+            return res.status(500).json({ error: 'Failed to group questions' });
+        }
+        
+        // Format for frontend
+        const formattedQuestions = groupingResult.results
+            .filter(group => group.question_count > 1) // Only show questions asked multiple times
+            .slice(0, limit) // Use dynamic limit
+            .map(group => ({
+                question: group.normalized_question,
+                count: group.question_count,
+                topic: group.topic,
+                languages: group.languages_detected,
+                examples: group.original_questions.slice(0, 3).map(q => {
+                    // Remove the numbering from examples
+                    return q.replace(/^\d+\.\s*/, '');
+                }),
+                multilingual: group.languages_detected.length > 1
+            }));
+
+        console.log(`[Dashboard] Returning ${formattedQuestions.length} grouped questions (processing: ${groupingResult.isProcessing})`);
+        
+        res.json({
+            questions: formattedQuestions,
+            isProcessing: groupingResult.isProcessing,
+            progress: groupingResult.progress,
+            message: groupingResult.isProcessing ? 'Daten werden noch ausgewertet, bitte warten' : (formattedQuestions.length > 0 ? 'Real-time Analyse der letzten 7 Tage' : ''),
+            source: 'realtime'
+        });
+    } catch (error) {
+        console.error('Error fetching frequent questions:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.get('/unanswered-questions', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 5;
+
+        // Try to get pre-computed unanswered statistics first (fast path)
+        const today = new Date().toISOString().split('T')[0];
+        
+        try {
+            const dailyStats = await sequelize.query(`
+                SELECT 
+                    normalized_question,
+                    question_count,
+                    topic,
+                    languages_detected,
+                    original_questions
+                FROM daily_unanswered_stats
+                WHERE analysis_date = ?
+                ORDER BY question_count DESC
+                LIMIT ?
+            `, {
+                replacements: [today, limit],
+                type: sequelize.QueryTypes.SELECT
+            });
+
+            if (dailyStats && dailyStats.length > 0) {
+                // Use pre-computed statistics (fast!)
+                const formattedQuestions = dailyStats.map(stat => ({
+                    question: stat.normalized_question,
+                    count: stat.question_count,
+                    topic: stat.topic,
+                    languages: JSON.parse(stat.languages_detected || '[]'),
+                    examples: JSON.parse(stat.original_questions || '[]').slice(0, 3).map(q => {
+                        return q.replace(/^\d+\.\s*/, '');
+                    }),
+                    multilingual: JSON.parse(stat.languages_detected || '[]').length > 1
+                }));
+
+                console.log(`[Dashboard] Using pre-computed unanswered statistics: ${formattedQuestions.length} questions`);
+                
+                return res.json({
+                    questions: formattedQuestions,
+                    isProcessing: false,
+                    progress: 100,
+                    message: `Vorberechnete Analyse von ${today}`,
+                    lastUpdated: today,
+                    source: 'daily_cache'
+                });
+            }
+        } catch (err) {
+            console.log('[Dashboard] No daily unanswered statistics available, falling back to real-time analysis');
+        }
+
+        // Fallback to real-time analysis
+        // First get potentially unanswered messages using SQL
+        const potentialUnanswered = await sequelize.query(`
+            SELECT 
+                m.content,
+                m.created_at,
+                c.category
+            FROM messages m
+            JOIN conversations c ON m.conversation_id = c.id
+            LEFT JOIN messages m_response ON m_response.conversation_id = c.id 
+                AND m_response.role = 'model' 
+                AND m_response.created_at > m.created_at
+                AND ABS(strftime('%s', m_response.created_at) - strftime('%s', m.created_at)) < 30
+            WHERE m.role = 'user' 
+            AND LENGTH(TRIM(m.content)) > 5
+            AND m.content NOT LIKE '%<%'
+            AND (
+                m_response.content IS NULL 
+                OR m_response.content LIKE '%kann ich leider nicht%'
+                OR m_response.content LIKE '%keine Informationen%'
+                OR m_response.content LIKE '%tut mir leid%'
+                OR m_response.content LIKE '%sorry%'
+                OR m_response.content LIKE '%Unfortunately%'
+                OR LENGTH(m_response.content) < 50
+            )
+            AND m.created_at >= datetime('now', '-7 days')
+            ORDER BY m.created_at DESC
+            LIMIT 200
+        `, {
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        if (potentialUnanswered.length === 0) {
+            return res.json({
+                questions: [],
+                isProcessing: false,
+                progress: 100,
+                message: 'Keine unbeantworteten Fragen in den letzten 7 Tagen',
+                source: 'realtime_empty'
+            });
+        }
+
+        // Check if question grouper is available for intelligent analysis
+        if (!groupSimilarQuestions || !extractQuestions) {
+            // Fallback to simple grouping
+            const simpleGroups = {};
+            potentialUnanswered.forEach(msg => {
+                const key = msg.content.toLowerCase().trim();
+                if (!simpleGroups[key]) {
+                    simpleGroups[key] = {
+                        question: msg.content,
+                        count: 0,
+                        category: msg.category || 'Unkategorisiert',
+                        examples: []
+                    };
+                }
+                simpleGroups[key].count++;
+                if (simpleGroups[key].examples.length < 3) {
+                    simpleGroups[key].examples.push(msg.content);
+                }
+            });
+
+            const simpleResult = Object.values(simpleGroups)
+                .filter(group => group.count > 1)
+                .sort((a, b) => b.count - a.count)
+                .slice(0, limit)
+                .map(group => ({
+                    question: group.question,
+                    count: group.count,
+                    topic: group.category,
+                    languages: ['deutsch'], // Default assumption
+                    examples: group.examples,
+                    multilingual: false
+                }));
+
+            return res.json({
+                questions: simpleResult,
+                isProcessing: false,
+                progress: 100,
+                message: 'Einfache Gruppierung (KI-Analyse nicht verfügbar)',
+                source: 'simple_grouping'
+            });
+        }
+
+        console.log(`[Dashboard] Starting intelligent unanswered questions analysis for ${potentialUnanswered.length} messages`);
+
+        // Convert to format expected by question grouper
+        const messagesForGrouper = potentialUnanswered.map(msg => ({
+            content: msg.content,
+            role: 'user',
+            created_at: msg.created_at
+        }));
+
+        // Extract questions using the same logic as frequent questions
+        const questions = extractQuestions(messagesForGrouper);
+        
+        if (questions.length === 0) {
+            return res.json({
+                questions: [],
+                isProcessing: false,
+                progress: 100,
+                message: 'Keine Fragen in unbeantworteten Nachrichten gefunden',
+                source: 'no_questions'
+            });
+        }
+
+        // Group similar questions using AI with caching
+        const groupingResult = await groupSimilarQuestions(questions, true);
+        
+        if (!groupingResult) {
+            return res.status(500).json({ error: 'Failed to group unanswered questions' });
+        }
+        
+        // Format for frontend
+        const formattedQuestions = groupingResult.results
+            .filter(group => group.question_count > 1) // Only show questions asked multiple times
+            .slice(0, limit) // Use dynamic limit
+            .map(group => ({
+                question: group.normalized_question,
+                count: group.question_count,
+                topic: group.topic,
+                languages: group.languages_detected,
+                examples: group.original_questions.slice(0, 3).map(q => {
+                    // Remove the numbering from examples
+                    return q.replace(/^\d+\.\s*/, '');
+                }),
+                multilingual: group.languages_detected.length > 1
+            }));
+
+        console.log(`[Dashboard] Returning ${formattedQuestions.length} grouped unanswered questions (processing: ${groupingResult.isProcessing})`);
+        
+        res.json({
+            questions: formattedQuestions,
+            isProcessing: groupingResult.isProcessing,
+            progress: groupingResult.progress,
+            message: groupingResult.isProcessing ? 'Daten werden noch ausgewertet, bitte warten' : (formattedQuestions.length > 0 ? 'Intelligente Analyse unbeantworteter Fragen (7 Tage)' : ''),
+            source: 'realtime_ai'
+        });
+    } catch (error) {
+        console.error('Error fetching unanswered questions:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.post('/trigger-analysis', async (req, res) => {
+    try {
+        // Check if question grouper is available
+        if (!groupSimilarQuestions || !extractQuestions) {
+            return res.status(400).json({ 
+                error: 'Question analysis not available (GEMINI_API_KEY not configured)',
+                success: false
+            });
+        }
+
+        // Get recent messages for analysis
+        const recentMessages = await Message.findAll({
+            where: {
+                role: 'user',
+                created_at: {
+                    [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+                }
+            },
+            attributes: ['content', 'role', 'created_at'],
+            order: [['created_at', 'DESC']],
+            raw: true
+        });
+
+        if (recentMessages.length === 0) {
+            return res.json({
+                success: false,
+                message: 'Keine Nachrichten zum Analysieren gefunden'
+            });
+        }
+
+        // Extract questions
+        const questions = extractQuestions(recentMessages);
+        
+        if (questions.length === 0) {
+            return res.json({
+                success: false,
+                message: 'Keine Fragen in den Nachrichten gefunden'
+            });
+        }
+
+        console.log(`[Manual Analysis] Processing ${questions.length} questions from ${recentMessages.length} messages`);
+
+        // Force fresh analysis (no cache)
+        const groupingResult = await groupSimilarQuestions(questions, false);
+        
+        if (!groupingResult || !groupingResult.results) {
+            return res.status(500).json({ 
+                error: 'Analysis failed',
+                success: false
+            });
+        }
+
+        // Store results in daily statistics table
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Create table if it doesn't exist
+        await sequelize.query(`
+            CREATE TABLE IF NOT EXISTS daily_question_stats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                analysis_date TEXT NOT NULL,
+                normalized_question TEXT NOT NULL,
+                question_count INTEGER NOT NULL,
+                topic TEXT,
+                languages_detected TEXT,
+                original_questions TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Clear today's statistics
+        await sequelize.query('DELETE FROM daily_question_stats WHERE analysis_date = ?', {
+            replacements: [today],
+            type: sequelize.QueryTypes.DELETE
+        });
+
+        // Insert new statistics
+        const statsData = groupingResult.results.map(group => ({
+            analysis_date: today,
+            normalized_question: group.normalized_question,
+            question_count: group.question_count,
+            topic: group.topic,
+            languages_detected: JSON.stringify(group.languages_detected),
+            original_questions: JSON.stringify(group.original_questions)
+        }));
+
+        if (statsData.length > 0) {
+            // Bulk insert
+            const placeholders = statsData.map(() => '(?, ?, ?, ?, ?, ?)').join(',');
+            const values = statsData.flatMap(stat => [
+                stat.analysis_date,
+                stat.normalized_question,
+                stat.question_count,
+                stat.topic,
+                stat.languages_detected,
+                stat.original_questions
+            ]);
+
+            await sequelize.query(
+                `INSERT INTO daily_question_stats (analysis_date, normalized_question, question_count, topic, languages_detected, original_questions) VALUES ${placeholders}`,
+                {
+                    replacements: values,
+                    type: sequelize.QueryTypes.INSERT
+                }
+            );
+        }
+
+        console.log(`[Manual Analysis] Completed: ${statsData.length} question groups stored`);
+
+        res.json({
+            success: true,
+            message: `Analyse abgeschlossen: ${statsData.length} Fragengruppen identifiziert`,
+            questionsProcessed: questions.length,
+            groupsFound: statsData.length,
+            analysisDate: today
+        });
+
+    } catch (error) {
+        console.error('Manual analysis failed:', error);
+        res.status(500).json({ 
+            error: 'Analysis failed: ' + error.message,
+            success: false
+        });
+    }
+});
+
+router.get('/analysis-status', async (req, res) => {
+    try {
+        // Check when last analysis was performed
+        const latestAnalysis = await sequelize.query(`
+            SELECT 
+                analysis_date,
+                COUNT(*) as question_groups,
+                MAX(created_at) as last_updated
+            FROM daily_question_stats 
+            GROUP BY analysis_date 
+            ORDER BY analysis_date DESC 
+            LIMIT 1
+        `, {
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        const analysisAvailable = groupSimilarQuestions && extractQuestions;
+
+        if (latestAnalysis.length > 0) {
+            const latest = latestAnalysis[0];
+            const analysisDate = new Date(latest.analysis_date);
+            const today = new Date();
+            const daysDiff = Math.floor((today - analysisDate) / (1000 * 60 * 60 * 24));
+
+            res.json({
+                hasData: true,
+                lastAnalysis: latest.analysis_date,
+                lastUpdated: latest.last_updated,
+                questionGroups: latest.question_groups,
+                daysSinceAnalysis: daysDiff,
+                isToday: daysDiff === 0,
+                analysisAvailable,
+                status: daysDiff === 0 ? 'current' : daysDiff === 1 ? 'yesterday' : 'outdated'
+            });
+        } else {
+            res.json({
+                hasData: false,
+                lastAnalysis: null,
+                lastUpdated: null,
+                questionGroups: 0,
+                daysSinceAnalysis: null,
+                isToday: false,
+                analysisAvailable,
+                status: 'no_data'
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching analysis status:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

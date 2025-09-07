@@ -4,23 +4,38 @@ const { getCached } = require("../utils/cache");
 const { estimateTokens, isWithinTokenLimit } = require("../utils/tokenizer");
 const { summarizeConversation } = require("../utils/summarizer");
 const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require("../utils/analytics");
-const { categorizeConversation } = require("../utils/categorizer");
+// Lazy import to avoid immediate API key check
+let categorizeConversation = null;
+
+function loadCategorizer() {
+    if (!categorizeConversation) {
+        const categorizer = require("../utils/categorizer");
+        categorizeConversation = categorizer.categorizeConversation;
+    }
+    return categorizeConversation;
+}
 
 // In-memory conversation store is no longer needed
 // const conversations = new Map();
 
-const defaultApiKey = process.env.GEMINI_API_KEY;
-if (!defaultApiKey) {
-  console.error(
-    "Fehler: Kein API-Key gefunden. Bitte setze die Umgebungsvariable GEMINI_API_KEY."
-  );
-  process.exit(1);
+// Lazy initialization - only check API key when actually needed
+let genAI = null;
+
+function initializeGemini() {
+    const defaultApiKey = process.env.GEMINI_API_KEY;
+    if (!defaultApiKey) {
+        throw new Error("GEMINI_API_KEY environment variable not set.");
+    }
+    if (!genAI) {
+        genAI = new GoogleGenerativeAI(defaultApiKey);
+    }
+    return genAI;
 }
-const genAI = new GoogleGenerativeAI(defaultApiKey);
 
 async function logUnansweredQuestion(newQuestion) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const currentGenAI = initializeGemini();
+    const model = currentGenAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const unansweredQuestions = await Questions.findAll({
       where: { answered: false, spam: false, deleted: false },
       attributes: ['question'],
@@ -88,11 +103,13 @@ async function streamChat(req, res) {
     }
 
     const userApiKey = req.headers['x-user-api-key'];
-    let currentGenAI = genAI;
+    let currentGenAI;
 
     if (userApiKey) {
       console.log("Using user-provided API key.");
       currentGenAI = new GoogleGenerativeAI(userApiKey);
+    } else {
+      currentGenAI = initializeGemini();
     }
     const model = currentGenAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
@@ -282,7 +299,8 @@ async function streamChat(req, res) {
                 attributes: ['role', 'content']
             });
 
-            const categorizationResult = await categorizeConversation(finalHistory);
+            const categorizationFunc = loadCategorizer();
+            const categorizationResult = await categorizationFunc(finalHistory);
 
             if (categorizationResult) {
                 await Conversation.update(

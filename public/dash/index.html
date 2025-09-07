@@ -114,8 +114,22 @@
               <i class="fas fa-chart-line text-purple-600 text-lg sm:text-xl"></i>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">Erfolgsrate</p>
-              <p class="text-xl sm:text-2xl font-bold text-orange-600">Under Construction</p>
+              <div class="flex items-center space-x-2">
+                <p class="text-sm font-medium text-gray-500">Erfolgsrate</p>
+                <div class="relative group">
+                  <i class="fas fa-question-circle text-gray-400 text-sm cursor-help hover:text-gray-600 transition-colors"></i>
+                  <!-- Tooltip -->
+                  <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                    <div class="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 shadow-lg whitespace-nowrap">
+                      Eine Antwort wird als erfolgreich gewertet wenn der Bot<br>
+                      eine Antwort mit Hilfe der hinterlegten Datenbank geben kann.
+                      <!-- Arrow -->
+                      <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p id="success-rate" class="text-xl sm:text-2xl font-bold text-purple-600">-</p>
             </div>
           </div>
         </div>
@@ -149,37 +163,134 @@
 
       </div>
 
+      <!-- Categories and Languages Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
+        
+        <!-- Kategorien-Statistiken -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+              <i class="fas fa-tags text-purple-600 mr-2"></i>
+              Beliebteste Kategorien
+            </h3>
+          </div>
+          <div class="p-4 sm:p-6">
+            <div id="category-stats">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Sprach-Statistiken -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+              <i class="fas fa-language text-green-600 mr-2"></i>
+              Verwendete Sprachen
+            </h3>
+          </div>
+          <div class="p-4 sm:p-6">
+            <div id="language-stats">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Frequent Messages Section -->
+      <div class="mb-6 sm:mb-8">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+              <i class="fas fa-comments text-blue-600 mr-2"></i>
+              Häufigste Nachrichten
+            </h3>
+          </div>
+          <div class="p-4 sm:p-6">
+            <div id="frequent-messages">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Under Construction Sections -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         
         <!-- Unbeantwortete Fragen -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div class="p-4 sm:p-6 border-b border-gray-100">
-            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
-              <i class="fas fa-exclamation-circle text-orange-600 mr-2"></i>
-              Häufigste unbeantwortete Fragen
-            </h3>
+          <div class="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
+            <div class="flex items-center">
+              <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+                <i class="fas fa-exclamation-circle text-orange-600 mr-2"></i>
+                Häufigste unbeantwortete Fragen
+              </h3>
+              <div class="relative group ml-2">
+                <i class="fas fa-question-circle text-gray-400 text-sm cursor-help hover:text-gray-600 transition-colors"></i>
+                <!-- Tooltip -->
+                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                  <div class="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 shadow-lg whitespace-nowrap">
+                    <div id="unanswered-analysis-tooltip-content">
+                      Lädt Status...
+                    </div>
+                    <!-- Arrow -->
+                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button id="trigger-unanswered-analysis-btn" class="text-xs bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500" title="Manuelle Analyse starten">
+                <i class="fas fa-sync mr-1"></i>Analysieren
+              </button>
+            </div>
           </div>
-          <div class="p-4 sm:p-6 flex items-center justify-center h-32">
-            <div class="text-center">
-              <i class="fas fa-tools text-orange-600 text-2xl mb-2"></i>
-              <p class="text-orange-600 font-semibold">Under Construction</p>
+          <div class="p-4 sm:p-6">
+            <div id="unanswered-questions-status" class="mb-3 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+              <i class="fas fa-clock mr-1"></i>
+              <span id="unanswered-questions-status-text">Status wird geladen...</span>
+            </div>
+            <div id="unanswered-questions">
+              <!-- Dynamic content -->
             </div>
           </div>
         </div>
 
-        <!-- Top 5 häufigste Fragen -->
+        <!-- Top häufigste Fragen -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div class="p-4 sm:p-6 border-b border-gray-100">
-            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
-              <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
-              Häufigste Fragen
-            </h3>
+          <div class="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
+            <div class="flex items-center">
+              <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+                <i class="fas fa-question-circle text-blue-600 mr-2"></i>
+                Häufigste Fragen
+              </h3>
+              <div class="relative group ml-2">
+                <i class="fas fa-question-circle text-gray-400 text-sm cursor-help hover:text-gray-600 transition-colors"></i>
+                <!-- Tooltip -->
+                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                  <div class="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 shadow-lg whitespace-nowrap">
+                    <div id="analysis-tooltip-content">
+                      Lädt Status...
+                    </div>
+                    <!-- Arrow -->
+                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button id="trigger-analysis-btn" class="text-xs bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500" title="Manuelle Analyse starten">
+                <i class="fas fa-sync mr-1"></i>Analysieren
+              </button>
+            </div>
           </div>
-          <div class="p-4 sm:p-6 flex items-center justify-center h-32">
-            <div class="text-center">
-              <i class="fas fa-tools text-orange-600 text-2xl mb-2"></i>
-              <p class="text-orange-600 font-semibold">Under Construction</p>
+          <div class="p-4 sm:p-6">
+            <div id="frequent-questions-status" class="mb-3 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+              <i class="fas fa-clock mr-1"></i>
+              <span id="frequent-questions-status-text">Status wird geladen...</span>
+            </div>
+            <div id="frequent-questions">
+              <!-- Dynamic content -->
             </div>
           </div>
         </div>

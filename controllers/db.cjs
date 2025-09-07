@@ -361,8 +361,52 @@ const Message = sequelize.define('Message', {
 Conversation.hasMany(Message, { foreignKey: 'conversation_id' });
 Message.belongsTo(Conversation, { foreignKey: 'conversation_id' });
 
+// Question Analysis Cache
+const QuestionAnalysisCache = sequelize.define('QuestionAnalysisCache', {
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  },
+  cache_key: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  normalized_question: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
+  question_count: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1,
+  },
+  topic: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  languages_detected: {
+    type: DataTypes.TEXT, // JSON string
+    allowNull: true,
+  },
+  original_questions: {
+    type: DataTypes.TEXT, // JSON string
+    allowNull: false,
+  },
+  last_updated: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+  },
+  is_processing: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  }
+}, {
+  tableName: 'question_analysis_cache',
+  timestamps: false
+});
+
 // sequelize.sync({ alter: true })
 //   .then(() => console.log('✓ All models were synchronized successfully.'))
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, UserSessions, ArticleViews, ChatInteractions, Conversation, Message };
+module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache };
