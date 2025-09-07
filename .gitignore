@@ -22,3 +22,4 @@ server.log
 public/uploads/
 public/admin/milkdown_editor/
 cache/
+.DS_Store
