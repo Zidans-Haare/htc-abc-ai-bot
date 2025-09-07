@@ -58,6 +58,9 @@ export function handleSettingChange(e) {
         tts: 'tts',
         contrastmode: 'contrastMode',
         keyboardnav: 'keyboardNav',
+        sendwithenter: 'sendWithEnter',
+        timestampformat: 'timestampFormat',
+        maxchatwidth: 'maxChatWidth',
     };
     
     const settingKey = keyMap[key.toLowerCase()];

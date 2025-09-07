@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="mobile.css?v=1.1">
     <script src="/js/marked.min.js"></script>
     <script src="/js/purify.min.js"></script>
-    <script type="module"  src="bot.js"></script>
+    <script type="module"  src="bot.js?v=${new Date().getTime()}"></script>
     <script src="/js/api_guide.js"></script>
 </head>
 <body>
@@ -123,6 +123,18 @@
                     </div>
                 </div>
 
+                <!-- Funktionalität & Verhalten -->
+                <div class="settings-section">
+                    <h4 class="section-title" data-i18n="section_behavior_title">Funktionalität & Verhalten</h4>
+                    <div class="form-group switch-group">
+                        <label for="setting-send-with-enter" data-i18n="setting_send_with_enter">Nachricht mit Enter senden</label>
+                        <label class="switch">
+                            <input type="checkbox" id="setting-send-with-enter" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
                 <!-- Design & Darstellung -->
                 <div class="settings-section">
                     <h4 class="section-title" data-i18n="section_design_title">Design & Darstellung</h4>
@@ -160,6 +172,22 @@
                             <option value="normal" data-i18n="animation_speed_normal">Normal</option>
                             <option value="reduced" data-i18n="animation_speed_reduced">Reduziert</option>
                             <option value="none" data-i18n="animation_speed_none">Keine</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-timestamp-format" data-i18n="setting_timestamp_format">Zeitstempel-Format</label>
+                        <select id="setting-timestamp-format">
+                            <option value="24h" data-i18n="timestamp_format_24h">24 Stunden</option>
+                            <option value="12h" data-i18n="timestamp_format_12h">12 Stunden (AM/PM)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-max-chat-width" data-i18n="setting_max_chat_width">Maximale Chat-Breite</label>
+                        <select id="setting-max-chat-width">
+                            <option value="default" data-i18n="max_chat_width_default">Standard (1350px)</option>
+                            <option value="medium" data-i18n="max_chat_width_medium">Mittel (1000px)</option>
+                            <option value="small" data-i18n="max_chat_width_small">Klein (800px)</option>
+                            <option value="full" data-i18n="max_chat_width_full">Unbegrenzt</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -221,6 +249,15 @@
                             <option value="7" data-i18n="auto_delete_7_days">7 Tagen</option>
                             <option value="30" data-i18n="auto_delete_30_days">30 Tagen</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="export_history_label">Verlauf exportieren</label>
+                        <button id="export-history-btn" class="btn" data-i18n="export_history_button">Gesamten Verlauf herunterladen</button>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="import_history_label">Verlauf importieren</label>
+                        <button id="import-history-btn" class="btn" data-i18n="import_history_button">Verlauf aus Datei hochladen</button>
+                        <input type="file" id="import-history-input" accept=".json" style="display: none;">
                     </div>
                     <div class="form-group">
                         <label data-i18n="delete_all_chats_label">Alle Chats löschen</label>
