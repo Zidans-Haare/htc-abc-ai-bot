@@ -35,9 +35,17 @@ module.exports = (app) => {
     }
 
     try {
-      // Get metadata to determine actual format
+      // Get metadata to determine actual format and dimensions
       const metadata = await sharp(originalPath).metadata();
       const originalFormat = metadata.format ? metadata.format.toLowerCase() : null;
+      const originalWidth = metadata.width;
+
+      // If original image is smaller or equal to requested width, serve original
+      if (originalWidth <= width) {
+        // Cache the original image for future requests
+        fs.copyFileSync(originalPath, cachePath);
+        return res.sendFile(originalPath);
+      }
 
       // Start sharp pipeline
       let imageSharp = sharp(originalPath).resize({ width });
