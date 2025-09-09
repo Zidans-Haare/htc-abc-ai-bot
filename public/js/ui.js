@@ -114,13 +114,46 @@ export function addMessage(text, isUser, timestamp, copyable = false, save = tru
    
     messagesEl.appendChild(m);
 
-    // Post-process images (resize images to be max the width of the prompt bubble)
-    processImagesInBubble(bubble);
-
+    // The MutationObserver will handle image processing now.
     scrollToBottom();
 }
 
 export function setupUI(app) {
+    // --- MutationObserver to process images in new bubbles ---
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+            const bubblesToProcess = new Set();
+
+            // Check nodes that were added
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1) {
+                    // If the added node is a message itself or contains one
+                    const bubble = node.querySelector ? (node.classList.contains('bubble') ? node : node.querySelector('.bubble')) : null;
+                    if (bubble) {
+                        bubblesToProcess.add(bubble);
+                    }
+                    // If the added node is inside a bubble
+                    else if (node.parentElement) {
+                        const parentBubble = node.parentElement.closest('.bubble');
+                        if (parentBubble) bubblesToProcess.add(parentBubble);
+                    }
+                }
+            });
+
+            // Also consider the mutation target for text changes, etc.
+            if (mutation.target.nodeType === 1) {
+                const targetBubble = mutation.target.classList.contains('bubble') ? mutation.target : mutation.target.closest('.bubble');
+                if (targetBubble) bubblesToProcess.add(targetBubble);
+            }
+
+            bubblesToProcess.forEach(bubble => {
+                processImagesInBubble(bubble);
+            });
+        });
+    });
+
+    observer.observe(messagesEl, { childList: true, subtree: true });
+
     // Event Listeners
     sendBtnEl.addEventListener('click', () => app.send()); 
     chatInput.addEventListener('keydown', (e) => {

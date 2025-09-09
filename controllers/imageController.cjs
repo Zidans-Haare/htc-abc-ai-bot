@@ -8,6 +8,8 @@ if (!fs.existsSync(cacheDir)) {
   fs.mkdirSync(cacheDir, { recursive: true });
 }
 
+const processingPromises = new Map();
+
 module.exports = (app) => {
   app.get('/uploads/:filename', async (req, res) => {
     const { filename } = req.params;
@@ -15,7 +17,7 @@ module.exports = (app) => {
     if (!match) {
       // Serve original if no size specified
       return res.sendFile(path.join(__dirname, '..', 'public', 'uploads', filename), (err) => {
-        if (err) res.status(404).send('Image not found');
+        if (err && !res.headersSent) res.status(404).send('Image not found');
       });
     }
 
@@ -26,7 +28,8 @@ module.exports = (app) => {
     const cachePath = path.join(cacheDir, filename);
 
     if (!fs.existsSync(originalPath)) {
-      return res.status(404).send('Original image not found');
+      if (!res.headersSent) return res.status(404).send('Original image not found');
+      return;
     }
 
     // Check cache
@@ -34,62 +37,97 @@ module.exports = (app) => {
       return res.sendFile(cachePath);
     }
 
+    // --- Promise-based locking mechanism ---
+    if (processingPromises.has(filename)) {
+      // If image is being processed, wait for it to complete
+      try {
+        await processingPromises.get(filename);
+        // After waiting, check cache again
+        if (fs.existsSync(cachePath)) {
+          return res.sendFile(cachePath);
+        }
+      } catch (error) {
+        // If the processing failed, we can try again
+        console.log(`Previous processing failed for ${filename}, retrying...`);
+      }
+    }
+
+    // Create a new processing promise
+    const processingPromise = (async () => {
+      try {
+        // Get metadata to determine actual format and dimensions
+        const metadata = await sharp(originalPath).metadata();
+        const originalFormat = metadata.format ? metadata.format.toLowerCase() : null;
+        const originalWidth = metadata.width;
+
+        // If original image is smaller or equal to requested width, serve original
+        if (originalWidth <= width) {
+          // Cache the original image for future requests
+          fs.copyFileSync(originalPath, cachePath);
+          return;
+        }
+
+        // Start sharp pipeline
+        let imageSharp = sharp(originalPath).resize({ width });
+
+        let outputFormat;
+
+        switch (originalFormat) {
+          case 'jpeg':
+          case 'jpg':
+            imageSharp = imageSharp.jpeg();
+            outputFormat = 'jpeg';
+            break;
+          case 'png':
+            imageSharp = imageSharp.png();
+            outputFormat = 'png';
+            break;
+          case 'gif':
+            imageSharp = imageSharp.gif();
+            outputFormat = 'gif';
+            break;
+          case 'webp':
+            imageSharp = imageSharp.webp();
+            outputFormat = 'webp';
+            break;
+          case 'svg':
+            imageSharp = imageSharp.png();
+            outputFormat = 'png';
+            break;
+          default:
+            // Fallback to JPEG for unsupported formats
+            imageSharp = imageSharp.jpeg();
+            outputFormat = 'jpeg';
+        }
+
+        const buffer = await imageSharp.toBuffer();
+
+        // Cache the resized image
+        fs.writeFileSync(cachePath, buffer);
+
+      } catch (error) {
+        console.error('Image resize error:', error);
+        throw error; // Re-throw to be caught by the caller
+      }
+    })();
+
+    processingPromises.set(filename, processingPromise);
+
     try {
-      // Get metadata to determine actual format and dimensions
-      const metadata = await sharp(originalPath).metadata();
-      const originalFormat = metadata.format ? metadata.format.toLowerCase() : null;
-      const originalWidth = metadata.width;
+      await processingPromise;
 
-      // If original image is smaller or equal to requested width, serve original
-      if (originalWidth <= width) {
-        // Cache the original image for future requests
-        fs.copyFileSync(originalPath, cachePath);
-        return res.sendFile(originalPath);
+      // After processing is complete, serve the cached image
+      if (fs.existsSync(cachePath)) {
+        return res.sendFile(cachePath);
+      } else {
+        if (!res.headersSent) res.status(500).send('Image processing failed');
       }
-
-      // Start sharp pipeline
-      let imageSharp = sharp(originalPath).resize({ width });
-
-      let outputFormat;
-
-      switch (originalFormat) {
-        case 'jpeg':
-        case 'jpg':
-          imageSharp = imageSharp.jpeg();
-          outputFormat = 'jpeg';
-          break;
-        case 'png':
-          imageSharp = imageSharp.png();
-          outputFormat = 'png';
-          break;
-        case 'gif':
-          imageSharp = imageSharp.gif();
-          outputFormat = 'gif';
-          break;
-        case 'webp':
-          imageSharp = imageSharp.webp();
-          outputFormat = 'webp';
-          break;
-        case 'svg':
-          imageSharp = imageSharp.png();
-          outputFormat = 'png';
-          break;
-        default:
-          // Fallback to JPEG for unsupported formats
-          imageSharp = imageSharp.jpeg();
-          outputFormat = 'jpeg';
-      }
-
-      const buffer = await imageSharp.toBuffer();
-
-      // Cache the resized image
-      fs.writeFileSync(cachePath, buffer);
-
-      res.type(`image/${outputFormat}`);
-      res.send(buffer);
     } catch (error) {
-      console.error('Image resize error:', error);
-      res.status(500).send('Error resizing image');
+      console.error('Image processing failed:', error);
+      if (!res.headersSent) res.status(500).send('Error processing image');
+    } finally {
+      // Clean up the promise
+      processingPromises.delete(filename);
     }
   });
 };

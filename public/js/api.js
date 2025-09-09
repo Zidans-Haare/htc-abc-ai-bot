@@ -1,6 +1,7 @@
 import { addMessage, showToast } from './ui.js';
 import { renderMarkup } from './markup.js';
 import { getChatById } from './history.js';
+import { processImagesInBubble } from './imageLightbox.js';
 
 export async function sendMsg(app, promptText) {
     const txt = typeof promptText === 'string' ? promptText : document.getElementById('chat-input').value.trim();
@@ -115,6 +116,11 @@ export async function sendMsg(app, promptText) {
                         aiMessageBubble.innerHTML = '<span></span>';
                         m.appendChild(aiMessageBubble);
                         document.getElementById('messages').appendChild(m);
+
+
+                        // Post-process images (resize images to be max the width of the prompt bubble)
+                        processImagesInBubble(aiMessageBubble);
+
                         firstChunk = false;
                     }
                     

@@ -4,6 +4,11 @@ import { scrollToBottom } from './ui.js'; // If needed, but probably not
 export function processImagesInBubble(bubble) {
   const images = bubble.querySelectorAll('img');
   images.forEach(img => {
+    // Skip if the image has already been processed
+    if (img.dataset.fullSrc) {
+      return;
+    }
+
     const originalSrc = img.src;
     let pathname;
     try {
@@ -18,7 +23,7 @@ export function processImagesInBubble(bubble) {
 
     img.dataset.fullSrc = originalSrc; // Store original for lightbox
     img.style.cursor = 'pointer'; // Indicate clickable
-    img.alt = img.alt || 'AI-generated image'; // Accessibility
+    //img.alt = img.alt || 'AI-generated image'; // Accessibility
     img.tabIndex = 0; // Make tabbable
 
     // Measure bubble width after insertion
