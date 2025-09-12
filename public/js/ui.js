@@ -236,7 +236,12 @@ export function setupUI(app) {
         });
     }
 
-    document.querySelector('#settings-modal .modal-body').addEventListener('input', (e) => app.handleSettingChange(e));
+    // Capture live edits and committed changes (e.g., color pickers fire 'change')
+    const settingsBody = document.querySelector('#settings-modal .modal-body');
+    if (settingsBody) {
+        settingsBody.addEventListener('input', (e) => app.handleSettingChange(e));
+        settingsBody.addEventListener('change', (e) => app.handleSettingChange(e));
+    }
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
         if (app.settings.theme === 'system') {
             app.applySettings();
