@@ -1,4 +1,4 @@
-# HTC ABC AI Bot
+# HTW ABC AI Bot
 
 Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assistenten über eine API bereitstellt. Es umfasst ein umfassendes Admin-Panel zur Verwaltung von Inhalten und ein Dashboard zur Überwachung von Analysen.
 
