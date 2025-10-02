@@ -176,6 +176,68 @@ const Images = sequelize.define('Images', {
     timestamps: false
 });
 
+const KnowledgeChunk = sequelize.define('KnowledgeChunk', {
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    article_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'hochschuhl_abc',
+            key: 'id'
+        }
+    },
+    chunk_index: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    headline: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    section_heading: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    chunk_text: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    chunk_tokens: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    chunk_char_length: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    start_offset: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    end_offset: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    }
+}, {
+    tableName: 'knowledge_chunks',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    indexes: [
+        {
+            unique: true,
+            fields: ['article_id', 'chunk_index']
+        },
+        {
+            fields: ['chunk_tokens']
+        }
+    ]
+});
+
 const UserSessions = sequelize.define('UserSessions', {
     id: {
         type: DataTypes.INTEGER,
@@ -409,4 +471,4 @@ const QuestionAnalysisCache = sequelize.define('QuestionAnalysisCache', {
 //   .then(() => console.log('✓ All models were synchronized successfully.'))
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache };
+module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, KnowledgeChunk, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache };

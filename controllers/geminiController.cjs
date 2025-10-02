@@ -1,9 +1,9 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { HochschuhlABC, Questions, Images, Conversation, Message } = require("./db.cjs"); // Import new models from db.cjs
-const { getCached } = require("../utils/cache");
 const { estimateTokens, isWithinTokenLimit } = require("../utils/tokenizer");
 const { summarizeConversation } = require("../utils/summarizer");
 const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require("../utils/analytics");
+const { retrieveRelevantChunks } = require("../utils/retriever");
 // Lazy import to avoid immediate API key check
 let categorizeConversation = null;
 
@@ -13,6 +13,27 @@ function loadCategorizer() {
         categorizeConversation = categorizer.categorizeConversation;
     }
     return categorizeConversation;
+}
+
+function stripHeadingMarkers(chunkText) {
+    if (!chunkText) return '';
+    return chunkText
+        .replace(/\r\n?/g, '\n')
+        .replace(/^#\s+[^\n]*\n?/, '')
+        .trim();
+}
+
+function formatKnowledgeChunksForPrompt(chunks) {
+    if (!chunks || !chunks.length) {
+        return 'Keine passenden Wissensbausteine gefunden. Antworte trotzdem höflich, erkläre die Lage und füge "<+>" an, falls die Frage unbeantwortet bleibt.';
+    }
+
+    return chunks.map((chunk, index) => {
+        const sectionLabel = chunk.section_heading ? `Abschnitt: ${chunk.section_heading}` : 'Abschnitt: Allgemein';
+        const scoreLabel = typeof chunk.score === 'number' ? `Relevanzscore: ${chunk.score.toFixed(2)}` : 'Relevanzscore: n/a';
+        const body = stripHeadingMarkers(chunk.chunk_text);
+        return `[#${index + 1}] Artikel ${chunk.article_id} – ${chunk.headline}\n${sectionLabel} | Chunk ${chunk.chunk_index} | ${scoreLabel}\n${body}`;
+    }).join('\n\n---\n\n');
 }
 
 // In-memory conversation store is no longer needed
@@ -159,25 +180,29 @@ async function streamChat(req, res) {
     }));
     // --- End of new DB logic ---
 
-    const entries = await HochschuhlABC.findAll({
-      where: { active: true, archived: null },
-      order: [["headline", "DESC"]],
-      attributes: ["headline", "text"],
+    const retrievalStart = Date.now();
+    const { chunks: knowledgeChunks, diagnostics: retrievalDiagnostics } = await retrieveRelevantChunks({
+      prompt,
+      conversationMessages: messages,
+      limit: 8
     });
-    const hochschulContent = entries.map(entry => `## ${entry.headline}\n\n${entry.text}\n\n`).join("");
+    console.log(`[Retriever] Query=${retrievalDiagnostics.matchQuery || 'fallback'} results=${knowledgeChunks.length} fallback=${retrievalDiagnostics.fallback} duration=${Date.now() - retrievalStart}ms`);
+
+    const knowledgeContext = formatKnowledgeChunksForPrompt(knowledgeChunks);
+    console.log(`[Retriever] Approx context tokens=${estimateTokens(knowledgeContext)}`);
 
     const images = await Images.findAll({
       attributes: ["filename", "description"],
     });
     const imageList = images.map(image => `image_name: ${image.filename} description: ${image.description ? image.description.replace(/\n/g, ' ') : ''}`).join("\n\n");
 
-    const historyText = messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n");
-    const fullTextForTokenCheck = `**Inhalt des Hochschul ABC (2025)**:\n${hochschulContent}\n\n**Gesprächsverlauf**:\n${historyText}\n\nBenutzerfrage: ${prompt}`;
+    let historyText = messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n");
+    let fullTextForTokenCheck = `**Relevante Wissensbausteine**:\n${knowledgeContext}\n\n**Gesprächsverlauf**:\n${historyText}\n\nBenutzerfrage: ${prompt}`;
 
     if (!isWithinTokenLimit(fullTextForTokenCheck, 6000)) {
       messages = await summarizeConversation(messages);
-      // The next two lines are removed as 'conversations' is no longer used
-      // conversations.set(convoId, messages); 
+      historyText = messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n");
+      fullTextForTokenCheck = `**Relevante Wissensbausteine**:\n${knowledgeContext}\n\n**Gesprächsverlauf**:\n${historyText}\n\nBenutzerfrage: ${prompt}`;
       console.log(`Summarized conversation, new message count: ${messages.length}`);
     }
 
@@ -215,39 +240,44 @@ async function streamChat(req, res) {
       ${dateAndTime}.
       ${timezoneInfo}
 
+      Arbeitsweise:
+      - Nutze ausschließlich die unter **Relevante Wissensbausteine** bereitgestellten Inhalte für faktenbasierte Aussagen.
+      - Verwende im Fließtext nummerierte Referenzen im Format "[1]", "[2]", ... für jede genutzte Quelle.
+      - Sammle die tatsächlich genutzten Quellen am Ende unter der Überschrift "## Quellen" als nummerierte Liste, z.B. "1. Artikel <id>: <headline>". Hinterlege dabei keine Schritt-für-Schritt-Erklärung, sondern nur die Quellenangabe.
+      - Wenn keine relevanten Quellen vorhanden sind, erkläre dies höflich, frage nach weiteren Details und füge "<+>" am Ende deiner Antwort an. Ergänze dann im Quellen-Abschnitt den Eintrag "- Keine passenden Einträge".
+
       Contact data includes Name, Responsibility, Email, Phone number, Room, and talking hours. 
       Whenever you recommend a contact or advise to contact someone, provide complete contact data 
       for all relevant individuals, including: Name, Responsibility, Email, Phone number, Room, and talking hours. 
       
       If multiple persons are responsible, briefly explain the difference between them and provide full contact data for each.
       
-      If there are diverging Answers for long and short term students, and the user did not yet specify their status, 
+      If there are diverging answers for long and short term students, and the user did not yet specify their status, 
       ask for clarification and point out the difference.
 
       IMPORTANT: You MUST answer in the same language as the user's prompt. If the user asks in English, you MUST reply in English. If the user asks in German, you MUST reply in German.
 
 
-      **Knowledgebase of the HTW Desden**:
-      ${hochschulContent}
+      **Relevante Wissensbausteine**:
+      ${knowledgeContext}
 
       **Image List**:
       ${imageList}
 
-      If and image is in the Image List, that helps to answer the user question, add the image link to the answer. 
-      format the url in markdown: "\n\n ![](/uploads/<image_name>) \n\n"
+      If an image in the Image List helps to answer the question, add the markdown image link pattern "\n\n ![](/uploads/<image_name>) \n\n" to your response.
 
 
 
 
       --
 
-      If you can not answer a question about the HTW Dresden from the Knowledgebase, 
+      If you can not answer a question about the HTW Dresden from the knowledgebase above, 
       add the chars "<+>" at the end of the answer.
 
       --
       
       **Conversation History**:
-      ${messages.map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`).join("\n")} 
+      ${historyText} 
       
       --user prompt--
       ${prompt}
@@ -418,4 +448,3 @@ async function testApiKey(req, res) {
 }
 
 module.exports = { streamChat, getSuggestions, testApiKey };
-

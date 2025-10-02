@@ -86,6 +86,16 @@ Der Zugriff auf das Admin-Panel (`/admin/`) und das Dashboard (`/dash/`) erforde
 └── server.cjs       # Hauptanwendungsdatei (Server-Setup, Middleware, Routen)
 ```
 
+## 🧠 Wissensbasis aktualisieren
+
+Der Chatbot nutzt vorgeschnittene Wissensbausteine inklusive eines Full-Text-Index, um Tokenkosten gering zu halten. Immer wenn Inhalte im Hochschul-ABC geändert oder neue Artikel importiert werden, sollte der Chunk-Index neu aufgebaut werden:
+
+```bash
+npm run rebuild:chunks
+```
+
+Das Skript erstellt konsistente Chunks in `knowledge_chunks` und aktualisiert den zugehörigen FTS-Index. Es kann gefahrlos beliebig oft ausgeführt werden.
+
 ## 📝 API-Endpunkte (Übersicht)
 
 Die Anwendung stellt verschiedene API-Endpunkte bereit:
