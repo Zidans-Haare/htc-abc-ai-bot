@@ -28,11 +28,11 @@ function formatKnowledgeChunksForPrompt(chunks) {
         return 'Keine passenden Wissensbausteine gefunden. Antworte trotzdem höflich, erkläre die Lage und füge "<+>" an, falls die Frage unbeantwortet bleibt.';
     }
 
-    return chunks.map((chunk, index) => {
-        const sectionLabel = chunk.section_heading ? `Abschnitt: ${chunk.section_heading}` : 'Abschnitt: Allgemein';
-        const scoreLabel = typeof chunk.score === 'number' ? `Relevanzscore: ${chunk.score.toFixed(2)}` : 'Relevanzscore: n/a';
+    return chunks.map(chunk => {
+        const sectionLabel = chunk.section_heading ? `Abschnitt: ${chunk.section_heading}` : null;
         const body = stripHeadingMarkers(chunk.chunk_text);
-        return `[#${index + 1}] Artikel ${chunk.article_id} – ${chunk.headline}\n${sectionLabel} | Chunk ${chunk.chunk_index} | ${scoreLabel}\n${body}`;
+        const header = [`Artikel ${chunk.article_id} – ${chunk.headline}`, sectionLabel].filter(Boolean).join('\n');
+        return `${header}\n\n${body}`;
     }).join('\n\n---\n\n');
 }
 
@@ -242,9 +242,19 @@ async function streamChat(req, res) {
 
       Arbeitsweise:
       - Nutze ausschließlich die unter **Relevante Wissensbausteine** bereitgestellten Inhalte für faktenbasierte Aussagen.
-      - Verwende im Fließtext nummerierte Referenzen im Format "[1]", "[2]", ... für jede genutzte Quelle.
-      - Sammle die tatsächlich genutzten Quellen am Ende unter der Überschrift "## Quellen" als nummerierte Liste, z.B. "1. Artikel <id>: <headline>". Hinterlege dabei keine Schritt-für-Schritt-Erklärung, sondern nur die Quellenangabe.
-      - Wenn keine relevanten Quellen vorhanden sind, erkläre dies höflich, frage nach weiteren Details und füge "<+>" am Ende deiner Antwort an. Ergänze dann im Quellen-Abschnitt den Eintrag "- Keine passenden Einträge".
+      - Vermeide Referenzen oder Nummern direkt im Fließtext; halte die Antwort natürlich und lesbar.
+      - Schließe jede Antwort mit exakt folgendem Aufbau ab (keine Abweichungen):
+        1. Optionaler, sinnvoller Abschlusssatz als Anschlussfrage.
+        2. Eine leere Zeile (zwei Zeilenumbrüche als Trennung).
+        3. Anschließend folgt ein Block mit dem wörtlichen Aufbau:
+           <details><summary>Quellen</summary>
+           <ul>
+           <li>Artikel <id> – <headline></li> (für jede genutzte Quelle)
+           </ul>
+           </details>
+      - Wenn keine Quelle genutzt wurde, verwende statt der Listeneinträge genau die Zeile <li>Keine passenden Einträge</li>.
+      - Nach </details> darf kein weiterer Text erscheinen.
+      - Wenn keine relevanten Quellen vorhanden sind, erkläre dies höflich, frage nach weiteren Details und füge "<+>" am Ende deiner Antwort an.
 
       Contact data includes Name, Responsibility, Email, Phone number, Room, and talking hours. 
       Whenever you recommend a contact or advise to contact someone, provide complete contact data 
