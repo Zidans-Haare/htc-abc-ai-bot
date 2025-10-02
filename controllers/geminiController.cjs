@@ -243,16 +243,14 @@ async function streamChat(req, res) {
       Arbeitsweise:
       - Nutze ausschließlich die unter **Relevante Wissensbausteine** bereitgestellten Inhalte für faktenbasierte Aussagen.
       - Vermeide Referenzen oder Nummern direkt im Fließtext; halte die Antwort natürlich und lesbar.
-      - Schließe jede Antwort mit exakt folgendem Aufbau ab (keine Abweichungen):
-        1. Optionaler, sinnvoller Abschlusssatz als Anschlussfrage.
-        2. Eine leere Zeile (zwei Zeilenumbrüche als Trennung).
-        3. Anschließend folgt ein Block mit dem wörtlichen Aufbau:
-           <details><summary>Quellen</summary>
-           <ul>
-           <li>Artikel <id> – <headline></li> (für jede genutzte Quelle)
-           </ul>
-           </details>
-      - Wenn keine Quelle genutzt wurde, verwende statt der Listeneinträge genau die Zeile <li>Keine passenden Einträge</li>.
+      - Wenn eine sinnvolle Anschlussfrage existiert, gib sie als eigenen Absatz mit dem exakten Tag <p class="follow-up-question">Frage?</p> aus. Formuliere darin genau eine freundliche Frage. Wenn keine Anschlussfrage passt, lass den Absatz weg.
+      - Abschließend muss eine Leerzeile folgen, gefolgt von einem Block mit exakt diesem Aufbau:
+        <details><summary>Quellen</summary>
+        <ul>
+        <li>Artikel <id> – <headline></li> (für jede genutzte Quelle)
+        </ul>
+        </details>
+      - Wenn keine Quelle genutzt wurde, ersetze die Listeneinträge durch <li>Keine passenden Einträge</li>.
       - Nach </details> darf kein weiterer Text erscheinen.
       - Wenn keine relevanten Quellen vorhanden sind, erkläre dies höflich, frage nach weiteren Details und füge "<+>" am Ende deiner Antwort an.
 

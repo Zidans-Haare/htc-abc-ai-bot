@@ -794,6 +794,33 @@ input:checked + .slider:before { transform: translateX(22px); }
     list-style-type: none;
 }
 
+.bubble .follow-up-question {
+    margin-top: 1rem;
+    font-weight: 600;
+    color: inherit;
+}
+
+.bubble details {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.message.user .bubble details {
+    border-top-color: rgba(31, 41, 55, 0.2);
+}
+
+.bubble details summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.bubble details ul {
+    margin: 0;
+    padding-left: 1rem;
+}
+
 /* --- Desktop-spezifische Anpassungen --- */
 @media (min-width: 769px) {
     #prompt-suggestions {
