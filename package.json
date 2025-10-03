@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.cjs",
-    "rebuild:chunks": "node scripts/rebuildKnowledgeChunks.js"
+    "rebuild:chunks": "node scripts/rebuildKnowledgeChunks.js",
+    "test:chunker": "node --test tests/chunker.test.cjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

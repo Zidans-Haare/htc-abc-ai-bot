@@ -3,7 +3,12 @@
 require('dotenv').config();
 
 const { sequelize, HochschuhlABC, KnowledgeChunk } = require('../controllers/db.cjs');
-const { chunkArticle, DEFAULT_MAX_TOKENS, DEFAULT_OVERLAP_TOKENS } = require('../utils/chunker');
+const {
+  chunkArticle,
+  DEFAULT_MAX_TOKENS,
+  DEFAULT_MIN_TOKENS,
+  DEFAULT_OVERLAP_TOKENS
+} = require('../utils/chunker');
 
 async function ensureSchema() {
   await KnowledgeChunk.sync();
@@ -54,6 +59,11 @@ async function rebuildChunks({
     }
   }
 
+  const tokenValues = chunkPayload.map(chunk => chunk.chunk_tokens);
+  const smallestChunkTokens = tokenValues.length ? Math.min(...tokenValues) : 0;
+  const largestChunkTokens = tokenValues.length ? Math.max(...tokenValues) : 0;
+  const belowMinTokensCount = chunkPayload.filter(chunk => chunk.chunk_tokens < DEFAULT_MIN_TOKENS).length;
+
   await sequelize.transaction(async transaction => {
     await sequelize.query('DELETE FROM knowledge_chunks;', { transaction });
     await sequelize.query("DELETE FROM sqlite_sequence WHERE name='knowledge_chunks';", { transaction }).catch(() => {});
@@ -102,6 +112,9 @@ async function rebuildChunks({
     chunkCount: chunkPayload.length,
     avgChunksPerArticle: articles.length ? (chunkPayload.length / articles.length) : 0,
     maxTokens,
+    largestChunkTokens,
+    smallestChunkTokens,
+    belowMinTokensCount,
     overlapTokens
   };
 }
@@ -115,6 +128,10 @@ async function main() {
     console.log(`Chunks generated: ${stats.chunkCount}`);
     console.log(`Average chunks per article: ${stats.avgChunksPerArticle.toFixed(2)}`);
     console.log(`Chunk configuration: maxTokens=${stats.maxTokens}, overlapTokens=${stats.overlapTokens}`);
+    if (stats.chunkCount) {
+      console.log(`Chunk token range: min=${stats.smallestChunkTokens}, max=${stats.largestChunkTokens}`);
+      console.log(`Chunks below min token target (${DEFAULT_MIN_TOKENS}): ${stats.belowMinTokensCount}`);
+    }
   } catch (error) {
     console.error('Failed to rebuild knowledge chunks:', error);
     process.exitCode = 1;

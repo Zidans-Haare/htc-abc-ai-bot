@@ -4,6 +4,106 @@ const DEFAULT_MAX_TOKENS = 380;
 const DEFAULT_MIN_TOKENS = 120;
 const DEFAULT_OVERLAP_TOKENS = 60;
 const AVG_CHARS_PER_TOKEN = 4;
+const HEADER_TOKEN_BUFFER = 35;
+
+function collectBreakpoints(text, startOffset, endOffset) {
+  const windowText = text.slice(startOffset, endOffset);
+  if (!windowText) return [];
+
+  const breakpoints = new Set();
+
+  const addBreakpoint = (relativeIndex, includeLength = 0) => {
+    if (relativeIndex === null || relativeIndex === undefined) return;
+    const absoluteIndex = startOffset + relativeIndex + includeLength;
+    if (absoluteIndex > startOffset && absoluteIndex < endOffset) {
+      breakpoints.add(absoluteIndex);
+    }
+  };
+
+  const paragraphRegex = /\n{2,}/g;
+  let match;
+  while ((match = paragraphRegex.exec(windowText)) !== null) {
+    addBreakpoint(match.index);
+  }
+
+  const sentenceRegex = /[.!?;]+\s+/g;
+  while ((match = sentenceRegex.exec(windowText)) !== null) {
+    addBreakpoint(match.index, match[0].length);
+  }
+
+  const newlineRegex = /\n/g;
+  while ((match = newlineRegex.exec(windowText)) !== null) {
+    addBreakpoint(match.index);
+  }
+
+  const whitespaceRegex = /\s+/g;
+  while ((match = whitespaceRegex.exec(windowText)) !== null) {
+    addBreakpoint(match.index, match[0].length);
+  }
+
+  return Array.from(breakpoints).sort((a, b) => b - a);
+}
+
+function clampSliceToTokenLimit(baseText, sliceStart, initialSliceEnd, maxTokens) {
+  const maxChars = Math.max(1, maxTokens * AVG_CHARS_PER_TOKEN);
+  const upperBound = Math.min(
+    baseText.length,
+    Math.max(sliceStart + 1, initialSliceEnd, sliceStart + maxChars)
+  );
+
+  const candidateBreaks = collectBreakpoints(baseText, sliceStart, upperBound);
+  const evaluatedBreaks = [upperBound, ...candidateBreaks.filter(end => end !== upperBound)];
+
+  for (const candidateEnd of evaluatedBreaks) {
+    if (candidateEnd <= sliceStart) continue;
+    const candidateSlice = baseText.slice(sliceStart, candidateEnd);
+    const candidateText = candidateSlice.trim();
+    if (!candidateText) continue;
+    const candidateTokens = estimateTokens(candidateText);
+    if (candidateTokens <= maxTokens) {
+      return { end: candidateEnd, text: candidateText };
+    }
+  }
+
+  let low = sliceStart + 1;
+  let high = upperBound;
+  let best = null;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const midSlice = baseText.slice(sliceStart, mid);
+    const midText = midSlice.trim();
+
+    if (!midText) {
+      low = mid + 1;
+      continue;
+    }
+
+    const midTokens = estimateTokens(midText);
+
+    if (midTokens <= maxTokens) {
+      best = { end: mid, text: midText };
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  if (best) {
+    return best;
+  }
+
+  const minimalEnd = Math.min(
+    baseText.length,
+    Math.max(sliceStart + 1, sliceStart + Math.floor(maxChars * 0.5))
+  );
+  const fallbackSlice = baseText.slice(sliceStart, minimalEnd);
+  const fallbackText = fallbackSlice.trim() || fallbackSlice;
+  return {
+    end: minimalEnd,
+    text: fallbackText.trim()
+  };
+}
 
 function normalizeText(text) {
   if (!text) return '';
@@ -69,45 +169,33 @@ function addSegment(segments, raw, globalStart) {
 }
 
 function splitOversizedSegment(segment, maxTokens) {
-  const maxChars = maxTokens * AVG_CHARS_PER_TOKEN;
   const parts = [];
   let relativeCursor = 0;
   const base = segment.text;
 
   while (relativeCursor < base.length) {
-    let sliceEnd = Math.min(base.length, relativeCursor + maxChars);
-    let slice = base.slice(relativeCursor, sliceEnd);
+    const proposedEnd = relativeCursor + maxTokens * AVG_CHARS_PER_TOKEN;
+    const { end, text: trimmed } = clampSliceToTokenLimit(base, relativeCursor, proposedEnd, maxTokens);
 
-    if (sliceEnd < base.length) {
-      const lastParagraphBreak = slice.lastIndexOf('\n\n');
-      const lastSentenceBreak = Math.max(
-        slice.lastIndexOf('. '),
-        slice.lastIndexOf('! '),
-        slice.lastIndexOf('? '),
-        slice.lastIndexOf('; ')
-      );
-      const preferredBreak = Math.max(lastParagraphBreak, lastSentenceBreak);
-      if (preferredBreak > slice.length * 0.5) {
-        sliceEnd = relativeCursor + preferredBreak + 1;
-        slice = base.slice(relativeCursor, sliceEnd);
-      }
+    if (!trimmed) {
+      relativeCursor = end;
+      continue;
     }
 
-    const trimmed = slice.trim();
-    if (trimmed) {
-      const localLeading = slice.match(/^\s*/)[0].length;
-      const localIndex = relativeCursor + localLeading;
-      const partStart = segment.start !== null ? segment.start + localIndex : null;
-      const partEnd = partStart !== null ? partStart + trimmed.length : null;
-      parts.push({
-        text: trimmed,
-        start: partStart,
-        end: partEnd,
-        type: segment.type
-      });
-    }
+    const rawSlice = base.slice(relativeCursor, end);
+    const localLeading = rawSlice.match(/^\s*/)[0].length;
+    const localIndex = relativeCursor + localLeading;
+    const partStart = segment.start !== null ? segment.start + localIndex : null;
+    const partEnd = partStart !== null ? partStart + trimmed.length : null;
 
-    relativeCursor = sliceEnd;
+    parts.push({
+      text: trimmed,
+      start: partStart,
+      end: partEnd,
+      type: segment.type
+    });
+
+    relativeCursor = end;
   }
 
   return parts;
@@ -138,21 +226,27 @@ function chunkArticle(article, options = {}) {
 
   if (!article || !article.text) return [];
 
+  const bodyTokenBudget = Math.max(1, maxTokens - HEADER_TOKEN_BUFFER - overlapTokens);
   const baseSegments = segmentArticle(article.text);
-  const segments = baseSegments.flatMap(segment => ensureSegmentSize(segment, maxTokens));
+  const segments = baseSegments.flatMap(segment => ensureSegmentSize(segment, bodyTokenBudget));
 
   const chunks = [];
   let currentParts = [];
-  let currentTokens = 0;
   let currentStart = null;
   let currentEnd = null;
   let currentHeading = null;
   let chunkIndex = 0;
   let lastActiveHeading = null;
 
+  const getActiveTokenCount = () => currentParts.reduce((sum, part) => {
+    if (part.__isOverlap) {
+      return sum;
+    }
+    return sum + estimateTokens(part.text);
+  }, 0);
+
   const flushChunk = (force = false) => {
     if (!currentParts.length) {
-      currentTokens = 0;
       currentStart = null;
       currentEnd = null;
       return false;
@@ -161,7 +255,6 @@ function chunkArticle(article, options = {}) {
     const body = currentParts.map(part => part.text).join('\n\n').trim();
     if (!body) {
       currentParts = [];
-      currentTokens = 0;
       currentStart = null;
       currentEnd = null;
       return false;
@@ -191,19 +284,83 @@ function chunkArticle(article, options = {}) {
 
     if (overlapTokens > 0) {
       const overlapParts = [];
-      let overlapCount = 0;
-      for (let i = currentParts.length - 1; i >= 0 && overlapCount < overlapTokens; i -= 1) {
+      let tokensRemaining = overlapTokens;
+
+      for (let i = currentParts.length - 1; i >= 0 && tokensRemaining > 0; i -= 1) {
         const part = currentParts[i];
-        overlapParts.unshift(part);
-        overlapCount += estimateTokens(part.text);
+        const partTokens = estimateTokens(part.text);
+
+        if (partTokens <= tokensRemaining) {
+          const overlapPart = {
+            ...part,
+            __isOverlap: true
+          };
+          overlapParts.unshift(overlapPart);
+          tokensRemaining -= partTokens;
+          continue;
+        }
+
+        const baseText = part.text;
+        let low = 0;
+        let high = baseText.length - 1;
+        let bestStart = baseText.length - 1;
+
+        while (low <= high) {
+          const mid = Math.floor((low + high) / 2);
+          const candidate = baseText.slice(mid).trim();
+          if (!candidate) {
+            low = mid + 1;
+            continue;
+          }
+          const candidateTokens = estimateTokens(candidate);
+          if (candidateTokens <= tokensRemaining) {
+            bestStart = mid;
+            high = mid - 1;
+          } else {
+            low = mid + 1;
+          }
+        }
+
+        let rawSlice = baseText.slice(bestStart);
+        let trimmedSlice = rawSlice.trimStart();
+        let leadingTrim = rawSlice.length - trimmedSlice.length;
+        let effectiveStartIndex = bestStart + leadingTrim;
+        let overlapText = trimmedSlice || baseText;
+        let overlapStart = part.start !== null && part.start !== undefined
+          ? part.start + effectiveStartIndex
+          : null;
+
+        let overlapTokens = estimateTokens(overlapText);
+        while (overlapTokens > tokensRemaining && overlapText.length > 1) {
+          rawSlice = rawSlice.slice(1);
+          trimmedSlice = rawSlice.trimStart();
+          leadingTrim = rawSlice.length - trimmedSlice.length;
+          effectiveStartIndex += 1 + leadingTrim;
+          overlapText = trimmedSlice || rawSlice;
+          overlapStart = part.start !== null && part.start !== undefined
+            ? part.start + effectiveStartIndex
+            : null;
+          overlapTokens = estimateTokens(overlapText);
+        }
+
+        const overlapEnd = part.end;
+
+        overlapParts.unshift({
+          ...part,
+          text: overlapText,
+          start: overlapStart,
+          end: overlapEnd,
+          __isOverlap: true
+        });
+
+        tokensRemaining = 0;
       }
+
       currentParts = overlapParts.slice();
-      currentTokens = overlapParts.reduce((sum, part) => sum + estimateTokens(part.text), 0);
       currentStart = overlapParts.length ? overlapParts[0].start : null;
       currentEnd = overlapParts.length ? overlapParts[overlapParts.length - 1].end : null;
     } else {
       currentParts = [];
-      currentTokens = 0;
       currentStart = null;
       currentEnd = null;
     }
@@ -213,10 +370,12 @@ function chunkArticle(article, options = {}) {
 
   for (const segment of segments) {
     if (segment.type === 'heading') {
-      const flushed = flushChunk(true);
+      let flushed = flushChunk();
+      if (!flushed) {
+        flushed = flushChunk(true);
+      }
       if (flushed) {
         currentParts = [];
-        currentTokens = 0;
         currentStart = null;
         currentEnd = null;
       }
@@ -227,20 +386,24 @@ function chunkArticle(article, options = {}) {
 
     const segmentTokens = estimateTokens(segment.text);
 
-    if (currentTokens + segmentTokens > maxTokens && currentParts.length) {
-      flushChunk(true);
+    if (getActiveTokenCount() + segmentTokens > bodyTokenBudget && currentParts.length) {
+      if (!flushChunk()) {
+        flushChunk(true);
+      }
     }
 
     currentParts.push({
       ...segment,
-      sectionHeading: currentHeading || lastActiveHeading || null
+      sectionHeading: currentHeading || lastActiveHeading || null,
+      __isOverlap: false
     });
-    currentTokens += segmentTokens;
     currentStart = currentStart ?? segment.start;
     currentEnd = segment.end ?? currentEnd;
   }
 
-  flushChunk(true);
+  if (!flushChunk()) {
+    flushChunk(true);
+  }
 
   return chunks;
 }
