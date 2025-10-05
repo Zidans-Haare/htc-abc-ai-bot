@@ -165,3 +165,30 @@
 4. Backup der SQLite-Datenbank planen
    - Befehl: `sudo cp /opt/htw-ai-bot/app/hochschuhl-abc.db /var/backups/hochschuhl-abc-$(date +%F).db`
    - Grund: Erstellt Sicherungen der Datenbank fuer Disaster-Recovery.
+
+## 9. Mit Codex (optional)
+1. Sudo-Zeitfenster vorbereiten
+   - Befehl: `sudo -v && ( while true; do sleep 60; sudo -n -v || break; done ) &`
+   - Grund: Aktiviert die sudo-Anmeldedaten fuer ca. 15 Minuten und haelt sie waehrend der Codex-Session frisch (der Hintergrundprozess kann nach Abschluss mit `kill %1` beendet werden).
+2. Codex CLI installieren
+   - Befehl: `curl -fsSL https://cli.codex.build/install.sh | bash`
+   - Grund: Laedt und installiert die aktuelle Codex CLI in `$HOME/.codex/bin` (Installationshinweise laut offizieller Dokumentation).
+3. CLI dem PATH hinzufuegen (falls noetig)
+   - Befehl: `echo 'export PATH="$HOME/.codex/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc`
+   - Grund: Stellt sicher, dass der Befehl `codex` im Terminal verfuegbar ist.
+4. Installation pruefen
+   - Befehl: `codex --version`
+   - Grund: Bestaetigt, dass die CLI korrekt installiert wurde.
+5. Prompt fuer Server-Setup hinterlegen
+   - Befehl:
+     ```bash
+     cat <<'EOF' > ~/server-setup-prompt.txt
+     You are Codex, a coding agent. The user needs the HTW AI Bot deployed on a fresh Ubuntu server.
+     Follow the steps from ServerSetup.md and perform them on the target machine.
+     Keep all commands in ASCII, request approval before destructive actions, and confirm each major step.
+     EOF
+     ```
+   - Grund: Stellt eine wiederkehrende Aufgabenbeschreibung bereit, die Codex vor dem Start laden kann.
+6. Codex Session starten
+   - Befehl: `codex run --prompt-file ~/server-setup-prompt.txt`
+   - Grund: Startet die Codex CLI mit dem vorbereiteten Prompt und nutzt die zuvor aktivierten sudo-Rechte.
