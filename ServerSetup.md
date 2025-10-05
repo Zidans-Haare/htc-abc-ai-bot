@@ -171,7 +171,7 @@
    - Befehl: `sudo -v && ( while true; do sleep 60; sudo -n -v || break; done ) &`
    - Grund: Aktiviert die sudo-Anmeldedaten fuer ca. 15 Minuten und haelt sie waehrend der Codex-Session frisch (der Hintergrundprozess kann nach Abschluss mit `kill %1` beendet werden).
 2. Codex CLI installieren
-   - Befehl: `curl -fsSL https://cli.codex.build/install.sh | bash`
+   - Befehl: `sudo npm install -g @openai/codex`
    - Grund: Laedt und installiert die aktuelle Codex CLI in `$HOME/.codex/bin` (Installationshinweise laut offizieller Dokumentation).
 3. CLI dem PATH hinzufuegen (falls noetig)
    - Befehl: `echo 'export PATH="$HOME/.codex/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc`
