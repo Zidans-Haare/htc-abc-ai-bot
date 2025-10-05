@@ -20,7 +20,21 @@
    - Befehl: `sudo adduser --system --group --home /opt/htc-ai-bot htc-ai-bot`
    - Grund: Betreibt die Anwendung unter einem eigenen Systemnutzer mit minimalen Rechten.
 
-## 2. Projektdateien bereitstellen
+## 2. GitHub SSH-Zugriff einrichten
+1. SSH-Verzeichnis vorbereiten
+   - Befehl: `mkdir -p ~/.ssh && chmod 700 ~/.ssh`
+   - Grund: Legt den SSH-Konfigurationsordner an und setzt sichere Rechte.
+2. SSH-Schluessel erzeugen
+   - Befehl: `ssh-keygen -t ed25519 -C "deploy@htc-ai-bot"`
+   - Grund: Erstellt ein modernes Schluesselpaar fuer die Authentifizierung bei GitHub (Dateipfad und Passphrase bei Bedarf anpassen).
+3. Public Key anzeigen
+   - Befehl: `cat ~/.ssh/id_ed25519.pub`
+   - Grund: Zeigt den oeffentlichen Schluessel an, der im GitHub-Account unter Settings -> SSH keys hinterlegt werden muss.
+4. Verbindung testen
+   - Befehl: `ssh -T git@github.com`
+   - Grund: Prueft, ob der Server sich erfolgreich bei GitHub authentifizieren kann (Hinweis bestaetigen, falls nach Known Host gefragt wird).
+
+## 3. Projektdateien bereitstellen
 1. Zielverzeichnis erstellen
    - Befehl: `sudo mkdir -p /opt/htc-ai-bot`
    - Grund: Legt den Installationspfad fuer die Anwendung an.
@@ -28,8 +42,8 @@
    - Befehl: `sudo chown -R htc-ai-bot:htc-ai-bot /opt/htc-ai-bot`
    - Grund: Gewaehrt dem Dienstnutzer Schreibrechte im Projektverzeichnis.
 3. Repository klonen
-   - Befehl: `sudo -u htc-ai-bot git clone git@github.com:<ORGANISATION>/htc-ai-bot.git /opt/htc-ai-bot/app`
-   - Grund: Holt den Anwendungscode aus GitHub an den Zielort (Platzhalter anpassen).
+   - Befehl: `sudo -u htc-ai-bot git clone git@github.com:Zidans-Haare/htw-ai-bot.git /opt/htc-ai-bot/app`
+   - Grund: Holt den Anwendungscode aus GitHub an den Zielort.
 4. Manifest-Domain anpassen
    - Befehl: `sudo -u htc-ai-bot nano /opt/htc-ai-bot/app/public/manifest.json`
    - Grund: Setzt `start_url` auf die neue Produktionsdomain, damit PWA-Funktionen korrekt arbeiten.
@@ -37,7 +51,7 @@
    - Befehl: `sudo -u htc-ai-bot nano /opt/htc-ai-bot/app/server.cjs`
    - Grund: Ergaenzt im Express-Setup `app.set('trust proxy', 1);`, damit Cookies hinter Nginx als sicher markiert werden.
 
-## 3. Umgebungsvariablen und Daten vorbereiten
+## 4. Umgebungsvariablen und Daten vorbereiten
 1. `.env` anlegen
    - Befehl: `sudo -u htc-ai-bot nano /opt/htc-ai-bot/app/.env`
    - Grund: Hinterlegt Umgebungsvariablen wie `GEMINI_API_KEY`, `PORT=3000` und `NODE_ENV=production`.
@@ -51,7 +65,7 @@
    - Befehl: `sudo -u htc-ai-bot mkdir -p /opt/htc-ai-bot/app/public/uploads /opt/htc-ai-bot/app/cache/uploads /opt/htc-ai-bot/app/logs`
    - Grund: Stellt sicher, dass fuer Bilddateien, Cache und Logs beschreibbare Pfade existieren.
 
-## 4. Abhaengigkeiten installieren und Testlauf
+## 5. Abhaengigkeiten installieren und Testlauf
 1. Pakete installieren
    - Befehl: `sudo -u htc-ai-bot bash -lc "cd /opt/htc-ai-bot/app && npm ci"`
    - Grund: Installiert eine reproduzierbare Dependency-Landschaft fuer das Projekt.
@@ -59,7 +73,7 @@
    - Befehl: `sudo -u htc-ai-bot bash -lc "cd /opt/htc-ai-bot/app && npm start"`
    - Grund: Verifiziert lokal, dass der Server startet und keine Laufzeitfehler auftreten (anschliessend STRG+C).
 
-## 5. Systemd-Dienst einrichten
+## 6. Systemd-Dienst einrichten
 1. Service-Datei erstellen
    - Befehl: `sudo nano /etc/systemd/system/htc-ai-bot.service`
    - Grund: Definiert, wie systemd die Anwendung als Dienst ausfuehrt.
@@ -95,7 +109,7 @@
    - Befehl: `sudo journalctl -u htc-ai-bot -f`
    - Grund: Bietet Live-Einsicht in Logmeldungen waehrend des Betriebs.
 
-## 6. Nginx als Reverse Proxy und HTTPS
+## 7. Nginx als Reverse Proxy und HTTPS
 1. Nginx installieren
    - Befehl: `sudo apt install -y nginx`
    - Grund: Installiert den Webserver, der als Reverse Proxy dient.
@@ -138,7 +152,7 @@
    - Befehl: `sudo certbot renew --dry-run`
    - Grund: Stellt sicher, dass die automatische Zertifikatserneuerung funktioniert.
 
-## 7. Nacharbeiten und Monitoring
+## 8. Nacharbeiten und Monitoring
 1. HTTPS testen
    - Befehl: `curl -I https://neue-domain.tld`
    - Grund: Verifiziert, dass die Domain ueber HTTPS erreichbar ist.
