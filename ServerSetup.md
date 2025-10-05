@@ -192,3 +192,6 @@
 6. Codex Session starten
    - Befehl: `codex run --prompt-file ~/server-setup-prompt.txt`
    - Grund: Startet die Codex CLI mit dem vorbereiteten Prompt und nutzt die zuvor aktivierten sudo-Rechte.
+7. Sudo-Keepalive beenden
+   - Befehl: `kill %1`
+   - Grund: Stoppt den Hintergrundprozess aus Schritt 1, sobald die Codex-Session abgeschlossen ist.
