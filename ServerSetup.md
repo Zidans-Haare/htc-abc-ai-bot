@@ -17,7 +17,7 @@
    - Befehl: `node -v && npm -v`
    - Grund: Bestaetigt, dass Node.js und npm korrekt eingerichtet wurden.
 6. Dienstnutzer anlegen (optional, empfohlen)
-   - Befehl: `sudo adduser --system --group --home /opt/htc-ai-bot htc-ai-bot`
+   - Befehl: `sudo adduser --system --group --home /opt/htw-ai-bot htw-ai-bot`
    - Grund: Betreibt die Anwendung unter einem eigenen Systemnutzer mit minimalen Rechten.
 
 ## 2. GitHub SSH-Zugriff einrichten
@@ -25,7 +25,7 @@
    - Befehl: `mkdir -p ~/.ssh && chmod 700 ~/.ssh`
    - Grund: Legt den SSH-Konfigurationsordner an und setzt sichere Rechte.
 2. SSH-Schluessel erzeugen
-   - Befehl: `ssh-keygen -t ed25519 -C "deploy@htc-ai-bot"`
+   - Befehl: `ssh-keygen -t ed25519 -C "deploy@htw-ai-bot"`
    - Grund: Erstellt ein modernes Schluesselpaar fuer die Authentifizierung bei GitHub (Dateipfad und Passphrase bei Bedarf anpassen).
 3. Public Key anzeigen
    - Befehl: `cat ~/.ssh/id_ed25519.pub`
@@ -36,60 +36,60 @@
 
 ## 3. Projektdateien bereitstellen
 1. Zielverzeichnis erstellen
-   - Befehl: `sudo mkdir -p /opt/htc-ai-bot`
+   - Befehl: `sudo mkdir -p /opt/htw-ai-bot`
    - Grund: Legt den Installationspfad fuer die Anwendung an.
 2. Besitzrechte setzen
-   - Befehl: `sudo chown -R htc-ai-bot:htc-ai-bot /opt/htc-ai-bot`
+   - Befehl: `sudo chown -R htw-ai-bot:htw-ai-bot /opt/htw-ai-bot`
    - Grund: Gewaehrt dem Dienstnutzer Schreibrechte im Projektverzeichnis.
 3. Repository klonen
-   - Befehl: `sudo -u htc-ai-bot git clone git@github.com:Zidans-Haare/htw-ai-bot.git /opt/htc-ai-bot/app`
+   - Befehl: `sudo -u htw-ai-bot git clone git@github.com:Zidans-Haare/htw-ai-bot.git /opt/htw-ai-bot/app`
    - Grund: Holt den Anwendungscode aus GitHub an den Zielort.
 4. Manifest-Domain anpassen
-   - Befehl: `sudo -u htc-ai-bot nano /opt/htc-ai-bot/app/public/manifest.json`
+   - Befehl: `sudo -u htw-ai-bot nano /opt/htw-ai-bot/app/public/manifest.json`
    - Grund: Setzt `start_url` auf die neue Produktionsdomain, damit PWA-Funktionen korrekt arbeiten.
 5. HTTPS-Vertrauen aktivieren
-   - Befehl: `sudo -u htc-ai-bot nano /opt/htc-ai-bot/app/server.cjs`
+   - Befehl: `sudo -u htw-ai-bot nano /opt/htw-ai-bot/app/server.cjs`
    - Grund: Ergaenzt im Express-Setup `app.set('trust proxy', 1);`, damit Cookies hinter Nginx als sicher markiert werden.
 
 ## 4. Umgebungsvariablen und Daten vorbereiten
 1. `.env` anlegen
-   - Befehl: `sudo -u htc-ai-bot nano /opt/htc-ai-bot/app/.env`
+   - Befehl: `sudo -u htw-ai-bot nano /opt/htw-ai-bot/app/.env`
    - Grund: Hinterlegt Umgebungsvariablen wie `GEMINI_API_KEY`, `PORT=3000` und `NODE_ENV=production`.
 2. Datenbankdatei setzen (falls Uebernahme)
-   - Befehl: `sudo cp /pfad/zur/alten/hochschuhl-abc.db /opt/htc-ai-bot/app/hochschuhl-abc.db`
+   - Befehl: `sudo cp /pfad/zur/alten/hochschuhl-abc.db /opt/htw-ai-bot/app/hochschuhl-abc.db`
    - Grund: Uebertraegt bestehende Inhalte auf den neuen Server.
 3. Rechte auf Datenbank und Verzeichnisse pruefen
-   - Befehl: `sudo chown htc-ai-bot:htc-ai-bot /opt/htc-ai-bot/app/hochschuhl-abc.db`
+   - Befehl: `sudo chown htw-ai-bot:htw-ai-bot /opt/htw-ai-bot/app/hochschuhl-abc.db`
    - Grund: Ermoeglicht dem Dienstnutzer Schreibzugriff auf die SQLite-Datei.
 4. Upload- und Cache-Verzeichnisse anlegen
-   - Befehl: `sudo -u htc-ai-bot mkdir -p /opt/htc-ai-bot/app/public/uploads /opt/htc-ai-bot/app/cache/uploads /opt/htc-ai-bot/app/logs`
+   - Befehl: `sudo -u htw-ai-bot mkdir -p /opt/htw-ai-bot/app/public/uploads /opt/htw-ai-bot/app/cache/uploads /opt/htw-ai-bot/app/logs`
    - Grund: Stellt sicher, dass fuer Bilddateien, Cache und Logs beschreibbare Pfade existieren.
 
 ## 5. Abhaengigkeiten installieren und Testlauf
 1. Pakete installieren
-   - Befehl: `sudo -u htc-ai-bot bash -lc "cd /opt/htc-ai-bot/app && npm ci"`
+   - Befehl: `sudo -u htw-ai-bot bash -lc "cd /opt/htw-ai-bot/app && npm ci"`
    - Grund: Installiert eine reproduzierbare Dependency-Landschaft fuer das Projekt.
 2. Optionaler Funktionstest
-   - Befehl: `sudo -u htc-ai-bot bash -lc "cd /opt/htc-ai-bot/app && npm start"`
+   - Befehl: `sudo -u htw-ai-bot bash -lc "cd /opt/htw-ai-bot/app && npm start"`
    - Grund: Verifiziert lokal, dass der Server startet und keine Laufzeitfehler auftreten (anschliessend STRG+C).
 
 ## 6. Systemd-Dienst einrichten
 1. Service-Datei erstellen
-   - Befehl: `sudo nano /etc/systemd/system/htc-ai-bot.service`
+   - Befehl: `sudo nano /etc/systemd/system/htw-ai-bot.service`
    - Grund: Definiert, wie systemd die Anwendung als Dienst ausfuehrt.
 2. Service-Konfiguration einfuegen
    - Inhalt:
      ```ini
      [Unit]
-     Description=HTC AI Bot
+     Description=HTW AI Bot
      After=network.target
 
      [Service]
      Type=simple
-     User=htc-ai-bot
-     WorkingDirectory=/opt/htc-ai-bot/app
-     EnvironmentFile=/opt/htc-ai-bot/app/.env
-     ExecStart=/usr/bin/node /opt/htc-ai-bot/app/server.cjs
+     User=htw-ai-bot
+     WorkingDirectory=/opt/htw-ai-bot/app
+     EnvironmentFile=/opt/htw-ai-bot/app/.env
+     ExecStart=/usr/bin/node /opt/htw-ai-bot/app/server.cjs
      Restart=on-failure
 
      [Install]
@@ -100,13 +100,13 @@
    - Befehl: `sudo systemctl daemon-reload`
    - Grund: Laedt die neue Service-Definition in systemd.
 4. Dienst aktivieren und starten
-   - Befehl: `sudo systemctl enable --now htc-ai-bot`
+   - Befehl: `sudo systemctl enable --now htw-ai-bot`
    - Grund: Startet den Bot sofort und sorgt dafuer, dass er nach Neustarts automatisch laeuft.
 5. Status kontrollieren
-   - Befehl: `sudo systemctl status htc-ai-bot`
+   - Befehl: `sudo systemctl status htw-ai-bot`
    - Grund: Ueberprueft, ob der Dienst fehlerfrei laeuft.
 6. Laufzeit-Logs beobachten
-   - Befehl: `sudo journalctl -u htc-ai-bot -f`
+   - Befehl: `sudo journalctl -u htw-ai-bot -f`
    - Grund: Bietet Live-Einsicht in Logmeldungen waehrend des Betriebs.
 
 ## 7. Nginx als Reverse Proxy und HTTPS
@@ -117,7 +117,7 @@
    - Befehl: `sudo ufw allow 'Nginx Full'`
    - Grund: Erlaubt HTTP- und HTTPS-Traffic durch die Firewall.
 3. Nginx-Serverblock anlegen
-   - Befehl: `sudo nano /etc/nginx/sites-available/htc-ai-bot`
+   - Befehl: `sudo nano /etc/nginx/sites-available/htw-ai-bot`
    - Grund: Erstellt die Proxy-Konfiguration fuer die neue Domain.
 4. Proxy-Konfiguration einfuegen
    - Inhalt:
@@ -137,7 +137,7 @@
      ```
    - Grund: Leitet eingehende Anfragen an den Node.js-Port weiter (Domain anpassen).
 5. Site aktivieren
-   - Befehl: `sudo ln -s /etc/nginx/sites-available/htc-ai-bot /etc/nginx/sites-enabled/`
+   - Befehl: `sudo ln -s /etc/nginx/sites-available/htw-ai-bot /etc/nginx/sites-enabled/`
    - Grund: Schaltet die neue Konfiguration scharf.
 6. Nginx-Konfiguration testen
    - Befehl: `sudo nginx -t`
@@ -157,11 +157,11 @@
    - Befehl: `curl -I https://neue-domain.tld`
    - Grund: Verifiziert, dass die Domain ueber HTTPS erreichbar ist.
 2. Logdateien der App pruefen
-   - Befehl: `sudo -u htc-ai-bot tail -n 100 /opt/htc-ai-bot/app/logs/audit.log`
+   - Befehl: `sudo -u htw-ai-bot tail -n 100 /opt/htw-ai-bot/app/logs/audit.log`
    - Grund: Kontrolliert, dass Audit-Logs geschrieben werden.
 3. Admin-Zugang haerten
-   - Befehl: `sudo -u htc-ai-bot node -e "const auth=require('./controllers/authController.cjs'); (async () => { await auth.updateUserPassword('admin','<NEUES_PASSWORT>'); console.log('Passwort geaendert'); })();"`
+   - Befehl: `sudo -u htw-ai-bot node -e "const auth=require('./controllers/authController.cjs'); (async () => { await auth.updateUserPassword('admin','<NEUES_PASSWORT>'); console.log('Passwort geaendert'); })();"`
    - Grund: Ersetzt das Standardpasswort vor dem Go-Live.
 4. Backup der SQLite-Datenbank planen
-   - Befehl: `sudo cp /opt/htc-ai-bot/app/hochschuhl-abc.db /var/backups/hochschuhl-abc-$(date +%F).db`
+   - Befehl: `sudo cp /opt/htw-ai-bot/app/hochschuhl-abc.db /var/backups/hochschuhl-abc-$(date +%F).db`
    - Grund: Erstellt Sicherungen der Datenbank fuer Disaster-Recovery.
