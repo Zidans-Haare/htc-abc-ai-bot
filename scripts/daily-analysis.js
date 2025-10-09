@@ -3,14 +3,14 @@
 const cron = require('node-cron');
 const { sequelize, Message, Conversation } = require('../controllers/db.cjs');
 
-// Optional import for question grouper (requires GEMINI_API_KEY)
+// Optional import for question grouper (requires server-side OpenAI-compatible API key)
 let groupSimilarQuestions, extractQuestions;
 try {
     const questionGrouper = require('../utils/questionGrouper');
     groupSimilarQuestions = questionGrouper.groupSimilarQuestions;
     extractQuestions = questionGrouper.extractQuestions;
 } catch (error) {
-    console.warn('Question grouper not available (GEMINI_API_KEY not set)');
+    console.warn('Question grouper not available (CHAT_AI_TOKEN/OPENAI_API_KEY/KISSKI_API_KEY not set)');
     process.exit(1);
 }
 

@@ -4,7 +4,7 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 
 ## ✨ Features
 
-- **KI-Chat:** Eine öffentliche Schnittstelle (`/api/chat`), die Anfragen über das Gemini API von Google beantwortet.
+- **KI-Chat:** Eine öffentliche Schnittstelle (`/api/chat`), die Anfragen über einen OpenAI-kompatiblen Endpoint (z. B. KISSKI Chat AI) beantwortet.
 - **Admin-Panel:** Eine passwortgeschützte Weboberfläche zur Verwaltung von Hochschul-ABC-Einträgen, Benutzern, Bildern und zur Überprüfung von Feedback.
 - **Dashboard:** Ein separates, geschütztes Dashboard zur Anzeige von Nutzungsstatistiken und Anwendungsdaten.
 - **Sicherheit:** Die Anwendung verwendet `helmet` zur Absicherung von HTTP-Headern und `express-rate-limit` zum Schutz vor Brute-Force-Angriffen.
@@ -15,7 +15,7 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 - **Backend:** Node.js, Express.js
 - **Datenbank:** SQLite mit Sequelize ORM
 - **Frontend:** Statisches HTML, CSS und JavaScript
-- **KI:** Google Gemini API
+- **KI:** OpenAI-kompatible API (z. B. KISSKI Chat AI)
 
 ## 🚀 Setup & Konfiguration
 
@@ -32,10 +32,12 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     ```
 
 2.  **Konfiguration:**
-    Erstellen Sie eine `.env`-Datei im Projektstammverzeichnis. Diese Datei sollte Ihren API-Schlüssel für die Gemini API und optional einen Port für den Server enthalten.
+    Erstellen Sie eine `.env`-Datei im Projektstammverzeichnis. Hinterlegen Sie dort Ihren Bearer-Token (oder API-Key) sowie optional Basis-URL, Modell und Port.
 
     ```env
-    GEMINI_API_KEY=your-google-api-key
+    CHAT_AI_TOKEN=dein-bearer-token      # alternativ: OPENAI_API_KEY oder KISSKI_API_KEY
+    OPENAI_BASE_URL=https://chat-ai.academiccloud.de/v1
+    OPENAI_MODEL=meta-llama-3.1-8b-instruct
     PORT=3000 # Optional, Standard ist 3000
     ```
 

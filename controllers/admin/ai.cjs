@@ -1,20 +1,25 @@
 const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { HochschuhlABC } = require('../db.cjs');
+const { getOpenAIClient, DEFAULT_MODEL } = require('../../utils/openaiClient');
 
 module.exports = (authMiddleware) => {
   const router = express.Router();
-  
-  if (!process.env.GEMINI_API_KEY) {
-    console.error("GEMINI_API_KEY is not set. The AI feature will not work.");
-    // Return a router that does nothing but return an error
+
+  const hasServerKey = Boolean(process.env.CHAT_AI_TOKEN || process.env.OPENAI_API_KEY || process.env.KISSKI_API_KEY);
+  if (!hasServerKey) {
+    console.error('CHAT_AI_TOKEN/OPENAI_API_KEY/KISSKI_API_KEY is not set. The AI feature will not work.');
     router.post('/analyze-text', authMiddleware, (req, res) => {
+      res.status(500).json({ error: 'AI feature is not configured on the server.' });
+    });
+    router.post('/improve-text', authMiddleware, (req, res) => {
       res.status(500).json({ error: 'AI feature is not configured on the server.' });
     });
     return router;
   }
 
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  function getClient() {
+    return getOpenAIClient();
+  }
 
   router.post('/analyze-text', authMiddleware, async (req, res) => {
     const { text } = req.body;
@@ -24,60 +29,35 @@ module.exports = (authMiddleware) => {
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const client = getClient();
 
-      // Get all existing articles from the database for context
       const allArticles = await HochschuhlABC.findAll({
         attributes: ['headline', 'text'],
-        where: { active: true }
+        where: { active: true },
       });
       const context = allArticles.map(a => `Überschrift: ${a.headline}\nText: ${a.text}`).join('\n\n---\n\n');
 
-      const prompt = `
-        Du bist ein Lektor für die Wissensdatenbank einer Hochschule.
-        Analysiere den folgenden Text und gib deine Antwort AUSSCHLIESSLICH als valides JSON-Objekt zurück.
+      const prompt = `Du bist ein Lektor für die Wissensdatenbank einer Hochschule. Analysiere den folgenden Text und gib deine Antwort AUSSCHLIESSLICH als valides JSON-Objekt mit dem Schema {"correctedText": "", "corrections": [{"original": "", "corrected": "", "reason": ""}], "suggestions": [{"suggestion": "", "reason": ""}], "contradictions": [{"contradiction": "", "reason": ""}]}.\n\nText:\n---\n${text}\n---\n\nKontext aus bestehenden Artikeln:\n---\n${context}\n---`;
 
-        **JSON-Schema:**
-        {
-          "correctedText": "string",
-          "corrections": [{ "original": "string", "corrected": "string", "reason": "string" }],
-          "suggestions": [{ "suggestion": "string", "reason": "string" }],
-          "contradictions": [{ "contradiction": "string", "reason": "string" }]
-        }
+      const completion = await client.chat.completions.create({
+        model: DEFAULT_MODEL,
+        messages: [
+          { role: 'system', content: 'Du bist ein akribischer Lektor. Antworte ausschließlich mit gültigem JSON.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.2,
+        max_tokens: 1200,
+      });
 
-        **Analyseprozess:**
-        1.  **Rechtschreibung & Grammatik:**
-            - Korrigiere NUR objektive Rechtschreib- und Grammatikfehler direkt im Text und erstelle daraus den Wert für "correctedText".
-            - Führe KEINE stilistischen oder inhaltlichen Änderungen im "correctedText" durch.
-            - Fülle das "corrections"-Array für JEDE einzelne Korrektur mit dem Original, der Korrektur und einer kurzen Begründung.
-        2.  **Stil & Tonalität:**
-            - Mache Vorschläge zur Verbesserung von Stil und Tonalität. Diese dürfen NICHT in den "correctedText" einfließen.
-            - Fülle das "suggestions"-Array mit deinen Vorschlägen und Begründungen.
-        3.  **Widersprüche & Dopplungen:**
-            - Vergleiche den Text mit dem "Kontext aus bestehenden Artikeln".
-            - Fülle das "contradictions"-Array, wenn du inhaltliche Widersprüche oder signifikante Dopplungen findest.
+      const raw = completion?.choices?.[0]?.message?.content?.trim();
+      if (!raw) {
+        throw new Error('Empty response from model');
+      }
 
-        **WICHTIG:** Gib nur das JSON-Objekt zurück, ohne umschließende Zeichen wie \`\`\`json.
-
-        **Zu analysierender Text:**
-        ---
-        ${text}
-        ---
-
-        **Kontext aus bestehenden Artikeln:**
-        ---
-        ${context}
-        ---
-      `;
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      // Clean the response to ensure it's valid JSON
-      const cleanedText = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+      const cleanedText = raw.replace(/^```json\s*|```\s*$/g, '');
       const analysis = JSON.parse(cleanedText);
 
       res.json(analysis);
-
     } catch (error) {
       console.error('Error analyzing text with AI:', error);
       res.status(500).json({ error: 'Failed to analyze text' });
@@ -92,30 +72,25 @@ module.exports = (authMiddleware) => {
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const prompt = `
-        Du bist ein Lektor. Wende die folgende Anweisung zur Verbesserung auf den gegebenen Text an.
-        Gib NUR den vollständig verbesserten Text im Markdown-Format zurück, ohne weitere Erklärungen.
+      const client = getClient();
+      const completion = await client.chat.completions.create({
+        model: DEFAULT_MODEL,
+        messages: [
+          { role: 'system', content: 'Du verbesserst Texte basierend auf konkreten Anweisungen. Gib ausschließlich den optimierten Text im Markdown-Format zurück.' },
+          { role: 'user', content: `Anweisung: "${suggestion}"\n\nText:\n---\n${text}\n---` },
+        ],
+        temperature: 0.4,
+        max_tokens: 800,
+      });
 
-        Anweisung: "${suggestion}"
-
-        Text:
-        ---
-        ${text}
-        ---
-      `;
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const improvedText = response.text();
+      const improvedText = completion?.choices?.[0]?.message?.content?.trim();
+      if (!improvedText) {
+        throw new Error('Empty response from model');
+      }
 
       res.json({ improvedText });
-
     } catch (error) {
       console.error('Error improving text with AI:', error);
-      if (error.constructor.name === 'GoogleGenerativeAIFetchError') {
-          return res.status(503).json({ error: 'Der AI-Dienst ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.' });
-      }
       res.status(500).json({ error: 'Failed to improve text' });
     }
   });

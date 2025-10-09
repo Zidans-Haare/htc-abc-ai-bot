@@ -1,21 +1,14 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { QuestionAnalysisCache, sequelize } = require('../controllers/db.cjs');
+const { getOpenAIClient, DEFAULT_MODEL } = require('./openaiClient');
 const crypto = require('crypto');
 
-// Lazy initialization - only check API key when actually needed
-let genAI = null;
-let model = null;
+let clientCache = null;
 
-function initializeGemini() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        throw new Error("GEMINI_API_KEY environment variable not set.");
+function getClient() {
+    if (!clientCache) {
+        clientCache = getOpenAIClient();
     }
-    if (!genAI) {
-        genAI = new GoogleGenerativeAI(apiKey);
-        model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    }
-    return model;
+    return clientCache;
 }
 
 // Cache validity in hours
@@ -316,13 +309,21 @@ async function processBatch(questions) {
     `;
 
     try {
-        const currentModel = initializeGemini();
-        const result = await currentModel.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text().trim();
+        const client = getClient();
+        const completion = await client.chat.completions.create({
+            model: DEFAULT_MODEL,
+            messages: [
+                { role: 'system', content: 'Du gruppierst ähnliche Fragen und antwortest ausschließlich mit JSON.' },
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.2,
+            max_tokens: 1000,
+        });
+
+        const text = completion?.choices?.[0]?.message?.content?.trim();
 
         // Clean the response to ensure it's valid JSON
-        const jsonString = text.replace(/^```json\s*|```\s*$/g, '');
+        const jsonString = (text || '').replace(/^```json\s*|```\s*$/g, '');
         const data = JSON.parse(jsonString);
 
         if (Array.isArray(data)) {

@@ -16,7 +16,7 @@ const sharp = require('sharp');
 dotenv.config();
 
 // --- Controller Imports (after dotenv) ---
-const { streamChat, getSuggestions, testApiKey } = require('./controllers/geminiController.cjs');
+const { streamChat, getSuggestions, testApiKey } = require('./controllers/openaiController.cjs');
 const feedbackController = require('./controllers/feedbackController.cjs');
 const adminController = require('./controllers/adminController.cjs');
 const auth = require('./controllers/authController.cjs');

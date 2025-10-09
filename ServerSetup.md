@@ -55,7 +55,7 @@ Hinweis (Debian): Manche Minimal-Images liefern `sudo` nicht mit. In dem Fall zu
 ## 4. Umgebungsvariablen und Daten vorbereiten
 1. `.env` anlegen
    - Befehl: `sudo -u htw-ai-bot nano /opt/htw-ai-bot/app/.env`
-   - Grund: Hinterlegt Umgebungsvariablen wie `GEMINI_API_KEY`, `PORT=3000` und `NODE_ENV=production`.
+   - Grund: Hinterlegt Umgebungsvariablen wie `CHAT_AI_TOKEN` (oder `OPENAI_API_KEY`/`KISSKI_API_KEY`), optional `OPENAI_BASE_URL=https://chat-ai.academiccloud.de/v1`, `OPENAI_MODEL=meta-llama-3.1-8b-instruct`, sowie `PORT=3000` und `NODE_ENV=production`.
 2. Datenbankdatei setzen (falls Uebernahme)
    - Befehl: `sudo cp /pfad/zur/alten/hochschuhl-abc.db /opt/htw-ai-bot/app/hochschuhl-abc.db`
    - Grund: Uebertraegt bestehende Inhalte auf den neuen Server.

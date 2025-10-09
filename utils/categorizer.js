@@ -1,93 +1,77 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { getOpenAIClient, DEFAULT_MODEL } = require('./openaiClient');
 
-// Lazy initialization - only check API key when actually needed
-let genAI = null;
-let model = null;
+let clientCache = null;
 
-function initializeGemini() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        throw new Error("GEMINI_API_KEY environment variable not set.");
-    }
-    if (!genAI) {
-        genAI = new GoogleGenerativeAI(apiKey);
-        model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    }
-    return model;
+function getClient() {
+  if (!clientCache) {
+    clientCache = getOpenAIClient();
+  }
+  return clientCache;
 }
 
 const CATEGORIES = [
-    "Immatrikulation & Bewerbung",
-    "Prüfungen & Noten",
-    "Bibliothek & Ressourcen",
-    "Campus-Leben & Mensa",
-    "Organisation & Verwaltung",
-    "Technischer Support & IT",
-    "Internationales & Auslandssemester",
-    "Feedback zum Bot",
-    "Sonstiges & Unklares"
+  'Immatrikulation & Bewerbung',
+  'Prüfungen & Noten',
+  'Bibliothek & Ressourcen',
+  'Campus-Leben & Mensa',
+  'Organisation & Verwaltung',
+  'Technischer Support & IT',
+  'Internationales & Auslandssemester',
+  'Feedback zum Bot',
+  'Sonstiges & Unklares',
 ];
 
-/**
- * Analyzes a conversation history and assigns it to a predefined category.
- * @param {Array<object>} messages - The conversation history, array of {role, content}.
- * @returns {Promise<{category: string, confidence: number}|null>} - The category and confidence score, or null on error.
- */
 async function categorizeConversation(messages) {
-    console.log(`[Categorizer] Starting categorization for conversation...`);
+  console.log('[Categorizer] Starting categorization for conversation...');
 
-    if (!messages || messages.length === 0) {
-        console.log("[Categorizer] No messages provided.");
-        return null;
+  if (!messages || messages.length === 0) {
+    console.log('[Categorizer] No messages provided.');
+    return null;
+  }
+
+  const conversationText = messages
+    .map(msg => `${msg.role === 'user' ? 'Nutzer' : 'Assistent'}: ${msg.content}`)
+    .join('\n');
+
+  const userPrompt = `Analysiere die folgende Konversation und ordne sie einer der vorgegebenen Kategorien zu. Antworte ausschließlich mit einem JSON-Objekt {"category": "...", "confidence": Zahl}. Die Kategorie muss exakt einer der folgenden Werte sein:\n- ${CATEGORIES.join('\n- ')}\n\nKonversation:\n---\n${conversationText}\n---`;
+
+  try {
+    const client = getClient();
+    const completion = await client.chat.completions.create({
+      model: DEFAULT_MODEL,
+      messages: [
+        { role: 'system', content: 'Du bist ein Assistent, der Gespräche kategorisiert und ausschließlich JSON zurückgibt.' },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0,
+      max_tokens: 200,
+    });
+
+    const rawText = completion?.choices?.[0]?.message?.content?.trim();
+    if (!rawText) {
+      console.error('[Categorizer] Empty response from model.');
+      return null;
     }
 
-    // Format the conversation for the prompt
-    const conversationText = messages
-        .map(msg => `${msg.role === 'user' ? 'Nutzer' : 'Assistent'}: ${msg.content}`)
-        .join('\n');
+    const cleaned = rawText.replace(/^```json\s*|```\s*$/g, '');
+    const data = JSON.parse(cleaned);
 
-    const prompt = `
-        Analysiere die folgende Konversation und ordne sie einer der folgenden Kategorien zu.
-        Antworte ausschließlich mit einem JSON-Objekt, das die Schlüssel "category" und "confidence" enthält.
-        Die "category" muss exakt einer der vorgegebenen Kategorien entsprechen.
-        Die "confidence" soll ein numerischer Wert zwischen 0.0 und 1.0 sein, der deine Sicherheit bei der Zuordnung angibt.
-
-        Vorgegebene Kategorien:
-        - ${CATEGORIES.join("\n-")}
-
-        Konversation:
-        ---
-        ${conversationText}
-        ---
-    `;
-
-    try {
-        const currentModel = initializeGemini();
-        const result = await currentModel.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text().trim();
-
-        // Clean the response to ensure it's valid JSON
-        const jsonString = text.replace(/^```json\s*|```\s*$/g, '');
-        const data = JSON.parse(jsonString);
-
-        if (data && data.category && typeof data.confidence === 'number') {
-            if (CATEGORIES.includes(data.category)) {
-                console.log(`[Categorizer] Successfully categorized conversation as '${data.category}' with confidence ${data.confidence}.`);
-                return data;
-            } else {
-                console.warn(`[Categorizer] AI returned an invalid category: '${data.category}'. Defaulting to 'Sonstiges & Unklares'.`);
-                return { category: "Sonstiges & Unklares", confidence: data.confidence };
-            }
-        }
-        
-        console.error("[Categorizer] AI response was not in the expected JSON format:", text);
-        return null;
-
-    } catch (error) {
-        console.error("[Categorizer] Error during API call:", error.message);
-        return null;
+    if (data && data.category && typeof data.confidence === 'number') {
+      if (CATEGORIES.includes(data.category)) {
+        console.log(`[Categorizer] Successfully categorized conversation as '${data.category}' with confidence ${data.confidence}.`);
+        return data;
+      }
+      console.warn(`[Categorizer] Model returned invalid category '${data.category}'. Using fallback.`);
+      return { category: 'Sonstiges & Unklares', confidence: data.confidence };
     }
+
+    console.error('[Categorizer] Unexpected model response:', rawText);
+    return null;
+  } catch (error) {
+    console.error('[Categorizer] Error during API call:', error.message);
+    return null;
+  }
 }
 
 module.exports = { categorizeConversation };
+
