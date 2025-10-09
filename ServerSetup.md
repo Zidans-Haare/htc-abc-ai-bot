@@ -1,12 +1,13 @@
 # ServerSetup
 
 ## 1. Basis-System vorbereiten
+Hinweis (Debian): Manche Minimal-Images liefern `sudo` nicht mit. In dem Fall zuerst als `root` `apt install sudo` ausfuehren und den Zielbenutzer per `usermod -aG sudo <BENUTZERNAME>` in die sudo-Gruppe aufnehmen.
 1. Systempakete aktualisieren
    - Befehl: `sudo apt update && sudo apt upgrade -y`
    - Grund: Haelt alle Pakete aktuell und schliesst bekannte Sicherheitsluecken.
 2. Kern-Tools installieren
-   - Befehl: `sudo apt install -y git build-essential ufw unzip python3 libvips sqlite3`
-   - Grund: Git fuer den Code, Build-Tools und libvips fuer `sharp`, SQLite fuer die Datenbank sowie Basis-Utilities.
+   - Befehl: `sudo apt install -y git build-essential ufw unzip python3 libvips sqlite3 curl ca-certificates`
+   - Grund: Git fuer den Code, Build-Tools, libvips fuer `sharp`, SQLite fuer die Datenbank sowie curl und Zertifikate fuer externe Downloads.
 3. NodeSource-Repository fuer Node.js 18 einrichten
    - Befehl: `curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -`
    - Grund: Bindet die offizielle NodeSource-Quelle ein, damit eine aktuelle Node.js-LTS-Version verfuegbar ist.
@@ -111,8 +112,8 @@
 
 ## 7. Nginx als Reverse Proxy und HTTPS
 1. Nginx installieren
-   - Befehl: `sudo apt install -y nginx`
-   - Grund: Installiert den Webserver, der als Reverse Proxy dient.
+   - Befehl: `sudo apt install -y nginx certbot python3-certbot-nginx`
+   - Grund: Installiert den Webserver sowie Certbot inklusive Nginx-Plugin fuer spaetere TLS-Zertifikate.
 2. Firewall oeffnen
    - Befehl: `sudo ufw allow 'Nginx Full'`
    - Grund: Erlaubt HTTP- und HTTPS-Traffic durch die Firewall.
@@ -183,7 +184,7 @@
    - Befehl:
      ```bash
      cat <<'EOF' > ~/server-setup-prompt.txt
-     You are Codex, a coding agent. The user needs the HTW AI Bot deployed on a fresh Ubuntu server.
+     You are Codex, a coding agent. The user needs the HTW AI Bot deployed on a fresh Debian or Ubuntu server.
      Follow the steps from ServerSetup.md and perform them on the target machine.
      Keep all commands in ASCII, request approval before destructive actions, and confirm each major step.
      EOF
