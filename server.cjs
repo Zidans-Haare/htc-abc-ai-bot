@@ -15,6 +15,8 @@ const sharp = require('sharp');
 // --- Initializations ---
 dotenv.config();
 
+const { sequelize } = require('./controllers/db.cjs');
+
 // --- Controller Imports (after dotenv) ---
 const { streamChat, getSuggestions, testApiKey } = require('./controllers/openaiController.cjs');
 const feedbackController = require('./controllers/feedbackController.cjs');
@@ -24,6 +26,7 @@ const viewController = require('./controllers/viewController.cjs');
 const dashboardController = require('./controllers/dashboardController.cjs');
 const imageController = require('./controllers/imageController.cjs');
 const app = express();
+app.set('trust proxy', true);
 const port = process.env.PORT || 3000;
 const useHttps = process.argv.includes('-https');
 const isTest = process.argv.includes('--test');
@@ -261,6 +264,22 @@ const serverCallback = async () => {
     console.log('✓ Dashboard tables initialized');
   } catch (error) {
     console.error('Warning: Could not initialize dashboard tables:', error.message);
+  }
+
+  // Authenticate database connection
+  try {
+    await sequelize.authenticate();
+    console.log('✓ Database connection established');
+  } catch (error) {
+    console.error('Warning: Could not connect to database:', error.message);
+  }
+
+  // Sync all models to ensure tables exist
+  try {
+    await sequelize.sync();
+    console.log('✓ All database tables synchronized');
+  } catch (error) {
+    console.error('Warning: Could not sync database:', error.message);
   }
 
   // Cleanup expired sessions on startup
