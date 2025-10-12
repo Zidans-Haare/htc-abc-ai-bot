@@ -2,42 +2,98 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { User } = require('./db.cjs');
+const { User, AuthSession } = require('./db.cjs');
 
-const SESSION_TTL = 1000 * 60 * 60; // 1 hour
-const sessions = {};
-
-function createSession(username, role) {
+async function createSession(username, role) {
   const token = crypto.randomBytes(32).toString('hex');
-  sessions[token] = { username, role, created: Date.now(), expires: Date.now() + SESSION_TTL };
-  console.log('Created session:', { token, username, role, expires: new Date(sessions[token].expires).toISOString() });
-  return token;
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  try {
+    await AuthSession.create({
+      session_token: token,
+      username,
+      role,
+      expires_at: expiresAt
+    });
+    console.log('Created session:', { token, username, role, expires_at: expiresAt.toISOString() });
+    return token;
+  } catch (err) {
+    console.error('Create session error:', err);
+    throw err;
+  }
 }
 
-function destroySession(token) {
+async function destroySession(token) {
   console.log('Destroying session:', token);
-  delete sessions[token];
+  try {
+    await AuthSession.destroy({ where: { session_token: token } });
+  } catch (err) {
+    console.error('Destroy session error:', err);
+  }
 }
 
-function getSession(token) {
-  const s = sessions[token];
-  if (!s) {
-    console.log('Session not found for token:', token);
-    return null;
-  }
-  if (Date.now() > s.expires) {
-    console.log('Session expired for token:', token);
-    delete sessions[token];
-    return null;
-  }
-  // --- Sliding Session Logic ---
-  // Extend the session's lifetime on every valid request.
-  s.expires = Date.now() + SESSION_TTL;
-  sessions[token] = s; // Update the session in the store
-  // --- End of Sliding Session Logic ---
+async function getSession(token) {
+  try {
+    const session = await AuthSession.findOne({ where: { session_token: token } });
+    if (!session) {
+      console.log('Session not found for token:', token);
+      return null;
+    }
 
-  console.log('Session retrieved and refreshed:', { token, username: s.username, role: s.role, new_expires: new Date(s.expires).toISOString() });
-  return s;
+    const now = new Date();
+    const lastActivity = new Date(session.last_activity);
+    const createdAt = new Date(session.created_at);
+
+    // Check inactivity: 24 hours since last activity
+    if (now.getTime() - lastActivity.getTime() > 24 * 60 * 60 * 1000) {
+      console.log('Session expired due to inactivity for token:', token);
+      await AuthSession.destroy({ where: { session_token: token } });
+      return null;
+    }
+
+    // Check max usage: 30 days since creation
+    if (now.getTime() - createdAt.getTime() > 30 * 24 * 60 * 60 * 1000) {
+      console.log('Session expired due to max usage for token:', token);
+      await AuthSession.destroy({ where: { session_token: token } });
+      return null;
+    }
+
+    // Update last activity
+    await AuthSession.update(
+      { last_activity: now },
+      { where: { session_token: token } }
+    );
+
+    console.log('Session retrieved and refreshed:', {
+      token,
+      username: session.username,
+      role: session.role,
+      last_activity: now.toISOString()
+    });
+    return { username: session.username, role: session.role };
+  } catch (err) {
+    console.error('Get session error:', err);
+    return null;
+  }
+}
+
+async function cleanupExpiredSessions() {
+  try {
+    const now = new Date();
+    const result = await AuthSession.destroy({
+      where: {
+        [require('sequelize').Op.or]: [
+          { expires_at: { [require('sequelize').Op.lt]: now } },
+          { last_activity: { [require('sequelize').Op.lt]: new Date(now.getTime() - 24 * 60 * 60 * 1000) } },
+          { created_at: { [require('sequelize').Op.lt]: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) } }
+        ]
+      }
+    });
+    if (result > 0) {
+      console.log(`Cleaned up ${result} expired sessions`);
+    }
+  } catch (err) {
+    console.error('Cleanup sessions error:', err);
+  }
 }
 
 async function verifyUser(username, password) {
@@ -103,13 +159,13 @@ router.post('/login', async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    const token = createSession(user.username, user.role);
+    const token = await createSession(user.username, user.role);
     // secure: true should be used in production when using HTTPS
     const secureCookie = req.app.get('env') === 'production';
     res.cookie('sessionToken', token, {
       httpOnly: true,
       secure: secureCookie,
-      maxAge: SESSION_TTL,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'strict'
     });
     res.json({ role: user.role });
@@ -119,9 +175,9 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/validate', (req, res) => {
+router.get('/validate', async (req, res) => {
   const token = req.cookies.sessionToken;
-  const session = token && getSession(token);
+  const session = token && await getSession(token);
   if (session) {
     res.json({ valid: true, username: session.username, role: session.role });
   } else {
@@ -129,10 +185,10 @@ router.get('/validate', (req, res) => {
   }
 });
 
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
   const token = req.cookies.sessionToken;
   if (token) {
-    destroySession(token);
+    await destroySession(token);
   }
   res.clearCookie('sessionToken');
   res.json({ success: true });
@@ -147,5 +203,5 @@ module.exports = {
     listUsers,
     updateUserPassword,
     deleteUser,
-    SESSION_TTL
+    cleanupExpiredSessions
 };

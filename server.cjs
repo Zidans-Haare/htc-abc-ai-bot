@@ -26,7 +26,7 @@ const imageController = require('./controllers/imageController.cjs');
 const app = express();
 const port = process.env.PORT || 3000;
 const useHttps = process.argv.includes('-https');
-const useAdmin = process.argv.includes('-admin');
+const isTest = process.argv.includes('--test');
 const pid = process.pid;
 
 // --- Logging ---
@@ -90,79 +90,107 @@ imageController(app);
 
 // --- Static Files ---
 // IMPORTANT: Serve static files before any protection middleware
-app.use(express.static(path.join(__dirname, 'public')));
+app.use((req, res, next) => {
+  if (req.url.startsWith('/admin') || (req.url.startsWith('/dash') && !req.url.startsWith('/dash/login'))) {
+    return next();
+  }
+  express.static(path.join(__dirname, 'public'))(req, res, next);
+});
 
 // --- Protection Middleware ---
-const protect = (req, res, next) => {
-  // --- Debug Mode Bypass ---
-  if (useAdmin && (req.url.startsWith('/admin') || req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard'))) {
-    console.log(`ADMIN mode: Bypassing login for ${req.url}`);
-    const token = auth.createSession('debug_admin', 'admin');
-    res.cookie('sessionToken', token, { httpOnly: true, secure: useHttps, maxAge: auth.SESSION_TTL, sameSite: 'strict' });
-    req.session = auth.getSession(token);
-    return next();
-  }
-
-  // --- Allow access to login pages ---
-  if (req.url.startsWith('/login') || req.url.startsWith('/dash/login')) {
-    return next();
-  }
-
+const requireAuth = (loginPath) => (req, res, next) => {
   const token = req.cookies.sessionToken;
-  const session = token && auth.getSession(token);
-
-  // Helper to refresh the cookie with a new expiry date
-  const refreshCookie = () => {
-    if (token) {
-      const secureCookie = req.app.get('env') === 'production';
-      res.cookie('sessionToken', token, {
-        httpOnly: true,
-        secure: secureCookie,
-        maxAge: auth.SESSION_TTL, // Use the same TTL to extend the session
-        sameSite: 'strict'
-      });
-    }
-  };
-
-  // --- Dashboard Protection ---
-  if (req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
-    if (session) {
-      if (session.role === 'admin') {
-        req.session = session;
-        refreshCookie(); // Refresh the cookie on each valid request
-        return next(); // User is admin, allow access
-      } else {
-        // User is logged in but not an admin
-        return res.status(403).send('Forbidden: You do not have permission to view this page.');
-      }
-    }
-    // Not logged in, redirect to dashboard login
+  if (!token) {
+    // Not logged in
     if (req.url.startsWith('/api/')) {
       return res.status(401).json({ error: 'Session expired. Please log in.' });
     }
-    return res.redirect('/dash/login/');
+    return res.redirect(loginPath);
   }
-
-  // --- Admin Panel Protection ---
-  if (req.url.startsWith('/admin')) {
+  auth.getSession(token).then(session => {
     if (session) {
       req.session = session;
-      refreshCookie(); // Refresh the cookie on each valid request
-      return next(); // User is logged in, allow access
+      return next();
+    } else {
+      // Not logged in or expired
+      if (req.url.startsWith('/api/')) {
+        return res.status(401).json({ error: 'Session expired. Please log in.' });
+      }
+      return res.redirect(loginPath);
     }
-    // Not logged in, redirect to admin login
+  }).catch(err => {
+    console.error('Auth error:', err);
+    if (req.url.startsWith('/api/')) {
+      return res.status(401).json({ error: 'Session error. Please log in.' });
+    }
+    return res.redirect(loginPath);
+  });
+};
+
+const requireRole = (role, insufficientPath) => (req, res, next) => {
+  const token = req.cookies.sessionToken;
+  if (!token) {
+    // Not logged in
     if (req.url.startsWith('/api/')) {
       return res.status(401).json({ error: 'Session expired. Please log in.' });
     }
     return res.redirect('/login');
   }
+  auth.getSession(token).then(session => {
+    if (session) {
+      if (session.role === role) {
+        req.session = session;
+        return next();
+      } else {
+        // Insufficient permissions
+        if (req.url.startsWith('/api/')) {
+          return res.status(403).json({ error: 'Insufficient permissions. Please log in as a different user.' });
+        }
+        return res.redirect(insufficientPath);
+      }
+    } else {
+      // Not logged in or expired
+      if (req.url.startsWith('/api/')) {
+        return res.status(401).json({ error: 'Session expired. Please log in.' });
+      }
+      return res.redirect('/login');
+    }
+  }).catch(err => {
+    console.error('Auth error:', err);
+    if (req.url.startsWith('/api/')) {
+      return res.status(401).json({ error: 'Session error. Please log in.' });
+    }
+    return res.redirect('/login');
+  });
+};
 
+const protect = (req, res, next) => {
+  console.log(`Protect middleware: ${req.method} ${req.url}`);
+
+  // Allow access to login pages and insufficient permissions page
+  if (req.url.startsWith('/login') || req.url.startsWith('/dash/login') || req.url.startsWith('/insufficient-permissions')) {
+    console.log('Allowing access to login page');
+    return next();
+  }
+
+  // Dashboard routes require admin role
+  if (req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
+    console.log('Checking admin role for dashboard');
+    return requireRole('admin', '/insufficient-permissions')(req, res, next);
+  }
+
+  // Admin routes require authentication
+  if (req.url.startsWith('/admin')) {
+    console.log('Redirecting to login for admin');
+    return res.redirect('/login');
+  }
+
+  console.log('Allowing access to public route');
   next();
 };
 app.use(protect);
 
 // --- Static Files ---
-app.use(express.static(path.join(__dirname, 'public')));
 app.use('/dash/login', express.static(path.join(__dirname, 'public', 'dash', 'login')));
 
 // --- API Routes ---
@@ -192,15 +220,22 @@ app.get('/dash', (req, res) => {
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login', 'login.html'));
 });
-app.use('/admin', express.static(path.join(__dirname, 'public', 'admin')));
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+});
+
+// --- Insufficient Permissions Route ---
+app.get('/insufficient-permissions', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'insufficient-permissions.html'));
 });
 
 // --- Root Route ---
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// --- Protected Static Files ---
+app.use('/admin', express.static(path.join(__dirname, 'public', 'admin')));
 
 // --- Favicon & 404 ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());
@@ -210,6 +245,15 @@ app.use((req, res) => {
 
 // --- Server Start ---
 const serverCallback = async () => {
+  // Ensure auth sessions table exists
+  try {
+    const createAuthSessionsTable = require('./scripts/create_auth_sessions_table.js');
+    await createAuthSessionsTable(false); // Don't close connection
+    console.log('✓ Auth sessions table initialized');
+  } catch (error) {
+    console.error('Warning: Could not initialize auth sessions table:', error.message);
+  }
+
   // Ensure dashboard tables exist
   try {
     const createDashboardTables = require('./scripts/create_dashboard_tables.js');
@@ -218,24 +262,43 @@ const serverCallback = async () => {
   } catch (error) {
     console.error('Warning: Could not initialize dashboard tables:', error.message);
   }
-  
+
+  // Cleanup expired sessions on startup
+  try {
+    await auth.cleanupExpiredSessions();
+    console.log('✓ Expired sessions cleaned up');
+  } catch (error) {
+    console.error('Warning: Could not cleanup sessions:', error.message);
+  }
+
+  // Periodic cleanup every hour
+  setInterval(async () => {
+    try {
+      await auth.cleanupExpiredSessions();
+    } catch (error) {
+      console.error('Periodic session cleanup error:', error);
+    }
+  }, 60 * 60 * 1000); // 1 hour
+
   console.log(`Server is running with ${useHttps ? 'HTTPS' : 'HTTP'} on port ${port}`);
   fs.writeFile('server.pid', pid.toString(), err => {
     if (err) console.error('Error writing PID to server.pid:', err);
   });
 };
 
-if (useHttps) {
-  try {
-    const httpsOptions = {
-      key: fs.readFileSync(path.join(os.homedir(), '.ssh', 'key.pem')),
-      cert: fs.readFileSync(path.join(os.homedir(), '.ssh', 'cert.pem'))
-    };
-    https.createServer(httpsOptions, app).listen(port, serverCallback);
-  } catch (e) {
-    console.error("Could not start HTTPS server. Do you have key.pem and cert.pem in your .ssh directory?", e);
-    process.exit(1);
+if (!isTest) {
+  if (useHttps) {
+    try {
+      const httpsOptions = {
+        key: fs.readFileSync(path.join(os.homedir(), '.ssh', 'key.pem')),
+        cert: fs.readFileSync(path.join(os.homedir(), '.ssh', 'cert.pem'))
+      };
+      https.createServer(httpsOptions, app).listen(port, serverCallback);
+    } catch (e) {
+      console.error("Could not start HTTPS server. Do you have key.pem and cert.pem in your .ssh directory?", e);
+      process.exit(1);
+    }
+  } else {
+    app.listen(port, serverCallback);
   }
-} else {
-  app.listen(port, serverCallback);
 }

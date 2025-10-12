@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 
 // Admin auth middleware factory
-const adminAuth = (getSession, logAction) => (req, res, next) => {
+const adminAuth = (getSession, logAction) => async (req, res, next) => {
   const token = req.cookies.sessionToken;
-  const session = token && getSession(token);
+  const session = token && await getSession(token);
   if (session) {
     req.user = session.username;
     req.role = session.role;

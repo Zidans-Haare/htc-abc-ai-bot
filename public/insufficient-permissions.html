@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insufficient Permissions - Hochschul ABC</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/roboto.css">
+  <link rel="icon" href="/favicon.ico">
+  <style>
+    :root {
+        --bg-color: #e0e0e0;
+        --app-bg: #e9ecef;
+        --content-bg: #ffffff;
+        --primary-text: #1f2937;
+        --secondary-text: #6b7280;
+        --border-color: #e5e7eb;
+        --accent-color: #EC6608;
+        --accent-dark: #d95f07;
+        --font-family: 'Roboto', sans-serif;
+    }
+    body {
+        font-family: var(--font-family);
+    }
+    .btn-primary {
+        background-color: var(--accent-color);
+        color: white;
+        transition: background-color 0.2s;
+    }
+    .btn-primary:hover {
+        background-color: var(--accent-dark);
+    }
+  </style>
+</head>
+<body class="bg-[var(--bg-color)] flex items-center justify-center h-screen">
+  <div class="w-full max-w-md">
+    <div class="bg-[var(--content-bg)] p-8 rounded-xl shadow-lg">
+      <div class="flex justify-center mb-8">
+        <img src="/image/HTW.svg" alt="HTW Logo" class="h-20">
+      </div>
+      <h2 class="text-2xl font-bold text-center text-[var(--primary-text)] mb-2">Insufficient Permissions</h2>
+      <p class="text-center text-[var(--secondary-text)] mb-8">
+        You do not have the required permissions to access this page.
+      </p>
+      <p class="text-center text-[var(--secondary-text)] mb-8">
+        Please log in as a different user with appropriate permissions.
+      </p>
+      <div class="space-y-4">
+        <a href="/login" class="btn-primary block w-full text-center py-2 px-4 rounded-md font-medium">
+          Login as Different User
+        </a>
+        <a href="/" class="block w-full text-center py-2 px-4 rounded-md font-medium text-[var(--secondary-text)] hover:text-[var(--primary-text)]">
+          Go to Homepage
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

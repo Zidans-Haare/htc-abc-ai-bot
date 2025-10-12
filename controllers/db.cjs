@@ -176,6 +176,42 @@ const Images = sequelize.define('Images', {
     timestamps: false
 });
 
+const AuthSession = sequelize.define('AuthSession', {
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    session_token: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+    },
+    username: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    role: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    created_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+    },
+    last_activity: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+    },
+    expires_at: {
+        type: DataTypes.DATE,
+        allowNull: false
+    }
+}, {
+    tableName: 'auth_sessions',
+    timestamps: false
+});
+
 const UserSessions = sequelize.define('UserSessions', {
     id: {
         type: DataTypes.INTEGER,
@@ -409,4 +445,4 @@ const QuestionAnalysisCache = sequelize.define('QuestionAnalysisCache', {
 //   .then(() => console.log('✓ All models were synchronized successfully.'))
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache };
+module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, AuthSession, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache };
