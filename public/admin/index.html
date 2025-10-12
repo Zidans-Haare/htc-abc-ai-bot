@@ -18,10 +18,10 @@
   <link rel="icon" href="/favicon.ico">
   
 </head>
-<body class="flex h-screen bg-[var(--bg-color)] text-[var(--primary-text)]">
+  <body class="flex flex-col md:flex-row h-auto md:h-screen bg-[var(--bg-color)] text-[var(--primary-text)]">
 
   <!-- Sidebar Navigation -->
-  <aside id="sidebar" class="w-64 flex-shrink-0 bg-[var(--app-bg)] p-6 flex flex-col border-r border-[var(--border-color)] transition-all duration-300">
+  <aside id="sidebar" class="hidden md:block w-64 flex-shrink-0 bg-[var(--app-bg)] p-6 flex flex-col border-r border-[var(--border-color)] transition-all duration-300 relative z-auto">
     <div class="flex justify-center items-center mb-8">
         <img src="/image/HTW.svg" alt="HTWD Logo" class="h-16">
     </div>
@@ -53,11 +53,15 @@
             <i class="fa-solid fa-comments w-5 text-center"></i>
             <span class="sidebar-text">Conversations</span>
         </a>
-        <a href="#" id="btn-export" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
-            <i class="fa-solid fa-file-export w-5 text-center"></i>
-            <span class="sidebar-text">Export</span>
-        </a>
-        <a href="#" id="btn-user" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors hidden">
+         <a href="#" id="btn-export" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+             <i class="fa-solid fa-file-export w-5 text-center"></i>
+             <span class="sidebar-text">Export</span>
+         </a>
+         <a href="#" id="btn-stats" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+             <i class="fa-solid fa-chart-bar w-5 text-center"></i>
+             <span class="sidebar-text">Statistiken</span>
+         </a>
+         <a href="#" id="btn-user" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors hidden">
             <i class="fa-solid fa-users w-5 text-center"></i>
             <span class="sidebar-text">Benutzer</span>
         </a>
@@ -76,11 +80,75 @@
     </div>
   </aside>
 
-  <main class="flex-1 flex flex-col overflow-hidden bg-[var(--content-bg)]">
+  <main class="w-full md:flex-1 flex flex-col overflow-y-auto bg-[var(--content-bg)]">
+    <!-- Mobile Hamburger Menu -->
+    <div class="md:hidden relative">
+      <div class="p-4 bg-[var(--app-bg)] border-b border-[var(--border-color)] flex items-center">
+        <button id="hamburger-btn" class="text-[var(--primary-text)] hover:text-[var(--accent-color)] transition-colors">
+          <i class="fa-solid fa-bars text-2xl"></i>
+        </button>
+        <h1 class="ml-4 text-lg font-semibold">Admin Panel</h1>
+      </div>
+      <div id="mobile-menu" class="hidden absolute top-full left-0 w-full bg-[var(--app-bg)] border border-[var(--border-color)] z-40 flex flex-col">
+        <div class="flex justify-center items-center mb-4 mt-4">
+            <img src="/image/HTW.svg" alt="HTWD Logo" class="h-12">
+        </div>
+        <nav id="mobile-main-menu" class="flex-grow space-y-2 px-4 pb-4">
+            <a href="#" id="mobile-btn-editor" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-pen-to-square w-5 text-center"></i>
+                <span>Editor</span>
+            </a>
+            <a href="#" id="mobile-btn-questions" class="nav-link hover:bg-[var(--content-bg)] flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-colors">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-circle-question w-5 text-center"></i>
+                    <span>Fragen</span>
+                </div>
+                <span id="mobile-open-count" class="text-sm bg-red-500 text-white rounded-full px-2">0</span>
+            </a>
+            <a href="#" id="mobile-btn-images" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-image w-5 text-center"></i>
+                <span>Bilder</span>
+            </a>
+            <a href="#" id="mobile-btn-archive" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-box-archive w-5 text-center"></i>
+                <span>Archiv</span>
+            </a>
+            <a href="#" id="mobile-btn-feedback" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-comment-dots w-5 text-center"></i>
+                <span>Feedback</span>
+            </a>
+            <a href="#" id="mobile-btn-conversations" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-comments w-5 text-center"></i>
+                <span>Conversations</span>
+            </a>
+             <a href="#" id="mobile-btn-export" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+                 <i class="fa-solid fa-file-export w-5 text-center"></i>
+                 <span>Export</span>
+             </a>
+             <a href="#" id="mobile-btn-stats" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+                 <i class="fa-solid fa-chart-bar w-5 text-center"></i>
+                 <span>Statistiken</span>
+             </a>
+             <a href="#" id="mobile-btn-user" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors hidden">
+                <i class="fa-solid fa-users w-5 text-center"></i>
+                <span>Benutzer</span>
+            </a>
+        </nav>
+        <div class="px-4 pb-4">
+            <div id="mobile-user-session-info" class="px-4 py-2 mb-2 text-center text-sm text-[var(--secondary-text)]">
+                <!-- Session-Info wird hier per JS eingefügt -->
+            </div>
+            <a href="#" id="mobile-btn-logout" class="nav-link hover:bg-[var(--content-bg)] flex items-center justify-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors border-t border-[var(--border-color)]">
+                <i class="fa-solid fa-right-from-bracket w-5 text-center"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+      </div>
+    </div>
     <!-- Editor View -->
-    <div id="editor-view" class="flex flex-1 overflow-hidden">
+    <div id="editor-view" class="flex flex-col md:flex-row flex-1">
       <!-- Left Sidebar: Headlines (25%) -->
-      <div class="w-1/4 bg-[var(--app-bg)] border-r border-[var(--border-color)] flex flex-col">
+      <div class="w-full md:w-1/4 bg-[var(--app-bg)] border-r border-[var(--border-color)] flex flex-col">
         <!-- Search Field -->
         <div class="p-4 border-b border-[var(--border-color)]">
           <input
@@ -102,7 +170,7 @@
         </div>
       </div>
       <!-- Right Content Area: Text Editor (75%) -->
-      <div id="editor-pane" class="w-3/4 flex flex-col bg-white">
+      <div id="editor-pane" class="w-full md:w-3/4 flex flex-col bg-white">
         <div id="question-edit-banner" class="hidden p-4 bg-blue-100 border-b border-blue-200 flex items-center justify-between">
             <div>
                 <span class="font-semibold text-blue-800">Frage:</span>
@@ -176,8 +244,8 @@
       </div>
     </div>
     <!-- Conversations View -->
-    <div id="conversations-view" class="flex flex-1 hidden overflow-hidden">
-        <div class="w-1/3 bg-[var(--app-bg)] border-r border-[var(--border-color)] flex flex-col">
+    <div id="conversations-view" class="flex flex-col md:flex-row flex-1 hidden overflow-hidden">
+        <div class="w-full md:w-1/3 bg-[var(--app-bg)] border-r border-[var(--border-color)] flex flex-col">
             <div class="p-4 border-b border-[var(--border-color)]">
                 <h2 class="text-lg font-semibold">Conversations</h2>
             </div>
@@ -188,16 +256,20 @@
                 <!-- Conversation list will be populated here -->
             </div>
         </div>
-        <div class="w-2/3 flex flex-col bg-white">
+        <div class="w-full md:w-2/3 flex flex-col bg-white">
             <div class="p-4 border-b border-[var(--border-color)]">
                 <h2 id="conversation-detail-title" class="text-lg font-semibold">Select a conversation</h2>
             </div>
             <div id="conversation-detail-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
                 <!-- Messages will be populated here -->
             </div>
-        </div>
-    </div>
-    <!-- User Management View -->
+         </div>
+     </div>
+     <!-- Stats View -->
+     <div id="stats-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
+       <div id="stats-content"></div>
+     </div>
+     <!-- User Management View -->
     <div id="user-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
       <div id="user-admin" class="p-6 space-y-4 border border-[var(--border-color)] rounded-lg">
         <h2 class="font-semibold text-lg">Neuen Benutzer anlegen</h2>
