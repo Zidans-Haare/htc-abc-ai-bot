@@ -71,6 +71,7 @@ const loginLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     trustProxy: true,
+    skipSuccessfulRequests: true, // Only count failed login attempts
 });
 
 app.use(helmet({
