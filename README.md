@@ -39,6 +39,7 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     OPENAI_BASE_URL=https://chat-ai.academiccloud.de/v1
     OPENAI_MODEL=meta-llama-3.1-8b-instruct
     PORT=3000 # Optional, Standard ist 3000
+    TRUST_PROXY_COUNT=2 # Number of proxy layers (e.g., Cloudflare + Nginx)
     ```
 
 ## ▶️ Anwendung starten

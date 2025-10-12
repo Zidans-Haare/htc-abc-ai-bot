@@ -26,7 +26,8 @@ const viewController = require('./controllers/viewController.cjs');
 const dashboardController = require('./controllers/dashboardController.cjs');
 const imageController = require('./controllers/imageController.cjs');
 const app = express();
-app.set('trust proxy', true);
+// Trust proxy layers for correct client IP detection (default 2: Cloudflare -> Nginx -> Node.js)
+app.set('trust proxy', process.env.TRUST_PROXY_COUNT || 2);
 const port = process.env.PORT || 3000;
 const useHttps = process.argv.includes('-https');
 const isTest = process.argv.includes('--test');
@@ -52,6 +53,7 @@ const apiLimiter = rateLimit({
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,
+    trustProxy: true,
 });
 
 const dashboardLimiter = rateLimit({
@@ -59,6 +61,7 @@ const dashboardLimiter = rateLimit({
     max: 500, // Higher limit for dashboard API calls
     standardHeaders: true,
     legacyHeaders: false,
+    trustProxy: true,
 });
 
 const loginLimiter = rateLimit({
@@ -67,6 +70,7 @@ const loginLimiter = rateLimit({
     message: "Too many login attempts from this IP, please try again after an hour",
     standardHeaders: true,
     legacyHeaders: false,
+    trustProxy: true,
 });
 
 app.use(helmet({
