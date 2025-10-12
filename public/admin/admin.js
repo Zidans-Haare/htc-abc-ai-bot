@@ -1,13 +1,13 @@
-import { fetchAndParse, overrideFetch } from './utils.js?v=1.0.2';
-import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline, getCurrentId, loadEntry, saveEntry } from './articles.js?v=1.0.2';
-import { initQuestions } from './questions.js?v=1.0.2';
-import { initUsers, loadUsers } from './users.js?v=1.0.2';
-import { initArchive, loadArchive } from './archive.js?v=1.0.2';
-import { initExport } from './export.js?v=1.0.2';
-import { setupFeedback } from './feedback.js?v=1.0.2';
-import { renderMarkup } from '../js/markup.js?v=1.0.2';
-import { initImages } from './images.js?v=1.0.2';
-import { initStats } from './stats.js?v=1.0.2';
+import { fetchAndParse, overrideFetch } from './utils.js';
+import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline, getCurrentId, loadEntry, saveEntry } from './articles.js';
+import { initQuestions } from './questions.js';
+import { initUsers, loadUsers } from './users.js';
+import { initArchive, loadArchive } from './archive.js';
+import { initExport } from './export.js';
+import { setupFeedback } from './feedback.js';
+import { renderMarkup } from '../js/markup.js';
+import { initImages } from './images.js';
+import { initStats } from './stats.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -234,9 +234,8 @@ document.addEventListener('DOMContentLoaded', async () => {
      if (mobileMap[activeButton]) mobileMap[activeButton].classList.add('active');
    }
 
-   // --- Role-based UI Setup ---
-   const userRole = sessionStorage.getItem('userRole');
-   console.log('User role from sessionStorage:', userRole);
+    // --- Role-based UI Setup ---
+    const userRole = sessionStorage.getItem('userRole');
 
    // Hide all role-dependent buttons by default
    editorBtn.classList.add('hidden');

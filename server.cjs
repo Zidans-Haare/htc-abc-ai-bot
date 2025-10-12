@@ -69,6 +69,28 @@ const loginLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "data:"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"]
+    }
+  }
+}));
+app.use(cookieParser());
+app.use(express.json());
+
+
+// Attach image controller routes
+imageController(app);
+
 // --- Middleware ---
 if (isDev) {
   app.use((req, res, next) => {
@@ -80,27 +102,6 @@ if (isDev) {
     next();
   });
 }
-// app.use(helmet({
-//   contentSecurityPolicy: {
-//     directives: {
-//       defaultSrc: ["'self'"],
-//       scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
-//       styleSrc: ["'self'", "'unsafe-inline'"],
-//       imgSrc: ["'self'", "data:"],
-//       connectSrc: ["'self'"],
-//       fontSrc: ["'self'", "data:"],
-//       objectSrc: ["'none'"],
-//       baseUri: ["'self'"],
-//       formAction: ["'self'"]
-//     }
-//   }
-// }));
-app.use(cookieParser());
-app.use(express.json());
-
-
-// Attach image controller routes
-imageController(app);
 
 // --- Static Files ---
 // IMPORTANT: Serve static files before any protection middleware
@@ -181,29 +182,22 @@ const requireRole = (role, insufficientPath) => async (req, res, next) => {
 };
 
 const protect = (req, res, next) => {
-  console.log(`Protect middleware: ${req.method} ${req.url}, token: ${req.cookies.session_token ? req.cookies.session_token.substring(0, 10) + '...' : 'null'}`);
-
   // Allow access to login pages and insufficient permissions page
   if (req.url.startsWith('/login') || req.url.startsWith('/dash/login') || req.url.startsWith('/insufficient-permissions')) {
-    console.log('Allowing access to login page');
     return next();
   }
 
   // Dashboard routes require admin role
   if (req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
-    console.log('Checking admin role for dashboard');
     const token = req.cookies.session_token;
     if (!token) {
-      console.log('No token for dashboard, redirecting to /login');
       return res.redirect('/login');
     }
     auth.getSession(token).then(session => {
       if (session && session.role === 'admin') {
         req.session = session;
-        console.log('Dashboard access granted for user:', session.username);
         next();
       } else {
-        console.log('Dashboard access denied, redirecting to /insufficient-permissions');
         res.redirect('/insufficient-permissions');
       }
     }).catch(err => {
@@ -217,16 +211,13 @@ const protect = (req, res, next) => {
   if (req.url.startsWith('/admin')) {
     const token = req.cookies.session_token;
     if (!token) {
-      console.log('No token for admin, redirecting to /login');
       return res.redirect('/login');
     }
     auth.getSession(token).then(session => {
       if (session) {
         req.session = session;
-        console.log('Admin access granted for user:', session.username);
         next();
       } else {
-        console.log('Admin session invalid, redirecting to /login');
         res.redirect('/login');
       }
     }).catch(err => {
@@ -238,9 +229,6 @@ const protect = (req, res, next) => {
 
   // Allow other routes
   return next();
-
-  console.log('Allowing access to public route');
-  next();
 };
 app.use(protect);
 
@@ -251,6 +239,11 @@ app.use('/dash/login', express.static(path.join(__dirname, 'public', 'dash', 'lo
 app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
 // app.use('/api/login', loginLimiter); // Disabled for testing
 // app.use('/api', apiLimiter); // General limiter LAST
+
+// --- API Routes ---
+app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
+app.use('/api/login', loginLimiter); // Login limiter
+app.use('/api', apiLimiter); // General limiter LAST
 
 app.post('/api/chat', streamChat);
 app.post('/api/test-api-key', testApiKey);
