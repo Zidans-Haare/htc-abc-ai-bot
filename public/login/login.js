@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await res.json();
         console.log('Login successful, role:', data.role);
         sessionStorage.setItem('userRole', data.role); // Nur Rolle speichern
-        window.location.href = '/admin/index.html';
+         window.location.href = '/admin';
       } else {
         const error = await res.json();
         console.error('Login failed:', error);

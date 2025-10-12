@@ -3,7 +3,7 @@ const router = express.Router();
 
 // Admin auth middleware factory
 const adminAuth = (getSession, logAction) => async (req, res, next) => {
-  const token = req.cookies.sessionToken;
+  const token = req.cookies.session_token;
   const session = token && await getSession(token);
   if (session) {
     req.user = session.username;

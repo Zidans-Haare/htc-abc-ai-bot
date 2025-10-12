@@ -30,6 +30,7 @@ app.set('trust proxy', true);
 const port = process.env.PORT || 3000;
 const useHttps = process.argv.includes('-https');
 const isTest = process.argv.includes('--test');
+const isDev = process.argv.includes('-dev');
 const pid = process.pid;
 
 // --- Logging ---
@@ -69,21 +70,31 @@ const loginLimiter = rateLimit({
 });
 
 // --- Middleware ---
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'", "data:"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"]
+if (isDev) {
+  app.use((req, res, next) => {
+    if (req.path.match(/\.(js|css|html)$/)) {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
     }
-  }
-}));
+    next();
+  });
+}
+// app.use(helmet({
+//   contentSecurityPolicy: {
+//     directives: {
+//       defaultSrc: ["'self'"],
+//       scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
+//       styleSrc: ["'self'", "'unsafe-inline'"],
+//       imgSrc: ["'self'", "data:"],
+//       connectSrc: ["'self'"],
+//       fontSrc: ["'self'", "data:"],
+//       objectSrc: ["'none'"],
+//       baseUri: ["'self'"],
+//       formAction: ["'self'"]
+//     }
+//   }
+// }));
 app.use(cookieParser());
 app.use(express.json());
 
@@ -101,16 +112,17 @@ app.use((req, res, next) => {
 });
 
 // --- Protection Middleware ---
-const requireAuth = (loginPath) => (req, res, next) => {
-  const token = req.cookies.sessionToken;
-  if (!token) {
-    // Not logged in
-    if (req.url.startsWith('/api/')) {
-      return res.status(401).json({ error: 'Session expired. Please log in.' });
+const requireAuth = (loginPath) => async (req, res, next) => {
+  try {
+    const token = req.cookies.session_token;
+    if (!token) {
+      // Not logged in
+      if (req.url.startsWith('/api/')) {
+        return res.status(401).json({ error: 'Session expired. Please log in.' });
+      }
+      return res.redirect(loginPath);
     }
-    return res.redirect(loginPath);
-  }
-  auth.getSession(token).then(session => {
+    const session = await auth.getSession(token);
     if (session) {
       req.session = session;
       return next();
@@ -121,25 +133,26 @@ const requireAuth = (loginPath) => (req, res, next) => {
       }
       return res.redirect(loginPath);
     }
-  }).catch(err => {
+  } catch (err) {
     console.error('Auth error:', err);
     if (req.url.startsWith('/api/')) {
       return res.status(401).json({ error: 'Session error. Please log in.' });
     }
-    return res.redirect(loginPath);
-  });
-};
-
-const requireRole = (role, insufficientPath) => (req, res, next) => {
-  const token = req.cookies.sessionToken;
-  if (!token) {
-    // Not logged in
-    if (req.url.startsWith('/api/')) {
-      return res.status(401).json({ error: 'Session expired. Please log in.' });
-    }
     return res.redirect('/login');
   }
-  auth.getSession(token).then(session => {
+};
+
+const requireRole = (role, insufficientPath) => async (req, res, next) => {
+  try {
+    const token = req.cookies.session_token;
+    if (!token) {
+      // Not logged in
+      if (req.url.startsWith('/api/')) {
+        return res.status(401).json({ error: 'Session expired. Please log in.' });
+      }
+      return res.redirect('/login');
+    }
+    const session = await auth.getSession(token);
     if (session) {
       if (session.role === role) {
         req.session = session;
@@ -158,17 +171,17 @@ const requireRole = (role, insufficientPath) => (req, res, next) => {
       }
       return res.redirect('/login');
     }
-  }).catch(err => {
+  } catch (err) {
     console.error('Auth error:', err);
     if (req.url.startsWith('/api/')) {
       return res.status(401).json({ error: 'Session error. Please log in.' });
     }
     return res.redirect('/login');
-  });
+  }
 };
 
 const protect = (req, res, next) => {
-  console.log(`Protect middleware: ${req.method} ${req.url}`);
+  console.log(`Protect middleware: ${req.method} ${req.url}, token: ${req.cookies.session_token ? req.cookies.session_token.substring(0, 10) + '...' : 'null'}`);
 
   // Allow access to login pages and insufficient permissions page
   if (req.url.startsWith('/login') || req.url.startsWith('/dash/login') || req.url.startsWith('/insufficient-permissions')) {
@@ -179,14 +192,52 @@ const protect = (req, res, next) => {
   // Dashboard routes require admin role
   if (req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
     console.log('Checking admin role for dashboard');
-    return requireRole('admin', '/insufficient-permissions')(req, res, next);
+    const token = req.cookies.session_token;
+    if (!token) {
+      console.log('No token for dashboard, redirecting to /login');
+      return res.redirect('/login');
+    }
+    auth.getSession(token).then(session => {
+      if (session && session.role === 'admin') {
+        req.session = session;
+        console.log('Dashboard access granted for user:', session.username);
+        next();
+      } else {
+        console.log('Dashboard access denied, redirecting to /insufficient-permissions');
+        res.redirect('/insufficient-permissions');
+      }
+    }).catch(err => {
+      console.error('Auth error:', err);
+      res.redirect('/login');
+    });
+    return;
   }
 
   // Admin routes require authentication
   if (req.url.startsWith('/admin')) {
-    console.log('Redirecting to login for admin');
-    return res.redirect('/login');
+    const token = req.cookies.session_token;
+    if (!token) {
+      console.log('No token for admin, redirecting to /login');
+      return res.redirect('/login');
+    }
+    auth.getSession(token).then(session => {
+      if (session) {
+        req.session = session;
+        console.log('Admin access granted for user:', session.username);
+        next();
+      } else {
+        console.log('Admin session invalid, redirecting to /login');
+        res.redirect('/login');
+      }
+    }).catch(err => {
+      console.error('Auth error:', err);
+      res.redirect('/login');
+    });
+    return;
   }
+
+  // Allow other routes
+  return next();
 
   console.log('Allowing access to public route');
   next();
@@ -198,8 +249,8 @@ app.use('/dash/login', express.static(path.join(__dirname, 'public', 'dash', 'lo
 
 // --- API Routes ---
 app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
-app.use('/api/login', loginLimiter);
-app.use('/api', apiLimiter); // General limiter LAST
+// app.use('/api/login', loginLimiter); // Disabled for testing
+// app.use('/api', apiLimiter); // General limiter LAST
 
 app.post('/api/chat', streamChat);
 app.post('/api/test-api-key', testApiKey);
@@ -232,13 +283,25 @@ app.get('/insufficient-permissions', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'insufficient-permissions.html'));
 });
 
+// --- Health Check Route ---
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // --- Root Route ---
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // --- Protected Static Files ---
-app.use('/admin', express.static(path.join(__dirname, 'public', 'admin')));
+app.use('/admin', async (req, res, next) => {
+  const token = req.cookies.session_token;
+  const session = token && await auth.getSession(token);
+  if (session) {
+    return next();
+  }
+  res.redirect('/login/login.html');
+}, express.static(path.join(__dirname, 'public', 'admin')));
 
 // --- Favicon & 404 ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());

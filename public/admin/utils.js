@@ -46,14 +46,7 @@ export function overrideFetch() {
 
     const res = await originalFetch(input, init);
     
-    if (res.status === 401) {
-      console.error('Unauthorized request:', input);
-      sessionStorage.removeItem('userRole');
-      alert('Session abgelaufen, bitte erneut anmelden');
-      window.location.href = '/login/login.html';
-      // Return a new promise that will never resolve, to stop further processing
-      return new Promise(() => {}); 
-    }
+    // Note: 401 handling removed for server-side auth only
     
     // For other errors, we need to be able to read the body again later.
     // So we clone the response. The original response can be read by the caller.

@@ -1,13 +1,13 @@
-import { fetchAndParse, overrideFetch } from './utils.js';
-import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline, getCurrentId, loadEntry, saveEntry } from './articles.js';
-import { initQuestions } from './questions.js';
-import { initUsers, loadUsers } from './users.js';
-import { initArchive, loadArchive } from './archive.js';
-import { initExport } from './export.js';
-import { setupFeedback } from './feedback.js';
-import { renderMarkup } from '../js/markup.js';
-import { initImages } from './images.js';
-import { initStats } from './stats.js';
+import { fetchAndParse, overrideFetch } from './utils.js?v=1.0.2';
+import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline, getCurrentId, loadEntry, saveEntry } from './articles.js?v=1.0.2';
+import { initQuestions } from './questions.js?v=1.0.2';
+import { initUsers, loadUsers } from './users.js?v=1.0.2';
+import { initArchive, loadArchive } from './archive.js?v=1.0.2';
+import { initExport } from './export.js?v=1.0.2';
+import { setupFeedback } from './feedback.js?v=1.0.2';
+import { renderMarkup } from '../js/markup.js?v=1.0.2';
+import { initImages } from './images.js?v=1.0.2';
+import { initStats } from './stats.js?v=1.0.2';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
@@ -23,29 +23,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   overrideFetch();
 
-  // Validate session
-  try {
-    const session = await fetchAndParse('/api/validate');
-    document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
-    if (!sessionStorage.getItem('userRole')) {
-        sessionStorage.setItem('userRole', session.role);
-    }
-     // Display logged in user info
-     const userSessionInfo = document.getElementById('user-session-info');
-     if (userSessionInfo && session.username) {
-         userSessionInfo.innerHTML = `Angemeldet als:<br><strong class="font-medium text-[var(--primary-text)]">${session.username}</strong>`;
-     }
-     if (mobileUserSessionInfo && session.username) {
-         mobileUserSessionInfo.innerHTML = `Angemeldet als:<br><strong class="font-medium text-[var(--primary-text)]">${session.username}</strong>`;
-     }
-  } catch (err) {
-    console.error('Validation error:', err);
-    sessionStorage.removeItem('userRole');
-    window.location.href = '/login/login.html';
-    return;
-  }
+  // --- Get DOM Elements ---
+  const userSessionInfo = document.getElementById('user-session-info');
+  const mobileUserSessionInfo = document.getElementById('mobile-user-session-info');
 
-   // --- Get DOM Elements ---
+
+
+   // --- Get remaining DOM Elements ---
    const editorBtn = document.getElementById('btn-editor');
    const questionsBtn = document.getElementById('btn-questions');
    const archiveBtn = document.getElementById('btn-archive');
@@ -77,16 +61,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const imagesView = document.getElementById('images-view');
   const conversationsView = document.getElementById('conversations-view');
   const statsView = document.getElementById('stats-view');
-  
+
   const openCountSpan = document.getElementById('open-count');
-  
+
    const sidebar = document.getElementById('sidebar');
    const sidebarToggle = document.getElementById('sidebar-toggle');
    const sidebarToggleIcon = document.getElementById('sidebar-toggle-icon');
    const hamburgerBtn = document.getElementById('hamburger-btn');
    const mobileMenu = document.getElementById('mobile-menu');
    const mobileOpenCount = document.getElementById('mobile-open-count');
-   const mobileUserSessionInfo = document.getElementById('mobile-user-session-info');
 
   // --- Sidebar Toggle Logic ---
   function setSidebarState(collapsed) {
@@ -251,8 +234,9 @@ document.addEventListener('DOMContentLoaded', async () => {
      if (mobileMap[activeButton]) mobileMap[activeButton].classList.add('active');
    }
 
-  // --- Role-based UI Setup ---
-  const userRole = sessionStorage.getItem('userRole');
+   // --- Role-based UI Setup ---
+   const userRole = sessionStorage.getItem('userRole');
+   console.log('User role from sessionStorage:', userRole);
 
    // Hide all role-dependent buttons by default
    editorBtn.classList.add('hidden');

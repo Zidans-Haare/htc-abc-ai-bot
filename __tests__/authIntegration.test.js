@@ -89,7 +89,7 @@ describe('Auth Integration Tests', () => {
 
       const response = await request(app)
         .get('/auth/validate')
-        .set('Cookie', ['sessionToken=token123']);
+        .set('Cookie', ['session_token=token123']);
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ valid: true, username: 'user', role: 'admin' });
@@ -113,7 +113,7 @@ describe('Auth Integration Tests', () => {
 
       const response = await request(app)
         .post('/auth/logout')
-        .set('Cookie', ['sessionToken=token123']);
+        .set('Cookie', ['session_token=token123']);
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ success: true });
