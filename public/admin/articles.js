@@ -15,6 +15,8 @@ const addBtn = document.getElementById('add-heading');
 const aiCheckModal = document.getElementById('ai-check-modal');
 const aiCheckCloseBtn = document.getElementById('ai-check-close');
 const aiCheckResponseEl = document.getElementById('ai-check-response');
+const headlinesSidebar = document.getElementById('headlines-sidebar');
+const mobileBackBtn = document.getElementById('mobile-back-btn');
 
 const loadedScripts = {};
 
@@ -295,6 +297,26 @@ const editor = new toastui.Editor({
   ]
 });
 
+// Set editor height dynamically to fill available space
+function setEditorHeight() {
+  const pane = document.getElementById('editor-pane');
+  if (!pane) return;
+
+  if (window.innerWidth < 768) {
+    // On mobile, use viewport height minus approximate header/footer
+    const availableHeight = window.innerHeight - 300;
+    if (availableHeight > 100) {
+      editor.setHeight(availableHeight + 'px');
+    }
+    return;
+  }
+
+  // On desktop, let flexbox handle the height
+}
+
+window.addEventListener('load', setEditorHeight);
+window.addEventListener('resize', setEditorHeight);
+
 function setSaveButtonState(enabled) {
   if (enabled) {
     saveBtn.disabled = false;
@@ -372,6 +394,15 @@ export async function loadEntry(id) {
       : '';
     document.getElementById('last-edited-by').innerHTML = `last edit by:<br>${entry.editor || ''}<br>${formattedDate}`;
     setSaveButtonState(false);
+
+    // Mobile: Hide sidebar and show back button
+    if (window.innerWidth < 768) { // md breakpoint
+      headlinesSidebar.classList.add('hidden');
+      mobileBackBtn.classList.remove('hidden');
+    }
+
+    // Adjust editor height after layout changes
+    setTimeout(setEditorHeight, 100);
   } catch (err) {
     console.error('Failed to load entry:', err);
   }
@@ -429,8 +460,8 @@ export async function saveEntry() {
       }
     }
 
-    await loadHeadlines();
-    await loadEntry(currentId);
+     await loadHeadlines();
+     await loadEntry(currentId);
   } catch (err) {
     console.error('Failed to save entry:', err);
     alert('Failed to save entry: ' + err.message);
@@ -443,12 +474,19 @@ async function deleteEntry() {
     console.log('Deleting entry:', currentId);
     await fetchAndParse(`/api/admin/entries/${currentId}`, { method: 'DELETE' });
     console.log('Entry deleted');
-    currentId = null;
-    headlineInput.value = '';
-    editor.setMarkdown('');
-    document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
-    await loadHeadlines();
-    alert('Gelöscht');
+     currentId = null;
+     headlineInput.value = '';
+     editor.setMarkdown('');
+     document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
+     await loadHeadlines();
+     alert('Gelöscht');
+
+     // Mobile: Show sidebar after delete
+     if (window.innerWidth < 768) {
+       headlinesSidebar.classList.remove('hidden');
+       mobileBackBtn.classList.add('hidden');
+       headlinesSidebar.scrollTop = 0;
+     }
   } catch (err) {
     console.error('Failed to delete entry:', err);
     alert('Failed to delete entry: ' + err.message);
@@ -469,16 +507,25 @@ export function getCurrentId() {
 export function initHeadlines() {
   saveBtn.addEventListener('click', saveEntry);
   deleteBtn.addEventListener('click', deleteEntry);
-  addBtn.addEventListener('click', () => {
-    console.log('Adding new heading...');
-    currentId = null;
-    headlineInput.value = '';
-    editor.setMarkdown('');
-    originalHeadline = '';
-    originalText = '';
-    document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
-    checkForChanges();
-  });
+   addBtn.addEventListener('click', () => {
+      console.log('Adding new heading...');
+      currentId = null;
+      headlineInput.value = '';
+      editor.setMarkdown('');
+      originalHeadline = '';
+      originalText = '';
+      document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
+      checkForChanges();
+
+      // Mobile: Hide sidebar and show back button
+      if (window.innerWidth < 768) { // md breakpoint
+        headlinesSidebar.classList.add('hidden');
+        mobileBackBtn.classList.remove('hidden');
+      }
+
+      // Adjust editor height after layout changes
+      setTimeout(setEditorHeight, 100);
+    });
   searchEl.addEventListener('input', () => {
     console.log('Search input changed, loading headlines...');
     loadHeadlines();
@@ -490,6 +537,47 @@ export function initHeadlines() {
   aiCheckCloseBtn.addEventListener('click', () => {
     aiCheckModal.classList.add('hidden');
   });
+
+   // Mobile back button
+   mobileBackBtn.querySelector('button').addEventListener('click', () => {
+     headlinesSidebar.classList.remove('hidden');
+     mobileBackBtn.classList.add('hidden');
+     // Scroll to the last viewed item
+     setTimeout(() => {
+       const activeLi = headlinesSidebar.querySelector('.active-headline');
+       if (activeLi) {
+         activeLi.scrollIntoView({ behavior: 'smooth', block: 'center' });
+       } else {
+         headlinesSidebar.scrollTop = 0;
+       }
+     }, 100);
+     // Adjust editor height after layout changes
+     setTimeout(setEditorHeight, 100);
+   });
+
+   // Cancel edit question button
+   document.getElementById('cancel-edit-question').addEventListener('click', () => {
+     if (window.innerWidth < 768) {
+       headlinesSidebar.classList.remove('hidden');
+       mobileBackBtn.classList.add('hidden');
+       headlinesSidebar.scrollTop = 0;
+     }
+   });
+
+   // Cancel button (mobile)
+   document.getElementById('cancel-btn').addEventListener('click', () => {
+     if (window.innerWidth < 768) {
+       headlinesSidebar.classList.remove('hidden');
+       mobileBackBtn.classList.add('hidden');
+       // Scroll to the last edited item
+       setTimeout(() => {
+         const activeLi = headlinesSidebar.querySelector('.active-headline');
+         if (activeLi) {
+           activeLi.scrollIntoView({ behavior: 'smooth', block: 'center' });
+         }
+       }, 100);
+     }
+   });
 
   loadHeadlines();
 }

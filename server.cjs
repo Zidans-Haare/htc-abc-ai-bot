@@ -66,7 +66,7 @@ const dashboardLimiter = rateLimit({
 
 const loginLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 5,
+    max: 6,
     message: "Too many login attempts from this IP, please try again after an hour",
     standardHeaders: true,
     legacyHeaders: false,

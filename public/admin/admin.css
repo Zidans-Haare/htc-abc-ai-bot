@@ -99,6 +99,19 @@ body {
 #sidebar.collapsed .nav-link {
     justify-content: center;
 }
+
+/* Mobile headlines layout */
+@media (max-width: 767px) {
+    #headlines-sidebar {
+        position: relative;
+    }
+    #mobile-back-btn {
+        display: none;
+    }
+    #mobile-back-btn.hidden {
+        display: none !important;
+    }
+}
 #sidebar.collapsed #btn-questions {
     flex-direction: column;
     justify-content: center;
@@ -162,4 +175,17 @@ body {
   background-color: #64d75c; /* A nice shade of yellow */
   text-decoration: none; /* Remove the line-through */
   color: inherit; /* Use the default text color */
+}
+
+#editor {
+  min-height: 400px;
+}
+
+@media (min-width: 768px) {
+  #headlines-sidebar {
+    height: 100vh;
+  }
+  #editor-pane {
+    height: 100vh;
+  }
 }
