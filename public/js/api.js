@@ -75,66 +75,95 @@ export async function sendMsg(app, promptText) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let firstChunk = true;
+        let buffer = '';
+
+        const processEvent = (eventString) => {
+            const trimmedEvent = eventString.trim();
+            if (!trimmedEvent) return;
+
+            const lines = trimmedEvent.split('\n');
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) {
+                    continue;
+                }
+
+                const dataContent = line.substring(6);
+                if (dataContent === '[DONE]') {
+                    continue;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(dataContent);
+                } catch (err) {
+                    console.error('Failed to parse SSE data chunk:', err, dataContent);
+                    continue;
+                }
+
+                if (firstChunk) {
+                    document.getElementById('typing').style.display = 'none';
+                    currentConversationId = data.conversationId;
+                    if (isNewChat) {
+                        app.conversationId = currentConversationId;
+                    }
+
+                    const m = document.createElement('div');
+                    m.className = 'message ai';
+                    const avatar = document.createElement('div');
+                    avatar.className = 'avatar';
+                    const avatarSrc = app.useFirstAvatar ? '/image/smoky_klein.png' : '/image/stu_klein.png';
+                    avatar.innerHTML = `<img src="${avatarSrc}" alt="Bot Avatar" />`;
+                    app.useFirstAvatar = !app.useFirstAvatar;
+                    m.appendChild(avatar);
+
+                    aiMessageBubble = document.createElement('div');
+                    aiMessageBubble.className = 'bubble';
+                    aiMessageBubble.innerHTML = '<span></span>';
+                    m.appendChild(aiMessageBubble);
+                    document.getElementById('messages').appendChild(m);
+
+                    // Post-process images (resize images to be max the width of the prompt bubble)
+                    processImagesInBubble(aiMessageBubble);
+
+                    firstChunk = false;
+                }
+
+                if (data.token) {
+                    fullResponse += data.token;
+                    aiMessageBubble.querySelector('span').innerHTML = renderMarkup(fullResponse);
+                    app.scrollToBottom();
+                }
+            }
+        };
 
         while (true) {
             const { done, value } = await reader.read();
             if (done) {
+                if (buffer.trim() !== '') {
+                    processEvent(buffer);
+                    buffer = '';
+                }
                 finalizeMessage();
                 break;
             }
 
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n\n').filter(line => line.trim() !== '');
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split('\n\n');
+            buffer = events.pop() || '';
 
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    const dataContent = line.substring(6);
-                    if (dataContent === '[DONE]') {
-                        continue;
-                    }
-                    
-                    const data = JSON.parse(dataContent);
-
-                    if (firstChunk) {
-                        document.getElementById('typing').style.display = 'none';
-                        currentConversationId = data.conversationId;
-                        if (isNewChat) {
-                            app.conversationId = currentConversationId;
-                        }
-                        
-                        const m = document.createElement('div');
-                        m.className = 'message ai';
-                        const avatar = document.createElement('div');
-                        avatar.className = 'avatar';
-                        const avatarSrc = app.useFirstAvatar ? '/image/smoky_klein.png' : '/image/stu_klein.png';
-                        avatar.innerHTML = `<img src="${avatarSrc}" alt="Bot Avatar" />`;
-                        app.useFirstAvatar = !app.useFirstAvatar;
-                        m.appendChild(avatar);
-
-                        aiMessageBubble = document.createElement('div');
-                        aiMessageBubble.className = 'bubble';
-                        aiMessageBubble.innerHTML = '<span></span>';
-                        m.appendChild(aiMessageBubble);
-                        document.getElementById('messages').appendChild(m);
-
-
-                        // Post-process images (resize images to be max the width of the prompt bubble)
-                        processImagesInBubble(aiMessageBubble);
-
-                        firstChunk = false;
-                    }
-                    
-                    if (data.token) {
-                        fullResponse += data.token;
-                        aiMessageBubble.querySelector('span').innerHTML = renderMarkup(fullResponse);
-                        app.scrollToBottom();
-                    }
-                }
+            for (const event of events) {
+                processEvent(event);
             }
         }
     } catch (e) {
         console.error(e);
-        addMessage('Fehler bei der Verbindung zum Server.', false, new Date());
+        if (fullResponse) {
+            finalizeMessage();
+            showToast('Fehler bei der Verbindung zum Server.');
+        } else {
+            addMessage('Fehler bei der Verbindung zum Server.', false, new Date());
+        }
     } finally {
         document.getElementById('typing').style.display = 'none';
         document.getElementById('chat-input').disabled = false;
