@@ -34,7 +34,7 @@ const envSchema = Joi.object({
    PDF_CHUNK_SIZE: Joi.number().integer().min(100).max(1000).default(300),
    PDF_EXTRACT_TEXT_ONLY: Joi.string().valid('true', 'false').default('false'),
    SYNC_BATCH: Joi.number().integer().min(10).max(500).default(100),
-});
+}).unknown(true);
 
 const { error } = envSchema.validate(process.env);
 if (error) {
@@ -69,44 +69,21 @@ program
 
 const options = program.opts();
 
-// Logger setup
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message }) => `${timestamp} [${level}]: ${message}`)
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'logs/vector-db.log' })
-  ]
-});
-
-// Prometheus metrics setup
-const register = new promClient.Registry();
-promClient.collectDefaultMetrics({ register });
-const syncDuration = new promClient.Histogram({
-  name: 'vector_sync_duration_seconds',
-  help: 'Duration of vector DB sync',
-  registers: [register]
-});
-const retrievalDuration = new promClient.Histogram({
-  name: 'vector_retrieval_duration_seconds',
-  help: 'Duration of similarity search',
-  registers: [register]
-});
-
 // Handle CLI options
+let cliMode = options.initVectordb || options.dropVectordb;
 if (options.initVectordb) {
   (async () => {
     try {
-      logger.info('Initializing vector DB...');
+      // Sync DB tables
+      await sequelize.sync();
+      console.log('DB tables synchronized for CLI');
+      console.log('Initializing vector DB...');
       const vectorStore = require('./lib/vectorStore');
       await vectorStore.initVectorDB();
-      logger.info('Vector DB initialized successfully');
+      console.log('Vector DB initialized successfully');
       process.exit(0);
     } catch (err) {
-      logger.error('Vector DB initialization failed:', err);
+      console.error('Vector DB initialization failed:', err);
       process.exit(1);
     }
   })();
@@ -114,13 +91,13 @@ if (options.initVectordb) {
 if (options.dropVectordb) {
   (async () => {
     try {
-      logger.info('Dropping vector DB...');
+      console.log('Dropping vector DB...');
       const vectorStore = require('./lib/vectorStore');
       await vectorStore.dropVectorDB();
-      logger.info('Vector DB dropped successfully');
+      console.log('Vector DB dropped successfully');
       process.exit(0);
     } catch (err) {
-      logger.error('Vector DB drop failed:', err);
+      console.error('Vector DB drop failed:', err);
       process.exit(1);
     }
   })();
@@ -490,7 +467,7 @@ const serverCallback = async () => {
   });
 };
 
-if (!isTest) {
+if (!cliMode && !isTest) {
   if (useHttps) {
     try {
       const httpsOptions = {

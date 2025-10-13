@@ -58,10 +58,10 @@ const HochschuhlABC = sequelize.define('HochschuhlABC', {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   },
-  archived: {
-    type: DataTypes.DATE,
-    allowNull: true
-  }
+   archived: {
+     type: DataTypes.DATE,
+     allowNull: true
+   }
 }, {
   tableName: 'hochschuhl_abc',
   timestamps: false
