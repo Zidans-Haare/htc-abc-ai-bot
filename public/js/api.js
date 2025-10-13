@@ -29,6 +29,7 @@ export async function sendMsg(app, promptText) {
     let aiMessageBubble;
     let fullResponse = '';
     let currentConversationId = app.conversationId;
+    let tokensInfo = null;
 
     function finalizeMessage() {
         if (aiMessageBubble) {
@@ -40,7 +41,11 @@ export async function sendMsg(app, promptText) {
 
             const md = document.createElement('div');
             md.className = 'metadata';
-            md.textContent = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+            let metadataText = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+            if (tokensInfo) {
+                metadataText += ` | Sent: ${tokensInfo.sent} | Received: ${tokensInfo.received}`;
+            }
+            md.textContent = metadataText;
             aiMessageBubble.appendChild(md);
         }
 
@@ -133,6 +138,10 @@ export async function sendMsg(app, promptText) {
                     fullResponse += data.token;
                     aiMessageBubble.querySelector('span').innerHTML = renderMarkup(fullResponse);
                     app.scrollToBottom();
+                }
+
+                if (data.tokens) {
+                    tokensInfo = data.tokens;
                 }
             }
         };
