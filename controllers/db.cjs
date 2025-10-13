@@ -1,11 +1,40 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const path = require('path');
 
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: path.join(__dirname, '../hochschuhl-abc.db'),
-  logging: false
-});
+let sequelize;
+const dbType = process.env.MAIN_DB_TYPE || 'sqlite';
+
+if (dbType === 'sqlite') {
+  sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: process.env.MAIN_DB_PATH || path.join(__dirname, '../hochschuhl-abc.db'),
+    logging: false
+  });
+} else if (dbType === 'postgresql') {
+  sequelize = new Sequelize({
+    dialect: 'postgres',
+    host: process.env.MAIN_DB_HOST,
+    port: process.env.MAIN_DB_PORT || 5432,
+    username: process.env.MAIN_DB_USER,
+    password: process.env.MAIN_DB_PASSWORD,
+    database: process.env.MAIN_DB_NAME,
+    ssl: process.env.MAIN_DB_SSL === 'true',
+    logging: false
+  });
+} else if (dbType === 'mysql') {
+  sequelize = new Sequelize({
+    dialect: 'mysql',
+    host: process.env.MAIN_DB_HOST,
+    port: process.env.MAIN_DB_PORT || 3306,
+    username: process.env.MAIN_DB_USER,
+    password: process.env.MAIN_DB_PASSWORD,
+    database: process.env.MAIN_DB_NAME,
+    ssl: process.env.MAIN_DB_SSL === 'true',
+    logging: false
+  });
+} else {
+  throw new Error(`Unsupported MAIN_DB_TYPE: ${dbType}`);
+}
 
 const User = sequelize.define('User', {
   id: {

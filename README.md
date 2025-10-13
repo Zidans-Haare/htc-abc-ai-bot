@@ -44,6 +44,17 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     PORT=3000  # Server port (default: 3000)
     TRUST_PROXY_COUNT=2  # Number of proxy layers (e.g., Cloudflare + Nginx)
 
+    # Main Database Configuration
+    MAIN_DB_TYPE=sqlite  # Main DB type: 'sqlite', 'postgresql', or 'mysql' (default: sqlite)
+    MAIN_DB_PATH=hochschuhl-abc.db  # SQLite file path (only if MAIN_DB_TYPE=sqlite)
+    # For PostgreSQL/MySQL (uncomment and set if MAIN_DB_TYPE is not 'sqlite')
+    # MAIN_DB_HOST=localhost  # DB host
+    # MAIN_DB_PORT=5432  # DB port (5432 for PostgreSQL, 3306 for MySQL)
+    # MAIN_DB_USER=myuser  # DB username
+    # MAIN_DB_PASSWORD=mypassword  # DB password
+    # MAIN_DB_NAME=mydb  # DB name
+    # MAIN_DB_SSL=false  # Enable SSL: 'true' or 'false' (default: false)
+
     # Session Authentication
     SESSION_INACTIVITY_TIMEOUT_MINUTES=1440  # Time in minutes after last activity before session expires (default: 1440 for 24 hours). Also sets client-side cookie expiration.
     SESSION_MAX_DURATION_MINUTES=43200  # Maximum session duration in minutes from creation (default: 43200 for 30 days).

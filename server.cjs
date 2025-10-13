@@ -37,6 +37,14 @@ const envSchema = Joi.object({
     DISPLAY_TOKEN_USED_FOR_QUERY: Joi.string().valid('true', 'false').default('false'),
     SESSION_INACTIVITY_TIMEOUT_MINUTES: Joi.number().integer().min(1).max(10080).default(1440),  // 1 min to 1 week
     SESSION_MAX_DURATION_MINUTES: Joi.number().integer().min(1).max(525600).default(43200),  // 1 min to 1 year
+    MAIN_DB_TYPE: Joi.string().valid('sqlite', 'postgresql', 'mysql').default('sqlite'),
+    MAIN_DB_PATH: Joi.string().default('hochschuhl-abc.db'),
+    MAIN_DB_HOST: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
+    MAIN_DB_PORT: Joi.number().integer().min(1).max(65535).default(3306),
+    MAIN_DB_USER: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
+    MAIN_DB_PASSWORD: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
+    MAIN_DB_NAME: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
+    MAIN_DB_SSL: Joi.string().valid('true', 'false').default('false')
 }).unknown(true);
 
 const { error } = envSchema.validate(process.env);
