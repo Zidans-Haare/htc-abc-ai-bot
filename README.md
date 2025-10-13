@@ -35,11 +35,39 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     Erstellen Sie eine `.env`-Datei im Projektstammverzeichnis. Hinterlegen Sie dort Ihren Bearer-Token (oder API-Key) sowie optional Basis-URL, Modell und Port.
 
     ```env
-    CHAT_AI_TOKEN=dein-bearer-token      # alternativ: OPENAI_API_KEY oder KISSKI_API_KEY
-    OPENAI_BASE_URL=https://chat-ai.academiccloud.de/v1
-    OPENAI_MODEL=meta-llama-3.1-8b-instruct
-    PORT=3000 # Optional, Standard ist 3000
-    TRUST_PROXY_COUNT=2 # Number of proxy layers (e.g., Cloudflare + Nginx)
+    # AI Chat Configuration
+    CHAT_AI_TOKEN=dein-bearer-token      # Bearer token for AI API (alternativ: OPENAI_API_KEY oder KISSKI_API_KEY)
+    OPENAI_BASE_URL=https://chat-ai.academiccloud.de/v1  # Base URL for OpenAI-compatible API
+    OPENAI_MODEL=meta-llama-3.1-8b-instruct  # Model to use for AI responses
+
+    # Server Configuration
+    PORT=3000  # Server port (default: 3000)
+    TRUST_PROXY_COUNT=2  # Number of proxy layers (e.g., Cloudflare + Nginx)
+
+    # Session Authentication
+    SESSION_INACTIVITY_TIMEOUT_MINUTES=1440  # Time in minutes after last activity before session expires (default: 1440 for 24 hours). Also sets client-side cookie expiration.
+    SESSION_MAX_DURATION_MINUTES=43200  # Maximum session duration in minutes from creation (default: 43200 for 30 days).
+
+    # Vector Database Configuration
+    VECTOR_DB_TYPE=none  # Vector DB type: 'none', 'chroma', or 'weaviate' (default: none)
+    CHROMA_URL=  # Required if VECTOR_DB_TYPE=chroma
+    CHROMA_COLLECTION=  # Required if VECTOR_DB_TYPE=chroma
+    WEAVIATE_URL=  # Required if VECTOR_DB_TYPE=weaviate
+    WEAVIATE_COLLECTION=  # Required if VECTOR_DB_TYPE=weaviate
+
+    # Vector DB Processing Options
+    CHUNK_SIZE=500  # Size of text chunks for vectorization (200-1000, default: 500)
+    CHUNK_OVERLAP=50  # Overlap between chunks (0-200, default: 50)
+    RETRIEVE_K=3  # Number of similar chunks to retrieve (1-10, default: 3)
+    MIN_SIMILARITY=0.7  # Minimum similarity score for retrieval (0-1, default: 0.7)
+    SYNC_ON_START=false  # Sync vector DB on startup: 'true' or 'false' (default: false)
+    ENABLE_GRAPHRAG=false  # Enable graph-based retrieval: 'true' or 'false' (default: false)
+
+    # PDF Processing Options
+    PDF_CHUNK_SIZE=300  # Chunk size for PDF text (100-1000, default: 300)
+    PDF_EXTRACT_TEXT_ONLY=false  # Extract only text from PDFs: 'true' or 'false' (default: false)
+    SYNC_BATCH=100  # Batch size for vector DB sync (10-500, default: 100)
+    DISPLAY_TOKEN_USED_FOR_QUERY=false  # Display token usage in responses: 'true' or 'false' (default: false)
     ```
 
 ## ▶️ Anwendung starten

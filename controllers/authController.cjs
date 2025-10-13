@@ -4,9 +4,13 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { User, AuthSession } = require('./db.cjs');
 
+// Session timeout configurations (in milliseconds)
+const SESSION_INACTIVITY_TIMEOUT_MS = (parseInt(process.env.SESSION_INACTIVITY_TIMEOUT_MINUTES) || 1440) * 60 * 1000;
+const SESSION_MAX_DURATION_MS = (parseInt(process.env.SESSION_MAX_DURATION_MINUTES) || 43200) * 60 * 1000;
+
 async function createSession(username, role) {
   const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  const expiresAt = new Date(Date.now() + SESSION_MAX_DURATION_MS);
   try {
     await AuthSession.create({
       session_token: token,
@@ -40,14 +44,14 @@ async function getSession(token) {
     const lastActivity = new Date(session.last_activity);
     const createdAt = new Date(session.created_at);
 
-    // Check inactivity: 24 hours since last activity
-    if (now.getTime() - lastActivity.getTime() > 24 * 60 * 60 * 1000) {
+    // Check inactivity
+    if (now.getTime() - lastActivity.getTime() > SESSION_INACTIVITY_TIMEOUT_MS) {
       await AuthSession.destroy({ where: { session_token: token } });
       return null;
     }
 
-    // Check max usage: 30 days since creation
-    if (now.getTime() - createdAt.getTime() > 30 * 24 * 60 * 60 * 1000) {
+    // Check max usage
+    if (now.getTime() - createdAt.getTime() > SESSION_MAX_DURATION_MS) {
       await AuthSession.destroy({ where: { session_token: token } });
       return null;
     }
@@ -72,8 +76,8 @@ async function cleanupExpiredSessions() {
       where: {
         [require('sequelize').Op.or]: [
           { expires_at: { [require('sequelize').Op.lt]: now } },
-          { last_activity: { [require('sequelize').Op.lt]: new Date(now.getTime() - 24 * 60 * 60 * 1000) } },
-          { created_at: { [require('sequelize').Op.lt]: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) } }
+          { last_activity: { [require('sequelize').Op.lt]: new Date(now.getTime() - SESSION_INACTIVITY_TIMEOUT_MS) } },
+          { created_at: { [require('sequelize').Op.lt]: new Date(now.getTime() - SESSION_MAX_DURATION_MS) } }
         ]
       }
     });
@@ -151,7 +155,7 @@ router.post('/login', async (req, res) => {
     res.cookie('session_token', token, {
       httpOnly: true,
       secure: secureCookie,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: SESSION_INACTIVITY_TIMEOUT_MS,
       sameSite
     });
     res.json({ role: user.role });
