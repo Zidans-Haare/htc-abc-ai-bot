@@ -3,6 +3,7 @@ const { estimateTokens, isWithinTokenLimit } = require('../utils/tokenizer');
 const { summarizeConversation } = require('../utils/summarizer');
 const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require('../utils/analytics');
 const { getOpenAIClient, DEFAULT_MODEL } = require('../utils/openaiClient');
+const vectorStore = require('../lib/vectorStore');
 
 // Lazy import to avoid immediate API key check
 let categorizeConversation = null;
@@ -139,12 +140,19 @@ async function streamChat(req, res) {
       isUser: msg.role === 'user',
     }));
 
-    const entries = await HochschuhlABC.findAll({
-      where: { active: true, archived: null },
-      order: [['headline', 'DESC']],
-      attributes: ['headline', 'text'],
-    });
-    const hochschulContent = entries.map(entry => `## ${entry.headline}\n\n${entry.text}\n\n`).join('');
+    let hochschulContent = '';
+    if (vectorStore.store) {
+      const relevantDocs = await vectorStore.similaritySearch(prompt);
+      hochschulContent = relevantDocs.map(doc => doc.pageContent).join('\n\n');
+    } else {
+      // Fallback to full DB if vector DB not enabled
+      const entries = await HochschuhlABC.findAll({
+        where: { active: true, archived: null },
+        order: [['headline', 'DESC']],
+        attributes: ['headline', 'text'],
+      });
+      hochschulContent = entries.map(entry => `## ${entry.headline}\n\n${entry.text}\n\n`).join('');
+    }
 
     const images = await Images.findAll({
       attributes: ['filename', 'description'],

@@ -8,12 +8,35 @@ const rateLimit = require("express-rate-limit");
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const sharp = require('sharp');
-
+const Joi = require('joi');
+const { program } = require('commander');
+const winston = require('winston');
 
 
 
 // --- Initializations ---
 dotenv.config();
+
+// Env validation
+const envSchema = Joi.object({
+  VECTOR_DB_TYPE: Joi.string().valid('none', 'chroma', 'weaviate').default('none'),
+  CHUNK_SIZE: Joi.number().integer().min(200).max(1000).default(500),
+  CHUNK_OVERLAP: Joi.number().integer().min(0).max(200).default(50),
+  RETRIEVE_K: Joi.number().integer().min(1).max(10).default(3),
+  MIN_SIMILARITY: Joi.number().min(0).max(1).default(0.7),
+  SYNC_ON_START: Joi.string().valid('true', 'false').default('false'),
+  ENABLE_GRAPHRAG: Joi.string().valid('true', 'false').default('false'),
+  CHROMA_URL: Joi.string().when('VECTOR_DB_TYPE', { is: 'chroma', then: Joi.required() }),
+  CHROMA_COLLECTION: Joi.string().when('VECTOR_DB_TYPE', { is: 'chroma', then: Joi.required() }),
+  WEAVIATE_URL: Joi.string().when('VECTOR_DB_TYPE', { is: 'weaviate', then: Joi.required() }),
+  WEAVIATE_COLLECTION: Joi.string().when('VECTOR_DB_TYPE', { is: 'weaviate', then: Joi.required() }),
+});
+
+const { error } = envSchema.validate(process.env);
+if (error) {
+  console.error('Env validation failed:', error.details[0].message);
+  process.exit(1);
+}
 
 const { sequelize } = require('./controllers/db.cjs');
 
@@ -33,6 +56,57 @@ const useHttps = process.argv.includes('-https');
 const isTest = process.argv.includes('--test');
 const isDev = process.argv.includes('-dev');
 const pid = process.pid;
+
+// CLI options
+program
+  .option('--init-vectordb', 'Initialize/populate vector DB from current headlines/articles')
+  .option('--drop-vectordb', 'Drop/clear vector DB collections')
+  .parse();
+
+const options = program.opts();
+
+// Logger setup
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.printf(({ timestamp, level, message }) => `${timestamp} [${level}]: ${message}`)
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'logs/vector-db.log' })
+  ]
+});
+
+// Handle CLI options
+if (options.initVectordb) {
+  (async () => {
+    try {
+      logger.info('Initializing vector DB...');
+      const vectorStore = require('./lib/vectorStore');
+      await vectorStore.initVectorDB();
+      logger.info('Vector DB initialized successfully');
+      process.exit(0);
+    } catch (err) {
+      logger.error('Vector DB initialization failed:', err);
+      process.exit(1);
+    }
+  })();
+}
+if (options.dropVectordb) {
+  (async () => {
+    try {
+      logger.info('Dropping vector DB...');
+      const vectorStore = require('./lib/vectorStore');
+      await vectorStore.dropVectorDB();
+      logger.info('Vector DB dropped successfully');
+      process.exit(0);
+    } catch (err) {
+      logger.error('Vector DB drop failed:', err);
+      process.exit(1);
+    }
+  })();
+}
 
 // --- Logging ---
 const logDir = path.resolve(__dirname, 'logs');
@@ -339,11 +413,22 @@ const serverCallback = async () => {
   try {
     await sequelize.sync();
     console.log('✓ All database tables synchronized');
-  } catch (error) {
-    console.error('Warning: Could not sync database:', error.message);
-  }
+   } catch (error) {
+     console.error('Warning: Could not sync database:', error.message);
+   }
 
-  // Cleanup expired sessions on startup
+   // Sync vector DB if enabled
+   if (process.env.SYNC_ON_START === 'true') {
+     try {
+       const vectorStore = require('./lib/vectorStore');
+       await vectorStore.syncFromDB();
+       console.log('✓ Vector DB synced on startup');
+     } catch (error) {
+       console.error('Warning: Could not sync vector DB:', error.message);
+     }
+   }
+
+   // Cleanup expired sessions on startup
   try {
     await auth.cleanupExpiredSessions();
     console.log('✓ Expired sessions cleaned up');
