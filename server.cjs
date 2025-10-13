@@ -11,6 +11,7 @@ const sharp = require('sharp');
 const Joi = require('joi');
 const { program } = require('commander');
 const winston = require('winston');
+const promClient = require('prom-client');
 
 
 
@@ -28,8 +29,11 @@ const envSchema = Joi.object({
   ENABLE_GRAPHRAG: Joi.string().valid('true', 'false').default('false'),
   CHROMA_URL: Joi.string().when('VECTOR_DB_TYPE', { is: 'chroma', then: Joi.required() }),
   CHROMA_COLLECTION: Joi.string().when('VECTOR_DB_TYPE', { is: 'chroma', then: Joi.required() }),
-  WEAVIATE_URL: Joi.string().when('VECTOR_DB_TYPE', { is: 'weaviate', then: Joi.required() }),
-  WEAVIATE_COLLECTION: Joi.string().when('VECTOR_DB_TYPE', { is: 'weaviate', then: Joi.required() }),
+   WEAVIATE_URL: Joi.string().when('VECTOR_DB_TYPE', { is: 'weaviate', then: Joi.required() }),
+   WEAVIATE_COLLECTION: Joi.string().when('VECTOR_DB_TYPE', { is: 'weaviate', then: Joi.required() }),
+   PDF_CHUNK_SIZE: Joi.number().integer().min(100).max(1000).default(300),
+   PDF_EXTRACT_TEXT_ONLY: Joi.string().valid('true', 'false').default('false'),
+   SYNC_BATCH: Joi.number().integer().min(10).max(500).default(100),
 });
 
 const { error } = envSchema.validate(process.env);
@@ -76,6 +80,20 @@ const logger = winston.createLogger({
     new winston.transports.Console(),
     new winston.transports.File({ filename: 'logs/vector-db.log' })
   ]
+});
+
+// Prometheus metrics setup
+const register = new promClient.Registry();
+promClient.collectDefaultMetrics({ register });
+const syncDuration = new promClient.Histogram({
+  name: 'vector_sync_duration_seconds',
+  help: 'Duration of vector DB sync',
+  registers: [register]
+});
+const retrievalDuration = new promClient.Histogram({
+  name: 'vector_retrieval_duration_seconds',
+  help: 'Duration of similarity search',
+  registers: [register]
 });
 
 // Handle CLI options
@@ -358,6 +376,27 @@ app.get('/insufficient-permissions', (req, res) => {
 // --- Health Check Route ---
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// --- Vector DB Health Check ---
+app.get('/api/vector-health', async (req, res) => {
+  try {
+    const vectorStore = require('./lib/vectorStore');
+    if (vectorStore.store) {
+      const test = await vectorStore.similaritySearch('test', 1);
+      res.json({ status: 'ok', connected: true });
+    } else {
+      res.json({ status: 'disabled' });
+    }
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// --- Prometheus Metrics ---
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
 });
 
 // --- Root Route ---

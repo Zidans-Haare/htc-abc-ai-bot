@@ -39,6 +39,10 @@
             <i class="fa-solid fa-image w-5 text-center"></i>
             <span class="sidebar-text">Bilder</span>
         </a>
+        <a href="#" id="btn-pdfs" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-file-pdf w-5 text-center"></i>
+            <span class="sidebar-text">PDFs</span>
+        </a>
         <a href="#" id="btn-archive" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
             <i class="fa-solid fa-box-archive w-5 text-center"></i>
             <span class="sidebar-text">Archiv</span>
@@ -106,6 +110,10 @@
             <a href="#" id="mobile-btn-images" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
                 <i class="fa-solid fa-image w-5 text-center"></i>
                 <span>Bilder</span>
+            </a>
+            <a href="#" id="mobile-btn-pdfs" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-file-pdf w-5 text-center"></i>
+                <span>PDFs</span>
             </a>
             <a href="#" id="mobile-btn-archive" class="nav-link hover:bg-[var(--content-bg)] flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
                 <i class="fa-solid fa-box-archive w-5 text-center"></i>
@@ -239,6 +247,10 @@
     <!-- Images View -->
     <div id="images-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
       <div id="images-list" class="space-y-4"></div>
+    </div>
+    <!-- PDFs View -->
+    <div id="pdf-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
+      <div id="pdf-list" class="space-y-4"></div>
     </div>
     <!-- Feedback View -->
     <div id="feedback-view" class="flex flex-col flex-1 hidden overflow-hidden">
@@ -391,6 +403,18 @@
             <div class="flex justify-end space-x-2 mt-4">
                 <button id="edit-image-cancel" class="px-4 py-2 rounded-md btn-secondary">Abbrechen</button>
                 <button id="edit-image-save" class="px-4 py-2 rounded-md btn-primary">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit PDF Description Modal -->
+    <div id="edit-pdf-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+            <h3 class="text-lg font-medium mb-4">PDF-Beschreibung bearbeiten</h3>
+            <textarea id="edit-pdf-description-input" class="w-full p-2 border border-[var(--input-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" rows="4"></textarea>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button id="edit-pdf-cancel" class="px-4 py-2 rounded-md btn-secondary">Abbrechen</button>
+                <button id="edit-pdf-save" class="px-4 py-2 rounded-md btn-primary">Speichern</button>
             </div>
         </div>
     </div>

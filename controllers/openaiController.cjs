@@ -144,6 +144,10 @@ async function streamChat(req, res) {
     if (vectorStore.store) {
       const relevantDocs = await vectorStore.similaritySearch(prompt);
       hochschulContent = relevantDocs.map(doc => doc.pageContent).join('\n\n');
+      if (vectorStore.graphData) {
+        const graphContext = await vectorStore.getGraphSummary(prompt, vectorStore.graphData);
+        hochschulContent += `\nGraph Summary: ${graphContext}`;
+      }
     } else {
       // Fallback to full DB if vector DB not enabled
       const entries = await HochschuhlABC.findAll({

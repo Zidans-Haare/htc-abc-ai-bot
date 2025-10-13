@@ -7,6 +7,7 @@ import { initExport } from './export.js';
 import { setupFeedback } from './feedback.js';
 import { renderMarkup } from '../js/markup.js';
 import { initImages } from './images.js';
+import { initPDFs } from './pdf.js';
 import { initStats } from './stats.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -37,8 +38,9 @@ document.addEventListener('DOMContentLoaded', async () => {
    const feedbackBtn = document.getElementById('btn-feedback');
    const exportBtn = document.getElementById('btn-export');
    const logoutBtn = document.getElementById('btn-logout');
-   const imagesBtn = document.getElementById('btn-images');
-   const conversationsBtn = document.getElementById('btn-conversations');
+    const imagesBtn = document.getElementById('btn-images');
+    const pdfBtn = document.getElementById('btn-pdfs');
+    const conversationsBtn = document.getElementById('btn-conversations');
    const statsBtn = document.getElementById('btn-stats');
 
    // Mobile buttons
@@ -49,8 +51,9 @@ document.addEventListener('DOMContentLoaded', async () => {
    const mobileFeedbackBtn = document.getElementById('mobile-btn-feedback');
    const mobileExportBtn = document.getElementById('mobile-btn-export');
    const mobileLogoutBtn = document.getElementById('mobile-btn-logout');
-   const mobileImagesBtn = document.getElementById('mobile-btn-images');
-   const mobileConversationsBtn = document.getElementById('mobile-btn-conversations');
+    const mobileImagesBtn = document.getElementById('mobile-btn-images');
+    const mobilePdfBtn = document.getElementById('mobile-btn-pdfs');
+    const mobileConversationsBtn = document.getElementById('mobile-btn-conversations');
    const mobileStatsBtn = document.getElementById('mobile-btn-stats');
 
   const editorView = document.getElementById('editor-view');
@@ -59,6 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const userView = document.getElementById('user-view');
   const feedbackView = document.getElementById('feedback-view');
   const imagesView = document.getElementById('images-view');
+  const pdfView = document.getElementById('pdf-view');
   const conversationsView = document.getElementById('conversations-view');
   const statsView = document.getElementById('stats-view');
 
@@ -116,6 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    pdfView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     statsView.classList.add('hidden');
     updateButtonStyles(editorBtn);
@@ -128,6 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    pdfView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     statsView.classList.add('hidden');
     updateButtonStyles(questionsBtn);
@@ -145,6 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    pdfView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(archiveBtn);
     loadArchive();
@@ -157,6 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    pdfView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(userBtn);
     loadUsers();
@@ -169,6 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    pdfView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(feedbackBtn);
   }
@@ -181,7 +190,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
+    pdfView.classList.add('hidden');
     updateButtonStyles(imagesBtn);
+  }
+
+  function showPDFs() {
+    pdfView.classList.remove('hidden');
+    editorView.classList.add('hidden');
+    questionsView.classList.add('hidden');
+    archiveView.classList.add('hidden');
+    userView.classList.add('hidden');
+    feedbackView.classList.add('hidden');
+    imagesView.classList.add('hidden');
+    if (conversationsView) conversationsView.classList.add('hidden');
+    updateButtonStyles(pdfBtn);
   }
 
   function showConversations() {
@@ -192,6 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    pdfView.classList.add('hidden');
     updateButtonStyles(conversationsBtn);
   }
 
@@ -203,12 +226,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
+    pdfView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(statsBtn);
   }
 
    function updateButtonStyles(activeButton) {
-     const buttons = [editorBtn, questionsBtn, archiveBtn, userBtn, feedbackBtn, exportBtn, imagesBtn, conversationsBtn, statsBtn];
+      const buttons = [editorBtn, questionsBtn, archiveBtn, userBtn, feedbackBtn, exportBtn, imagesBtn, pdfBtn, conversationsBtn, statsBtn];
      buttons.forEach(btn => {
        if (btn) btn.classList.remove('active');
      });
@@ -227,8 +251,9 @@ document.addEventListener('DOMContentLoaded', async () => {
        [userBtn]: mobileUserBtn,
        [feedbackBtn]: mobileFeedbackBtn,
        [exportBtn]: mobileExportBtn,
-       [imagesBtn]: mobileImagesBtn,
-       [conversationsBtn]: mobileConversationsBtn,
+        [imagesBtn]: mobileImagesBtn,
+        [pdfBtn]: mobilePdfBtn,
+        [conversationsBtn]: mobileConversationsBtn,
        [statsBtn]: mobileStatsBtn
      };
      if (mobileMap[activeButton]) mobileMap[activeButton].classList.add('active');
@@ -243,8 +268,9 @@ document.addEventListener('DOMContentLoaded', async () => {
    archiveBtn.classList.add('hidden');
    userBtn.classList.add('hidden');
    feedbackBtn.classList.add('hidden');
-   if(imagesBtn) imagesBtn.classList.add('hidden');
-   if(conversationsBtn) conversationsBtn.classList.add('hidden');
+    if(imagesBtn) imagesBtn.classList.add('hidden');
+    if(pdfBtn) pdfBtn.classList.add('hidden');
+    if(conversationsBtn) conversationsBtn.classList.add('hidden');
 
    // Mobile buttons
    if(mobileEditorBtn) mobileEditorBtn.classList.add('hidden');
@@ -252,7 +278,8 @@ document.addEventListener('DOMContentLoaded', async () => {
    if(mobileArchiveBtn) mobileArchiveBtn.classList.add('hidden');
    if(mobileUserBtn) mobileUserBtn.classList.add('hidden');
    if(mobileFeedbackBtn) mobileFeedbackBtn.classList.add('hidden');
-   if(mobileImagesBtn) mobileImagesBtn.classList.add('hidden');
+    if(mobileImagesBtn) mobileImagesBtn.classList.add('hidden');
+    if(mobilePdfBtn) mobilePdfBtn.classList.add('hidden');
    if(mobileConversationsBtn) mobileConversationsBtn.classList.add('hidden');
    if(mobileStatsBtn) mobileStatsBtn.classList.add('hidden');
 
@@ -263,8 +290,9 @@ document.addEventListener('DOMContentLoaded', async () => {
        archiveBtn.classList.remove('hidden');
        userBtn.classList.remove('hidden');
        feedbackBtn.classList.remove('hidden');
-       if(imagesBtn) imagesBtn.classList.remove('hidden');
-       if(conversationsBtn) conversationsBtn.classList.remove('hidden');
+        if(imagesBtn) imagesBtn.classList.remove('hidden');
+        if(pdfBtn) pdfBtn.classList.remove('hidden');
+        if(conversationsBtn) conversationsBtn.classList.remove('hidden');
 
        // Mobile
        if(mobileEditorBtn) mobileEditorBtn.classList.remove('hidden');
@@ -272,45 +300,50 @@ document.addEventListener('DOMContentLoaded', async () => {
        if(mobileArchiveBtn) mobileArchiveBtn.classList.remove('hidden');
        if(mobileUserBtn) mobileUserBtn.classList.remove('hidden');
        if(mobileFeedbackBtn) mobileFeedbackBtn.classList.remove('hidden');
-       if(mobileImagesBtn) mobileImagesBtn.classList.remove('hidden');
-       if(mobileConversationsBtn) mobileConversationsBtn.classList.remove('hidden');
+        if(mobileImagesBtn) mobileImagesBtn.classList.remove('hidden');
+        if(mobilePdfBtn) mobilePdfBtn.classList.remove('hidden');
+        if(mobileConversationsBtn) mobileConversationsBtn.classList.remove('hidden');
 
        editorBtn.addEventListener('click', showEditor);
        questionsBtn.addEventListener('click', showQuestions);
        archiveBtn.addEventListener('click', showArchive);
-       userBtn.addEventListener('click', showUserAdmin);
-       feedbackBtn.addEventListener('click', showFeedback);
-       if(imagesBtn) imagesBtn.addEventListener('click', showImages);
+        userBtn.addEventListener('click', showUserAdmin);
+        feedbackBtn.addEventListener('click', showFeedback);
+        if(imagesBtn) imagesBtn.addEventListener('click', showImages);
+        if(pdfBtn) pdfBtn.addEventListener('click', showPDFs);
 
-       // Mobile events
+        // Mobile events
        if(mobileEditorBtn) mobileEditorBtn.addEventListener('click', () => { showEditor(); mobileMenu.classList.add('hidden'); });
        if(mobileQuestionsBtn) mobileQuestionsBtn.addEventListener('click', () => { showQuestions(); mobileMenu.classList.add('hidden'); });
        if(mobileArchiveBtn) mobileArchiveBtn.addEventListener('click', () => { showArchive(); mobileMenu.classList.add('hidden'); });
        if(mobileUserBtn) mobileUserBtn.addEventListener('click', () => { showUserAdmin(); mobileMenu.classList.add('hidden'); });
-       if(mobileFeedbackBtn) mobileFeedbackBtn.addEventListener('click', () => { showFeedback(); mobileMenu.classList.add('hidden'); });
-       if(mobileImagesBtn) mobileImagesBtn.addEventListener('click', () => { showImages(); mobileMenu.classList.add('hidden'); });
+        if(mobileFeedbackBtn) mobileFeedbackBtn.addEventListener('click', () => { showFeedback(); mobileMenu.classList.add('hidden'); });
+        if(mobileImagesBtn) mobileImagesBtn.addEventListener('click', () => { showImages(); mobileMenu.classList.add('hidden'); });
+        if(mobilePdfBtn) mobilePdfBtn.addEventListener('click', () => { showPDFs(); mobileMenu.classList.add('hidden'); });
 
-       initUsers();
-       showEditor();
+        showEditor();
        break;
      case 'editor':
        editorBtn.classList.remove('hidden');
        questionsBtn.classList.remove('hidden');
        archiveBtn.classList.remove('hidden');
-       if(imagesBtn) imagesBtn.classList.remove('hidden');
+        if(imagesBtn) imagesBtn.classList.remove('hidden');
+        if(pdfBtn) pdfBtn.classList.remove('hidden');
 
-       // Mobile
+        // Mobile
        if(mobileEditorBtn) mobileEditorBtn.classList.remove('hidden');
        if(mobileQuestionsBtn) mobileQuestionsBtn.classList.remove('hidden');
        if(mobileArchiveBtn) mobileArchiveBtn.classList.remove('hidden');
-       if(mobileImagesBtn) mobileImagesBtn.classList.remove('hidden');
+        if(mobileImagesBtn) mobileImagesBtn.classList.remove('hidden');
+        if(mobilePdfBtn) mobilePdfBtn.classList.remove('hidden');
 
-       editorBtn.addEventListener('click', showEditor);
+        editorBtn.addEventListener('click', showEditor);
        questionsBtn.addEventListener('click', showQuestions);
        archiveBtn.addEventListener('click', showArchive);
-       if(imagesBtn) imagesBtn.addEventListener('click', showImages);
+        if(imagesBtn) imagesBtn.addEventListener('click', showImages);
+        if(pdfBtn) pdfBtn.addEventListener('click', showPDFs);
 
-       // Mobile events
+        // Mobile events
        if(mobileEditorBtn) mobileEditorBtn.addEventListener('click', () => { showEditor(); mobileMenu.classList.add('hidden'); });
        if(mobileQuestionsBtn) mobileQuestionsBtn.addEventListener('click', () => { showQuestions(); mobileMenu.classList.add('hidden'); });
        if(mobileArchiveBtn) mobileArchiveBtn.addEventListener('click', () => { showArchive(); mobileMenu.classList.add('hidden'); });
@@ -342,8 +375,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       archiveView.classList.add('hidden');
       userView.classList.add('hidden');
       feedbackView.classList.add('hidden');
-      imagesView.classList.add('hidden');
-      if(conversationsView) conversationsView.classList.add('hidden');
+       imagesView.classList.add('hidden');
+       pdfView.classList.add('hidden');
+       if(conversationsView) conversationsView.classList.add('hidden');
       break;
   }
 
@@ -374,6 +408,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initExport();
   setupFeedback();
   initImages();
+  initPDFs();
   if (window.initConversations) {
     initConversations(showConversations);
   }
