@@ -90,7 +90,7 @@ function renderPDFs(pdfs) {
                     <i class="fas fa-file-pdf fa-3x text-red-500"></i>
                 </div>
                 <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="copy-url-btn text-white hover:text-[var(--accent-color)] transition-colors" data-url="/uploads/${pdf.filename}" title="URL kopieren">
+                     <button class="copy-url-btn text-white hover:text-[var(--accent-color)] transition-colors" data-url="/pdf/${pdf.filename}" title="URL kopieren">
                         <i class="fas fa-copy fa-lg"></i>
                     </button>
                     <button class="edit-pdf-btn text-white hover:text-yellow-400 transition-colors ml-4" data-filename="${pdf.filename}" data-description="${pdf.description || ''}" title="Beschreibung bearbeiten">

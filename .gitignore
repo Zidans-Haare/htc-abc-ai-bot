@@ -24,3 +24,4 @@ public/admin/milkdown_editor/
 cache/
 .DS_Store
 package-lock.json
+public/pdf/

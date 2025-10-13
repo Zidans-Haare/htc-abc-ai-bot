@@ -123,7 +123,7 @@ const apiLimiter = rateLimit({
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,
-    trustProxy: true,
+    trustProxy: parseInt(process.env.TRUST_PROXY_COUNT) || 2,
 });
 
 const dashboardLimiter = rateLimit({
@@ -131,7 +131,7 @@ const dashboardLimiter = rateLimit({
     max: 500, // Higher limit for dashboard API calls
     standardHeaders: true,
     legacyHeaders: false,
-    trustProxy: true,
+    trustProxy: parseInt(process.env.TRUST_PROXY_COUNT) || 2,
 });
 
 const loginLimiter = rateLimit({
@@ -140,7 +140,7 @@ const loginLimiter = rateLimit({
     message: "Too many login attempts from this IP, please try again after an hour",
     standardHeaders: true,
     legacyHeaders: false,
-    trustProxy: true,
+    trustProxy: parseInt(process.env.TRUST_PROXY_COUNT) || 2,
     skipSuccessfulRequests: true, // Only count failed login attempts
 });
 

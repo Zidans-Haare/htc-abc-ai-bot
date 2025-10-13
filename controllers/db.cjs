@@ -176,6 +176,37 @@ const Images = sequelize.define('Images', {
     timestamps: false
 });
 
+const PDFs = sequelize.define('PDFs', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    filename: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    filepath: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    createdAt: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+    },
+    updatedAt: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+    }
+}, {
+    tableName: 'pdfs',
+    timestamps: true
+});
+
 const AuthSession = sequelize.define('AuthSession', {
     id: {
         type: DataTypes.INTEGER,
@@ -445,4 +476,4 @@ const QuestionAnalysisCache = sequelize.define('QuestionAnalysisCache', {
 //   .then(() => console.log('✓ All models were synchronized successfully.'))
 //   .catch(err => console.error('SQLite sync error:', err.message));
 
-module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, AuthSession, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache };
+module.exports = { sequelize, User, HochschuhlABC, Questions, Feedback, Images, PDFs, AuthSession, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache };

@@ -2,44 +2,9 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs/promises');
 const path = require('path');
-const { sequelize } = require('../db.cjs');
+const { PDFs } = require('../db.cjs');
 
-// Define PDFs model if not exists
-const PDFs = sequelize.define('PDFs', {
-    id: {
-        type: require('sequelize').INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-    filename: {
-        type: require('sequelize').STRING,
-        allowNull: false
-    },
-    filepath: {
-        type: require('sequelize').STRING,
-        allowNull: false
-    },
-    description: {
-        type: require('sequelize').TEXT,
-        allowNull: true
-    },
-    createdAt: {
-        type: require('sequelize').DATE,
-        defaultValue: require('sequelize').NOW
-    },
-    updatedAt: {
-        type: require('sequelize').DATE,
-        defaultValue: require('sequelize').NOW
-    }
-}, {
-    tableName: 'pdfs',
-    timestamps: true
-});
-
-// Sync the model
-PDFs.sync().catch(err => console.error("Failed to sync PDFs table", err));
-
-const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+const uploadDir = path.join(__dirname, '..', '..', 'public', 'pdf');
 
 // Ensure the upload directory exists
 fs.mkdir(uploadDir, { recursive: true }).catch(err => console.error("Failed to create upload directory", err));
@@ -87,7 +52,7 @@ module.exports = (authMiddleware) => {
             // Save PDF info to the database
             const newPDF = await PDFs.create({
                 filename: req.file.filename,
-                filepath: `/uploads/${req.file.filename}`,
+                filepath: `/pdf/${req.file.filename}`,
                 description: description || null // Save description, or null if it's empty
             });
             res.status(201).json(newPDF);
