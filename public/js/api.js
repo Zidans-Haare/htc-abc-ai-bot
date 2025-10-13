@@ -43,7 +43,7 @@ export async function sendMsg(app, promptText) {
             md.className = 'metadata';
             let metadataText = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
             if (tokensInfo) {
-                metadataText += ` | Sent: ${tokensInfo.sent} Tokens | Received: ${tokensInfo.received} Tokens`;
+                metadataText += ` | Tokens Sent: ${tokensInfo.sent} | Received: ${tokensInfo.received}`;
             }
             md.textContent = metadataText;
             aiMessageBubble.appendChild(md);

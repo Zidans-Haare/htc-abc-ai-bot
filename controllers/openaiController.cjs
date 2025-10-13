@@ -287,6 +287,11 @@ async function streamChat(req, res) {
 
     const responseTime = Date.now() - startTime;
     const tokensUsed = estimateTokens(fullResponseText);
+    let sentTokens = 0;
+    if (process.env.DISPLAY_TOKEN_USED_FOR_QUERY === 'true') {
+      const promptText = messagesPayload.map(m => m.content).join(' ');
+      sentTokens = estimateTokens(promptText);
+    }
     const wasSuccessful = !fullResponseText.includes('<+>');
 
     if (fullResponseText.includes('<+>')) {
@@ -298,6 +303,10 @@ async function streamChat(req, res) {
     const referencedArticleIds = extractArticleIds(fullResponseText);
     for (const articleId of referencedArticleIds) {
       await trackArticleView(articleId, sessionId, prompt);
+    }
+
+    if (process.env.DISPLAY_TOKEN_USED_FOR_QUERY === 'true') {
+      res.write(`data: ${JSON.stringify({ tokens: { sent: sentTokens, received: tokensUsed }, conversationId: convoId })}\n\n`);
     }
 
     res.write('data: [DONE]\n\n');

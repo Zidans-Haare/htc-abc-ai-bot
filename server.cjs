@@ -34,6 +34,7 @@ const envSchema = Joi.object({
    PDF_CHUNK_SIZE: Joi.number().integer().min(100).max(1000).default(300),
    PDF_EXTRACT_TEXT_ONLY: Joi.string().valid('true', 'false').default('false'),
    SYNC_BATCH: Joi.number().integer().min(10).max(500).default(100),
+   DISPLAY_TOKEN_USED_FOR_QUERY: Joi.string().valid('true', 'false').default('false'),
 }).unknown(true);
 
 const { error } = envSchema.validate(process.env);
