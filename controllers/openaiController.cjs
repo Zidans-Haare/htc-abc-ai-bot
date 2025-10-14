@@ -73,12 +73,14 @@ async function logUnansweredQuestion(newQuestion) {
     }
 
     await Questions.create({
-      question: newQuestion,
-      translation: translationToStore,
-      answered: false,
-      archived: false,
-      deleted: false,
-      spam: false,
+      data: {
+        question: newQuestion,
+        translation: translationToStore,
+        answered: false,
+        archived: false,
+        deleted: false,
+        spam: false,
+      },
     });
     console.log('Unanswered question logged to database');
   } catch (error) {
@@ -119,14 +121,18 @@ async function streamChat(req, res) {
         anonymous_user_id: anonymousUserId || 'unknown',
         category: 'Unkategorisiert',
         ai_confidence: 0.0,
+        created_at: new Date(),
       },
     });
     console.log(`Processed conversation in DB: ${convoId}`);
 
     await Message.create({
-      conversation_id: conversation.id,
-      role: 'user',
-      content: prompt,
+      data: {
+        conversation_id: conversation.id,
+        role: 'user',
+        content: prompt,
+        created_at: new Date(),
+      },
     });
     console.log(`Saved user message to DB: ${prompt}`);
 
@@ -279,9 +285,12 @@ async function streamChat(req, res) {
     }
 
     await Message.create({
-      conversation_id: convoId,
-      role: 'model',
-      content: fullResponseText,
+      data: {
+        conversation_id: convoId,
+        role: 'model',
+        content: fullResponseText,
+        created_at: new Date(),
+      },
     });
     console.log(`Saved AI response to DB: ${fullResponseText.slice(0, 50)}...`);
 

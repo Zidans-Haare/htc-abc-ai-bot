@@ -26,9 +26,10 @@ async function trackSession(req) {
             });
         }
 
-        const [session, created] = await UserSessions.findOrCreate({
+        const session = await UserSessions.upsert({
             where: { session_id: sessionId },
-            defaults: {
+            update: { last_activity: new Date() },
+            create: {
                 session_id: sessionId,
                 ip_address: req.ip || req.connection.remoteAddress,
                 user_agent: req.get('User-Agent'),
@@ -38,14 +39,6 @@ async function trackSession(req) {
                 successful_answers: 0
             }
         });
-
-        if (!created) {
-            // Update last activity
-            await UserSessions.update(
-                { last_activity: new Date() },
-                { where: { session_id: sessionId } }
-            );
-        }
 
         return sessionId;
     } catch (error) {
@@ -59,23 +52,29 @@ async function trackChatInteraction(sessionId, question, answer, wasSuccessful, 
         if (!sessionId) return;
 
         await ChatInteractions.create({
-            session_id: sessionId,
-            question: question,
-            answer: answer,
-            was_successful: wasSuccessful,
-            response_time_ms: responseTime,
-            tokens_used: tokensUsed,
-            timestamp: new Date(),
-            error_message: errorMessage
+            data: {
+                session_id: sessionId,
+                question: question,
+                answer: answer,
+                was_successful: wasSuccessful,
+                response_time_ms: responseTime,
+                tokens_used: tokensUsed,
+                timestamp: new Date(),
+                error_message: errorMessage
+            }
         });
 
         // Update session counters
-        await UserSessions.increment({
-            questions_count: 1,
-            successful_answers: wasSuccessful ? 1 : 0
-        }, {
-            where: { session_id: sessionId }
-        });
+        const current = await UserSessions.findUnique({ where: { session_id: sessionId } });
+        if (current) {
+            await UserSessions.update({
+                where: { session_id: sessionId },
+                data: {
+                    questions_count: current.questions_count + 1,
+                    successful_answers: current.successful_answers + (wasSuccessful ? 1 : 0)
+                }
+            });
+        }
 
     } catch (error) {
         console.error('Error tracking chat interaction:', error);
@@ -87,10 +86,12 @@ async function trackArticleView(articleId, sessionId, questionContext = null) {
         if (!articleId) return;
 
         await ArticleViews.create({
-            article_id: articleId,
-            session_id: sessionId,
-            viewed_at: new Date(),
-            question_context: questionContext
+            data: {
+                article_id: articleId,
+                session_id: sessionId,
+                viewed_at: new Date(),
+                question_context: questionContext
+            }
         });
 
     } catch (error) {
