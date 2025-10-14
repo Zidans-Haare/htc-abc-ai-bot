@@ -35,6 +35,7 @@ const envSchema = Joi.object({
     PDF_EXTRACT_TEXT_ONLY: Joi.string().valid('true', 'false').default('false'),
     SYNC_BATCH: Joi.number().integer().min(10).max(500).default(100),
     DISPLAY_TOKEN_USED_FOR_QUERY: Joi.string().valid('true', 'false').default('false'),
+    EMBEDDING_LIBRARY: Joi.string().valid('xenova', 'huggingface').default('xenova'),
     SESSION_INACTIVITY_TIMEOUT_MINUTES: Joi.number().integer().min(1).max(10080).default(1440),  // 1 min to 1 week
     SESSION_MAX_DURATION_MINUTES: Joi.number().integer().min(1).max(525600).default(43200),  // 1 min to 1 year
     MAIN_DB_TYPE: Joi.string().valid('sqlite', 'postgresql', 'mysql').default('sqlite'),

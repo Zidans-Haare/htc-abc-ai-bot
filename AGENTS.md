@@ -12,3 +12,4 @@
 - Use curl for troubleshooting network issues or API calls.
 - Vector DB supports incremental sync: removes old/invalid data, adds new/updated for headlines, PDFs. Init forces full sync; tracks with .vectordb_last_sync file.
 - Embedding uses free Xenova models; tests added for vector store functionality.
+- Context7 MCP tool is available; it exposes local context7 knowledge services and should be used whenever tasks can benefit from that capability.

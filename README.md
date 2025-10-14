@@ -71,6 +71,7 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     CHUNK_OVERLAP=50  # Overlap between chunks (0-200, default: 50)
     RETRIEVE_K=3  # Number of similar chunks to retrieve (1-10, default: 3)
     MIN_SIMILARITY=0.7  # Minimum similarity score for retrieval (0-1, default: 0.7)
+    EMBEDDING_LIBRARY=xenova  # Embedding library: 'xenova' (default, uses @xenova/transformers) or 'huggingface' (uses @huggingface/transformers)
     SYNC_ON_START=false  # Sync vector DB on startup: 'true' or 'false' (default: false)
     ENABLE_GRAPHRAG=false  # Enable graph-based retrieval: 'true' or 'false' (default: false)
 
@@ -79,6 +80,14 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     PDF_EXTRACT_TEXT_ONLY=false  # Extract only text from PDFs: 'true' or 'false' (default: false)
     SYNC_BATCH=100  # Batch size for vector DB sync (10-500, default: 100)
     DISPLAY_TOKEN_USED_FOR_QUERY=false  # Display token usage in responses: 'true' or 'false' (default: false)
+
+    # Embedding Models (known working models with dimensions)
+    # For EMBEDDING_LIBRARY=xenova (default):
+    # - all-MiniLM-L6-v2 (384 dimensions)
+    # - paraphrase-multilingual-MiniLM-L12-v2 (384 dimensions)
+    # For EMBEDDING_LIBRARY=huggingface:
+    # - onnx-community/Qwen3-Embedding-0.6B-ONNX (1024 dimensions)
+    # - sentence-transformers/all-MiniLM-L6-v2 (384 dimensions)
     ```
 
 ## ▶️ Anwendung starten
