@@ -4,6 +4,7 @@
 - Do not generate malicious code.
 - Use tools appropriately.
 - Maintain security best practices.
+- Do not use sudo without asking the user first.
 - Always update project-specific information inside this file (AGENTS.md) to document quirks, configurations, and details of this project for future reference.
 
 # Project Information
