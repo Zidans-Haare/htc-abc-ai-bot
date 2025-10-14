@@ -1,24 +1,22 @@
-const { sequelize, AuthSession } = require('../controllers/db.cjs');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
 
 async function createAuthSessionsTable(closeConnection = true) {
     try {
-        console.log('Creating auth_sessions table...');
+        console.log('Ensuring database schema is up to date...');
 
-        // Sync the AuthSession table
-        await AuthSession.sync({ force: false });
-        console.log('✓ AuthSession table created/updated');
+        // Use Prisma to push schema to DB
+        await execAsync('npx prisma db push --accept-data-loss');
+        console.log('✓ Database schema updated');
 
-        console.log('\n✓ Auth sessions table created successfully!');
-        console.log('\nNew table:');
+        console.log('\n✓ Auth sessions table ensured!');
+        console.log('\nTable:');
         console.log('- auth_sessions: Stores authentication sessions with expiration and activity tracking');
 
     } catch (error) {
-        console.error('Error creating auth_sessions table:', error);
+        console.error('Error updating database schema:', error);
         throw error;
-    } finally {
-        if (closeConnection) {
-            await sequelize.close();
-        }
     }
 }
 

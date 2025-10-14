@@ -311,36 +311,11 @@ async function streamChat(req, res) {
 
     res.write('data: [DONE]\n\n');
     res.end();
-
-    (async () => {
-      try {
-        const finalHistory = await Message.findMany({
-          where: { conversation_id: convoId },
-          orderBy: { created_at: 'asc' },
-          select: { role: true, content: true },
-        });
-
-        const categorizationFunc = loadCategorizer();
-        const categorizationResult = await categorizationFunc(finalHistory);
-
-        if (categorizationResult) {
-          await Conversation.updateMany({
-            where: { id: convoId },
-            data: {
-              category: categorizationResult.category,
-              ai_confidence: categorizationResult.confidence,
-            },
-          });
-
-    const formattedSuggestions = suggestions.map(s => ({
-      headline: s.headline,
-      text: s.text.substring(0, 100) + (s.text.length > 100 ? '...' : ''),
-    }));
-
-    res.json(formattedSuggestions);
   } catch (error) {
-    console.error('Fehler beim Abrufen der Vorschläge:', error.message);
-    res.status(500).json({ error: 'Vorschläge konnten nicht geladen werden' });
+    console.error('Error in streamChat:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 }
 

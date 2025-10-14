@@ -1,32 +1,24 @@
-const { sequelize, UserSessions, ArticleViews, ChatInteractions } = require('../controllers/db.cjs');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
 
 async function createDashboardTables(closeConnection = true) {
     try {
-        console.log('Creating dashboard tables...');
-        
-        // Force sync only the new tables
-        await UserSessions.sync({ force: false });
-        console.log('✓ UserSessions table created/updated');
-        
-        await ArticleViews.sync({ force: false });
-        console.log('✓ ArticleViews table created/updated');
-        
-        await ChatInteractions.sync({ force: false });
-        console.log('✓ ChatInteractions table created/updated');
-        
-        console.log('\n✓ All dashboard tables created successfully!');
-        console.log('\nNew tables:');
+        console.log('Ensuring dashboard tables exist...');
+
+        // Schema is already pushed by auth script, but ensure
+        await execAsync('npx prisma db push --accept-data-loss');
+        console.log('✓ Dashboard tables ensured');
+
+        console.log('\n✓ All dashboard tables ready!');
+        console.log('\nTables:');
         console.log('- user_sessions: Tracks user sessions and basic statistics');
         console.log('- article_views: Tracks which articles are viewed in context of questions');
         console.log('- chat_interactions: Tracks all chat interactions with success metrics');
-        
+
     } catch (error) {
-        console.error('Error creating dashboard tables:', error);
+        console.error('Error ensuring dashboard tables:', error);
         throw error;
-    } finally {
-        if (closeConnection) {
-            await sequelize.close();
-        }
     }
 }
 

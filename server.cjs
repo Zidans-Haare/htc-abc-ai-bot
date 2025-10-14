@@ -54,7 +54,7 @@ if (error) {
   process.exit(1);
 }
 
-const { sequelize } = require('./controllers/db.cjs');
+const { prisma } = require('./controllers/db.cjs');
 
 // --- Controller Imports (after dotenv) ---
 const { streamChat, getSuggestions, testApiKey } = require('./controllers/openaiController.cjs');
@@ -86,9 +86,9 @@ let cliMode = options.initVectordb || options.dropVectordb;
 if (options.initVectordb) {
   (async () => {
     try {
-      // Sync DB tables
-      await sequelize.sync();
-      console.log('DB tables synchronized for CLI');
+      // Ensure DB connection
+      await prisma.$connect();
+      console.log('DB connected for CLI');
       console.log('Initializing vector DB...');
       const vectorStore = require('./lib/vectorStore');
       const stats = await vectorStore.initVectorDB();
@@ -429,21 +429,13 @@ const serverCallback = async () => {
     console.error('Warning: Could not initialize dashboard tables:', error.message);
   }
 
-  // Authenticate database connection
+  // Connect to database
   try {
-    await sequelize.authenticate();
+    await prisma.$connect();
     console.log('✓ Database connection established');
   } catch (error) {
     console.error('Warning: Could not connect to database:', error.message);
   }
-
-  // Sync all models to ensure tables exist
-  try {
-    await sequelize.sync();
-    console.log('✓ All database tables synchronized');
-   } catch (error) {
-     console.error('Warning: Could not sync database:', error.message);
-   }
 
    // Sync vector DB if enabled
    if (process.env.SYNC_ON_START === 'true') {
