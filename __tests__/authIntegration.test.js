@@ -7,17 +7,17 @@ const bcrypt = require('bcryptjs');
 // Mock the db module
 jest.mock('../controllers/db.cjs', () => ({
   User: {
-    findOne: jest.fn(),
+    findFirst: jest.fn(),
     create: jest.fn(),
-    findAll: jest.fn(),
-    update: jest.fn(),
-    destroy: jest.fn(),
+    findMany: jest.fn(),
+    updateMany: jest.fn(),
+    deleteMany: jest.fn(),
   },
   AuthSession: {
     create: jest.fn(),
-    destroy: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
+    deleteMany: jest.fn(),
+    findFirst: jest.fn(),
+    updateMany: jest.fn(),
   },
 }));
 
@@ -42,7 +42,7 @@ describe('Auth Integration Tests', () => {
   describe('POST /auth/login', () => {
     it('should login successfully and set cookie', async () => {
       const mockUser = { username: 'user', password: 'hashed', role: 'admin' };
-      User.findOne.mockResolvedValue(mockUser);
+      User.findFirst.mockResolvedValue(mockUser);
       bcrypt.compare.mockResolvedValue(true);
       AuthSession.create.mockResolvedValue({ session_token: 'token123' });
 
@@ -65,7 +65,7 @@ describe('Auth Integration Tests', () => {
     });
 
     it('should return 401 for invalid credentials', async () => {
-      User.findOne.mockResolvedValue(null);
+      User.findFirst.mockResolvedValue(null);
 
       const response = await request(app)
         .post('/auth/login')
@@ -84,8 +84,8 @@ describe('Auth Integration Tests', () => {
         last_activity: new Date(),
         created_at: new Date(),
       };
-      AuthSession.findOne.mockResolvedValue(mockSession);
-      AuthSession.update.mockResolvedValue();
+      AuthSession.findFirst.mockResolvedValue(mockSession);
+      AuthSession.updateMany.mockResolvedValue();
 
       const response = await request(app)
         .get('/auth/validate')
@@ -96,7 +96,7 @@ describe('Auth Integration Tests', () => {
     });
 
     it('should return 401 for invalid session', async () => {
-      AuthSession.findOne.mockResolvedValue(null);
+      AuthSession.findFirst.mockResolvedValue(null);
 
       const response = await request(app)
         .get('/auth/validate')
@@ -109,7 +109,7 @@ describe('Auth Integration Tests', () => {
 
   describe('POST /auth/logout', () => {
     it('should logout and clear cookie', async () => {
-      AuthSession.destroy.mockResolvedValue();
+      AuthSession.deleteMany.mockResolvedValue();
 
       const response = await request(app)
         .post('/auth/logout')
@@ -117,7 +117,7 @@ describe('Auth Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ success: true });
-      expect(AuthSession.destroy).toHaveBeenCalledWith({ where: { session_token: 'token123' } });
+      expect(AuthSession.deleteMany).toHaveBeenCalledWith({ where: { session_token: 'token123' } });
     });
   });
 });

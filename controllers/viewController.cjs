@@ -1,5 +1,4 @@
 const { HochschuhlABC } = require('./db.cjs');
-const { Op } = require('sequelize');
 
 async function getPublishedArticles(req, res) {
     try {
@@ -9,33 +8,30 @@ async function getPublishedArticles(req, res) {
 
         if (sort === 'alpha') {
             // Fetch all and sort in the application for proper locale-aware sorting
-            articles = await HochschuhlABC.findAll({
-                attributes: ['headline', ['text', 'content']],
+            articles = await HochschuhlABC.findMany({
+                select: { headline: true, text: true },
                 where: {
                     active: true,
-                    archived: {
-                        [Op.is]: null
-                    }
+                    archived: null
                 }
             });
 
             // German locale, ignore case and accents
             const collator = new Intl.Collator('de', { sensitivity: 'base' });
             articles.sort((a, b) => collator.compare(a.headline, b.headline));
+            articles = articles.map(a => ({ headline: a.headline, content: a.text }));
 
         } else {
             // Default sort by lastUpdated, most recent first
-            order = [['lastUpdated', 'DESC']];
-            articles = await HochschuhlABC.findAll({
-                attributes: ['headline', ['text', 'content']],
+            articles = await HochschuhlABC.findMany({
+                select: { headline: true, text: true },
                 where: {
                     active: true,
-                    archived: {
-                        [Op.is]: null
-                    }
+                    archived: null
                 },
-                order: order
+                orderBy: { lastUpdated: 'desc' }
             });
+            articles = articles.map(a => ({ headline: a.headline, content: a.text }));
         }
 
         res.json(articles);

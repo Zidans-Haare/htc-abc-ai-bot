@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model article_views {
+  id               Int            @id @default(autoincrement())
+  article_id       Int
+  session_id       String?
+  viewed_at        DateTime?
+  question_context String?
+  hochschuhl_abc   hochschuhl_abc @relation(fields: [article_id], references: [id], onDelete: NoAction)
+}
+
+model auth_sessions {
+  id            Int       @id @default(autoincrement())
+  session_token String    @unique(map: "sqlite_autoindex_auth_sessions_1")
+  username      String
+  role          String
+  created_at    DateTime?
+  last_activity DateTime?
+  expires_at    DateTime
+}
+
+model chat_interactions {
+  id               Int                        @id @default(autoincrement())
+  session_id       String
+  question         String
+  answer           String?
+  was_successful   Boolean? @default(false)
+  response_time_ms Int?
+  tokens_used      Int?
+  timestamp        DateTime?
+  error_message    String?
+  user_sessions    user_sessions              @relation(fields: [session_id], references: [session_id], onDelete: NoAction)
+}
+
+model conversations {
+  id                String     @id
+  anonymous_user_id String
+  category          String?    @default("Unkategorisiert")
+  ai_confidence     Float?
+  created_at        DateTime
+  messages          messages[]
+}
+
+model daily_question_stats {
+  id                  Int       @id @default(autoincrement())
+  analysis_date       String
+  normalized_question String
+  question_count      Int
+  topic               String?
+  languages_detected  String?
+  original_questions  String?
+  created_at          DateTime? @default(now())
+}
+
+model feedback {
+  id                    Int       @id @default(autoincrement())
+  feedback_text         String
+  email                 String?
+  conversation_id       String?
+  timestamp             DateTime?
+  attached_chat_history String?
+}
+
+model hochschuhl_abc {
+  id            Int                        @id @default(autoincrement())
+  headline      String
+  text          String
+  editor        String?
+  lastUpdated   DateTime?
+  active        Boolean? @default(true)
+  archived      DateTime?
+  pdfPath       String?
+  updated_at    DateTime                   @default(dbgenerated("'2025-10-13 19:59:08.431 +00:00'"))
+  article_views article_views[]
+  questions     questions[]
+}
+
+model hochschuhl_abc_backup {
+  id          Int                        @id @default(autoincrement())
+  headline    String
+  text        String
+  lastUpdated DateTime?
+  active      Unsupported("tinyint(1)")? @default(dbgenerated("1"))
+  archived    DateTime?
+  editor      String?
+  views       Int                        @default(0)
+}
+
+model images {
+  id          Int     @id @default(autoincrement())
+  filename    String
+  description String?
+}
+
+model messages {
+  id              Int           @id @default(autoincrement())
+  conversation_id String
+  role            String
+  content         String
+  created_at      DateTime
+  conversations   conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+}
+
+model page_views {
+  id        Int       @id @default(autoincrement())
+  path      String    @default("/")
+  timestamp DateTime?
+}
+
+model pdfs {
+  id          Int       @id @default(autoincrement())
+  filename    String
+  filepath    String
+  description String?
+  createdAt   DateTime?
+  updatedAt   DateTime?
+}
+
+model question_analysis_cache {
+  id                  Int                        @id @default(autoincrement())
+  cache_key           String
+  normalized_question String
+  question_count      Int?                       @default(1)
+  topic               String?
+  languages_detected  String?
+  original_questions  String
+  last_updated        DateTime?
+  is_processing       Boolean? @default(false)
+}
+
+model question_cache {
+  id        Int      @id @default(autoincrement())
+  question  String   @unique(map: "sqlite_autoindex_question_cache_1")
+  answer    String
+  status    String   @default("pending")
+  hitCount  Int?     @default(0)
+  createdAt DateTime
+  updatedAt DateTime
+}
+
+model questions {
+  id                Int                        @id @default(autoincrement())
+  question          String
+  answer            String?
+  user              String?
+  lastUpdated       DateTime?
+  archived          Boolean? @default(false)
+  linked_article_id Int?
+  answered          Boolean? @default(false)
+  spam              Boolean? @default(false)
+  deleted           Boolean? @default(false)
+  translation       String?
+  feedback          String?
+  hochschuhl_abc    hochschuhl_abc?            @relation(fields: [linked_article_id], references: [id])
+}
+
+model sessions {
+  id            Int       @id @default(autoincrement())
+  token_hash    String    @unique(map: "sqlite_autoindex_sessions_1")
+  username      String
+  role          String
+  created_at    DateTime?
+  last_activity DateTime?
+  expires_at    DateTime
+}
+
+model token_usage {
+  id          Int       @id @default(autoincrement())
+  token_count Int
+  timestamp   DateTime?
+}
+
+model user_sessions {
+  id                 Int                 @id @default(autoincrement())
+  session_id         String              @unique(map: "sqlite_autoindex_user_sessions_1")
+  ip_address         String?
+  user_agent         String?
+  started_at         DateTime?
+  last_activity      DateTime?
+  questions_count    Int?                @default(0)
+  successful_answers Int?                @default(0)
+  ended_at           DateTime?
+  chat_interactions  chat_interactions[]
+}
+
+model users {
+  id       Int    @id @default(autoincrement())
+  username String @unique(map: "sqlite_autoindex_users_1")
+  password String
+  role     String @default("editor")
+}

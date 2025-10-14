@@ -14,3 +14,4 @@
 - Vector DB supports incremental sync: removes old/invalid data, adds new/updated for headlines, PDFs. Init forces full sync; tracks with .vectordb_last_sync file.
 - Embedding uses free Xenova models; tests added for vector store functionality.
 - Context7 MCP tool is available; it exposes local context7 knowledge services and should be used whenever tasks can benefit from that capability.
+- Investigated 'serialize' npm modules: serialize-error and dom-serializer were unused dependencies, removed from package.json. No serialization logic needed porting to Prisma.

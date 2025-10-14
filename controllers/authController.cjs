@@ -27,7 +27,7 @@ async function createSession(username, role) {
 
 async function destroySession(token) {
   try {
-    await AuthSession.destroy({ where: { session_token: token } });
+    await AuthSession.deleteMany({ where: { session_token: token } });
   } catch (err) {
     console.error('Destroy session error:', err);
   }
@@ -35,7 +35,7 @@ async function destroySession(token) {
 
 async function getSession(token) {
   try {
-    const session = await AuthSession.findOne({ where: { session_token: token } });
+    const session = await AuthSession.findFirst({ where: { session_token: token } });
     if (!session) {
       return null;
     }
@@ -46,21 +46,21 @@ async function getSession(token) {
 
     // Check inactivity
     if (now.getTime() - lastActivity.getTime() > SESSION_INACTIVITY_TIMEOUT_MS) {
-      await AuthSession.destroy({ where: { session_token: token } });
+      await AuthSession.deleteMany({ where: { session_token: token } });
       return null;
     }
 
     // Check max usage
     if (now.getTime() - createdAt.getTime() > SESSION_MAX_DURATION_MS) {
-      await AuthSession.destroy({ where: { session_token: token } });
+      await AuthSession.deleteMany({ where: { session_token: token } });
       return null;
     }
 
     // Update last activity
-    await AuthSession.update(
-      { last_activity: now },
-      { where: { session_token: token } }
-    );
+    await AuthSession.updateMany({
+      where: { session_token: token },
+      data: { last_activity: now }
+    });
 
     return { username: session.username, role: session.role };
   } catch (err) {
@@ -72,12 +72,12 @@ async function getSession(token) {
 async function cleanupExpiredSessions() {
   try {
     const now = new Date();
-    const result = await AuthSession.destroy({
+    const result = await AuthSession.deleteMany({
       where: {
-        [require('sequelize').Op.or]: [
-          { expires_at: { [require('sequelize').Op.lt]: now } },
-          { last_activity: { [require('sequelize').Op.lt]: new Date(now.getTime() - SESSION_INACTIVITY_TIMEOUT_MS) } },
-          { created_at: { [require('sequelize').Op.lt]: new Date(now.getTime() - SESSION_MAX_DURATION_MS) } }
+        OR: [
+          { expires_at: { lt: now } },
+          { last_activity: { lt: new Date(now.getTime() - SESSION_INACTIVITY_TIMEOUT_MS) } },
+          { created_at: { lt: new Date(now.getTime() - SESSION_MAX_DURATION_MS) } }
         ]
       }
     });
@@ -88,7 +88,7 @@ async function cleanupExpiredSessions() {
 
 async function verifyUser(username, password) {
   try {
-    const user = await User.findOne({ where: { username } });
+    const user = await User.findFirst({ where: { username } });
     if (!user) return null;
     const match = await bcrypt.compare(password, user.password);
     if (!match) return null;
@@ -112,7 +112,7 @@ async function createUser(username, password, role) {
 
 async function listUsers() {
   try {
-    const users = await User.findAll({ attributes: ['id', 'username', 'role'] });
+    const users = await User.findMany({ select: { id: true, username: true, role: true } });
     return users;
   } catch (err) {
     console.error('List users error:', err);
@@ -123,7 +123,10 @@ async function listUsers() {
 async function updateUserPassword(username, newPassword) {
   try {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await User.update({ password: hashedPassword }, { where: { username } });
+    await User.updateMany({
+      where: { username },
+      data: { password: hashedPassword }
+    });
   } catch (err) {
     console.error('Update user password error:', err);
     throw err;
@@ -132,7 +135,7 @@ async function updateUserPassword(username, newPassword) {
 
 async function deleteUser(username) {
   try {
-    await User.destroy({ where: { username } });
+    await User.deleteMany({ where: { username } });
   } catch (err) {
     console.error('Delete user error:', err);
     throw err;

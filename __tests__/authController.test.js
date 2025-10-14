@@ -5,17 +5,17 @@ const bcrypt = require('bcryptjs');
 // Mock the db module
 jest.mock('../controllers/db.cjs', () => ({
   User: {
-    findOne: jest.fn(),
+    findFirst: jest.fn(),
     create: jest.fn(),
-    findAll: jest.fn(),
-    update: jest.fn(),
-    destroy: jest.fn(),
+    findMany: jest.fn(),
+    updateMany: jest.fn(),
+    deleteMany: jest.fn(),
   },
   AuthSession: {
     create: jest.fn(),
-    destroy: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
+    deleteMany: jest.fn(),
+    findFirst: jest.fn(),
+    updateMany: jest.fn(),
   },
 }));
 
@@ -61,17 +61,17 @@ describe('authController', () => {
         last_activity: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
         created_at: new Date(),
       };
-      AuthSession.findOne.mockResolvedValue(mockSession);
-      AuthSession.update.mockResolvedValue();
+      AuthSession.findFirst.mockResolvedValue(mockSession);
+      AuthSession.updateMany.mockResolvedValue();
 
       const session = await getSession('token123');
 
       expect(session).toEqual({ username: 'user', role: 'admin' });
-      expect(AuthSession.update).toHaveBeenCalled();
+      expect(AuthSession.updateMany).toHaveBeenCalled();
     });
 
     it('should return null if session not found', async () => {
-      AuthSession.findOne.mockResolvedValue(null);
+      AuthSession.findFirst.mockResolvedValue(null);
 
       const session = await getSession('token123');
 
@@ -85,13 +85,13 @@ describe('authController', () => {
         last_activity: new Date(Date.now() - 25 * 60 * 60 * 1000), // 25 hours ago
         created_at: new Date(),
       };
-      AuthSession.findOne.mockResolvedValue(mockSession);
-      AuthSession.destroy.mockResolvedValue();
+      AuthSession.findFirst.mockResolvedValue(mockSession);
+      AuthSession.deleteMany.mockResolvedValue();
 
       const session = await getSession('token123');
 
       expect(session).toBeNull();
-      expect(AuthSession.destroy).toHaveBeenCalledWith({ where: { session_token: 'token123' } });
+      expect(AuthSession.deleteMany).toHaveBeenCalledWith({ where: { session_token: 'token123' } });
     });
 
     it('should return null if session expired by max usage', async () => {
@@ -101,20 +101,20 @@ describe('authController', () => {
         last_activity: new Date(),
         created_at: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000), // 31 days ago
       };
-      AuthSession.findOne.mockResolvedValue(mockSession);
-      AuthSession.destroy.mockResolvedValue();
+      AuthSession.findFirst.mockResolvedValue(mockSession);
+      AuthSession.deleteMany.mockResolvedValue();
 
       const session = await getSession('token123');
 
       expect(session).toBeNull();
-      expect(AuthSession.destroy).toHaveBeenCalledWith({ where: { session_token: 'token123' } });
+      expect(AuthSession.deleteMany).toHaveBeenCalledWith({ where: { session_token: 'token123' } });
     });
   });
 
   describe('verifyUser', () => {
     it('should return user if credentials valid', async () => {
       const mockUser = { username: 'user', password: 'hashed', role: 'admin' };
-      User.findOne.mockResolvedValue(mockUser);
+      User.findFirst.mockResolvedValue(mockUser);
       bcrypt.compare.mockResolvedValue(true);
 
       const user = await verifyUser('user', 'pass');
@@ -123,7 +123,7 @@ describe('authController', () => {
     });
 
     it('should return null if user not found', async () => {
-      User.findOne.mockResolvedValue(null);
+      User.findFirst.mockResolvedValue(null);
 
       const user = await verifyUser('user', 'pass');
 
@@ -132,7 +132,7 @@ describe('authController', () => {
 
     it('should return null if password invalid', async () => {
       const mockUser = { username: 'user', password: 'hashed', role: 'admin' };
-      User.findOne.mockResolvedValue(mockUser);
+      User.findFirst.mockResolvedValue(mockUser);
       bcrypt.compare.mockResolvedValue(false);
 
       const user = await verifyUser('user', 'pass');
@@ -158,7 +158,7 @@ describe('authController', () => {
   describe('listUsers', () => {
     it('should return list of users', async () => {
       const mockUsers = [{ id: 1, username: 'user1', role: 'admin' }];
-      User.findAll.mockResolvedValue(mockUsers);
+      User.findMany.mockResolvedValue(mockUsers);
 
       const users = await listUsers();
 
@@ -169,32 +169,32 @@ describe('authController', () => {
   describe('updateUserPassword', () => {
     it('should update password', async () => {
       bcrypt.hash.mockResolvedValue('newhashed');
-      User.update.mockResolvedValue();
+      User.updateMany.mockResolvedValue();
 
       await updateUserPassword('user', 'newpass');
 
       expect(bcrypt.hash).toHaveBeenCalledWith('newpass', 10);
-      expect(User.update).toHaveBeenCalledWith({ password: 'newhashed' }, { where: { username: 'user' } });
+      expect(User.updateMany).toHaveBeenCalledWith({ where: { username: 'user' }, data: { password: 'newhashed' } });
     });
   });
 
   describe('deleteUser', () => {
     it('should delete user', async () => {
-      User.destroy.mockResolvedValue();
+      User.deleteMany.mockResolvedValue();
 
       await deleteUser('user');
 
-      expect(User.destroy).toHaveBeenCalledWith({ where: { username: 'user' } });
+      expect(User.deleteMany).toHaveBeenCalledWith({ where: { username: 'user' } });
     });
   });
 
   describe('cleanupExpiredSessions', () => {
     it('should cleanup expired sessions', async () => {
-      AuthSession.destroy.mockResolvedValue(5);
+      AuthSession.deleteMany.mockResolvedValue(5);
 
       await cleanupExpiredSessions();
 
-      expect(AuthSession.destroy).toHaveBeenCalled();
+      expect(AuthSession.deleteMany).toHaveBeenCalled();
     });
   });
 });

@@ -26,3 +26,5 @@ cache/
 package-lock.json
 public/pdf/
 .vectordb_last_sync
+
+/lib/generated/prisma

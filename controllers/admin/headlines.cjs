@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { Sequelize } = require('sequelize');
 const { HochschuhlABC, Questions } = require('../db.cjs');
 
 module.exports = (adminAuth) => {
@@ -22,20 +21,25 @@ module.exports = (adminAuth) => {
           archived: null
         });
       } else {
-        entry = await HochschuhlABC.findByPk(headlineId);
+        entry = await HochschuhlABC.findUnique({ where: { id: parseInt(headlineId) } });
         if (!entry) {
           return res.status(404).json({ error: 'Headline not found' });
         }
-        entry.text += `\n\n**${question}**\n${answer}`;
-        entry.editor = req.user.username;
-        entry.lastUpdated = new Date();
-        await entry.save();
+        await HochschuhlABC.update({
+          where: { id: parseInt(headlineId) },
+          data: {
+            text: entry.text + `\n\n**${question}**\n${answer}`,
+            editor: req.user.username,
+            lastUpdated: new Date()
+          }
+        });
+        entry.id = headlineId; // for return
       }
 
-      await Questions.update(
-        { archived: true },
-        { where: { question: question } }
-      );
+      await Questions.updateMany({
+        where: { question },
+        data: { archived: true }
+      });
 
       res.json({ success: true, entryId: entry.id });
     } catch (err) {
@@ -49,16 +53,16 @@ module.exports = (adminAuth) => {
       const where = { active: true };
       const { q } = req.query;
       if (q) {
-        where[Sequelize.Op.or] = [
-          { headline: { [Sequelize.Op.like]: `%${q}%` } },
-          { text: { [Sequelize.Op.like]: `%${q}%` } },
-          { editor: { [Sequelize.Op.like]: `%${q}%` } }
+        where.OR = [
+          { headline: { contains: q } },
+          { text: { contains: q } },
+          { editor: { contains: q } }
         ];
       }
-      const headlines = await HochschuhlABC.findAll({
-        attributes: ['id', 'headline', 'text'],
+      const headlines = await HochschuhlABC.findMany({
+        select: { id: true, headline: true, text: true },
         where,
-        order: [['lastUpdated', 'DESC']]
+        orderBy: { lastUpdated: 'desc' }
       });
       res.json(headlines);
     } catch (err) {
@@ -69,7 +73,7 @@ module.exports = (adminAuth) => {
 
   router.get('/entries/:id', adminAuth, async (req, res) => {
     try {
-      const entry = await HochschuhlABC.findByPk(req.params.id);
+      const entry = await HochschuhlABC.findUnique({ where: { id: parseInt(req.params.id) } });
       if (!entry) return res.status(404).json({ error: 'Entry not found' });
       res.json(entry);
     } catch (err) {
@@ -105,11 +109,12 @@ module.exports = (adminAuth) => {
       return res.status(400).json({ error: 'Headline and text are required' });
     }
     try {
-      const oldEntry = await HochschuhlABC.findByPk(req.params.id);
+      const oldEntry = await HochschuhlABC.findUnique({ where: { id: parseInt(req.params.id) } });
       if (!oldEntry) return res.status(404).json({ error: 'Entry not found' });
-      oldEntry.active = false;
-      oldEntry.archived = new Date();
-      await oldEntry.save();
+      await HochschuhlABC.update({
+        where: { id: parseInt(req.params.id) },
+        data: { active: false, archived: new Date() }
+      });
       const newEntry = await HochschuhlABC.create({
         headline,
         text,
@@ -127,11 +132,12 @@ module.exports = (adminAuth) => {
 
   router.delete('/entries/:id', adminAuth, async (req, res) => {
     try {
-      const entry = await HochschuhlABC.findByPk(req.params.id);
+      const entry = await HochschuhlABC.findUnique({ where: { id: parseInt(req.params.id) } });
       if (!entry) return res.status(404).json({ error: 'Entry not found' });
-      entry.active = false;
-      entry.archived = new Date();
-      await entry.save();
+      await HochschuhlABC.update({
+        where: { id: parseInt(req.params.id) },
+        data: { active: false, archived: new Date() }
+      });
       res.json({ success: true });
     } catch (err) {
       console.error('Failed to delete entry:', err);

@@ -1,19 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const { Questions, HochschuhlABC } = require('../db.cjs');
-const { Op } = require('sequelize');
 
 module.exports = (adminAuth) => {
   router.get('/unanswered', adminAuth, async (req, res) => {
     try {
-      const questions = await Questions.findAll({
+      const questions = await Questions.findMany({
         where: {
           answered: false,
           archived: false,
           deleted: false,
           spam: false
         },
-        order: [['lastUpdated', 'DESC']]
+        orderBy: { lastUpdated: 'desc' }
       });
       res.json(questions);
     } catch (err) {
@@ -28,10 +27,10 @@ module.exports = (adminAuth) => {
       return res.status(400).json({ error: 'questions required' });
     }
     try {
-      await Questions.update(
-        { deleted: true },
-        { where: { question: { [Op.in]: questions } } }
-      );
+      await Questions.updateMany({
+        where: { question: { in: questions } },
+        data: { deleted: true }
+      });
       res.json({ success: true });
     } catch (err) {
       console.error('Failed to delete unanswered questions:', err);
@@ -45,14 +44,14 @@ module.exports = (adminAuth) => {
       return res.status(400).json({ error: 'question and answer required' });
     }
     try {
-      await Questions.update(
-        {
-          answer: answer,
+      await Questions.updateMany({
+        where: { question },
+        data: {
+          answer,
           answered: true,
           user: req.user.username
-        },
-        { where: { question: question } }
-      );
+        }
+      });
       res.json({ success: true });
     } catch (err) {
       console.error('Failed to save answer:', err);
@@ -62,18 +61,18 @@ module.exports = (adminAuth) => {
 
   router.get('/answered', adminAuth, async (req, res) => {
     try {
-      const questions = await Questions.findAll({
-        include: [{
-          model: HochschuhlABC,
-          attributes: ['headline', 'text'],
-          required: false
-        }],
+      const questions = await Questions.findMany({
+        include: {
+          hochschuhl_abc: {
+            select: { headline: true, text: true }
+          }
+        },
         where: {
           answered: true,
           archived: false,
           deleted: false
         },
-        order: [['lastUpdated', 'DESC']]
+        orderBy: { lastUpdated: 'desc' }
       });
       res.json(questions);
     } catch (err) {
@@ -88,15 +87,15 @@ module.exports = (adminAuth) => {
       return res.status(400).json({ error: 'questionId required' });
     }
     try {
-      const [affectedRows] = await Questions.update(
-        {
+      const result = await Questions.updateMany({
+        where: { id: parseInt(questionId) },
+        data: {
           answered: true,
           user: req.user.username
-        },
-        { where: { id: questionId } }
-      );
+        }
+      });
 
-      if (affectedRows === 0) {
+      if (result.count === 0) {
         return res.status(404).json({ message: 'Question not found.' });
       }
 
@@ -115,15 +114,13 @@ module.exports = (adminAuth) => {
     }
 
     try {
-      await Questions.update(
-        {
-          linked_article_id: articleId,
+      await Questions.updateMany({
+        where: { id: parseInt(questionId) },
+        data: {
+          linked_article_id: parseInt(articleId),
           user: req.user.username
-        },
-        {
-          where: { id: questionId }
         }
-      );
+      });
       res.json({ success: true });
     } catch (error) {
       console.error('Failed to link article to question:', error);

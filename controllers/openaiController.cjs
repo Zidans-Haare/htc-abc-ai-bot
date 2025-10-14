@@ -34,9 +34,9 @@ async function logUnansweredQuestion(newQuestion) {
   try {
     const client = getOpenAIClient();
 
-    const unansweredQuestions = await Questions.findAll({
+    const unansweredQuestions = await Questions.findMany({
       where: { answered: false, spam: false, deleted: false },
-      attributes: ['question'],
+      select: { question: true },
     });
 
     if (unansweredQuestions.length > 0) {
@@ -111,17 +111,17 @@ async function streamChat(req, res) {
     const convoId = conversationId || new Date().toISOString() + Math.random().toString(36).slice(2);
     console.log(`Processing conversationId: ${convoId}`);
 
-    const [conversation, created] = await Conversation.findOrCreate({
+    const conversation = await Conversation.upsert({
       where: { id: convoId },
-      defaults: {
+      update: {},
+      create: {
+        id: convoId,
         anonymous_user_id: anonymousUserId || 'unknown',
         category: 'Unkategorisiert',
         ai_confidence: 0.0,
       },
     });
-    if (created) {
-      console.log(`Created new conversation in DB: ${convoId}`);
-    }
+    console.log(`Processed conversation in DB: ${convoId}`);
 
     await Message.create({
       conversation_id: conversation.id,
@@ -130,9 +130,9 @@ async function streamChat(req, res) {
     });
     console.log(`Saved user message to DB: ${prompt}`);
 
-    const history = await Message.findAll({
+    const history = await Message.findMany({
       where: { conversation_id: conversation.id },
-      order: [['created_at', 'ASC']],
+      orderBy: { created_at: 'asc' },
     });
 
     let messages = history.map(msg => ({
@@ -150,16 +150,16 @@ async function streamChat(req, res) {
       }
     } else {
       // Fallback to full DB if vector DB not enabled
-      const entries = await HochschuhlABC.findAll({
+      const entries = await HochschuhlABC.findMany({
         where: { active: true, archived: null },
-        order: [['headline', 'DESC']],
-        attributes: ['headline', 'text'],
+        orderBy: { headline: 'desc' },
+        select: { headline: true, text: true },
       });
       hochschulContent = entries.map(entry => `## ${entry.headline}\n\n${entry.text}\n\n`).join('');
     }
 
-    const images = await Images.findAll({
-      attributes: ['filename', 'description'],
+    const images = await Images.findMany({
+      select: { filename: true, description: true },
     });
     const imageList = images
       .map(image => `image_name: ${image.filename} description: ${image.description ? image.description.replace(/\n/g, ' ') : ''}`)
@@ -314,59 +314,23 @@ async function streamChat(req, res) {
 
     (async () => {
       try {
-        const finalHistory = await Message.findAll({
+        const finalHistory = await Message.findMany({
           where: { conversation_id: convoId },
-          order: [['created_at', 'ASC']],
-          attributes: ['role', 'content'],
+          orderBy: { created_at: 'asc' },
+          select: { role: true, content: true },
         });
 
         const categorizationFunc = loadCategorizer();
         const categorizationResult = await categorizationFunc(finalHistory);
 
         if (categorizationResult) {
-          await Conversation.update(
-            {
+          await Conversation.updateMany({
+            where: { id: convoId },
+            data: {
               category: categorizationResult.category,
               ai_confidence: categorizationResult.confidence,
             },
-            { where: { id: convoId } },
-          );
-        }
-      } catch (e) {
-        console.error(`[Categorizer] Background task failed for conversation ${convoId}:`, e.message);
-      }
-    })();
-  } catch (error) {
-    console.error('Fehler beim Generieren der Antwort:', error.message);
-    if (error?.status === 401 || error?.statusCode === 401) {
-      console.error('OpenAI authentication failed. Check API key or base URL.');
-    }
-
-    const responseTime = Date.now() - startTime;
-    await trackChatInteraction(sessionId, req.body.prompt || 'unknown', null, false, responseTime, 0, error.message);
-
-    if (!res.headersSent) {
-      if (error?.status === 401 || error?.statusCode === 401) {
-        res.status(401).json({ error: 'KI-Zugriff verweigert. Bitte API-Schlüssel bzw. Service-Zugang prüfen.' });
-      } else {
-        res.status(500).json({ error: 'Interner Serverfehler' });
-      }
-    } else {
-      res.end();
-    }
-  }
-}
-
-const { Sequelize } = require('sequelize');
-
-async function getSuggestions(req, res) {
-  try {
-    const suggestions = await HochschuhlABC.findAll({
-      where: { active: true, archived: null },
-      order: Sequelize.literal('RANDOM()'),
-      limit: 4,
-      attributes: ['headline', 'text'],
-    });
+          });
 
     const formattedSuggestions = suggestions.map(s => ({
       headline: s.headline,
@@ -444,6 +408,27 @@ async function testApiKey(req, res) {
     }
 
     res.status(statusCode).json({ message: clientMessage });
+  }
+}
+
+async function getSuggestions(req, res) {
+  try {
+    const suggestions = await HochschuhlABC.findMany({
+      where: { active: true, archived: null },
+      select: { headline: true, text: true },
+      orderBy: { headline: 'asc' },
+      take: 10,
+    });
+
+    const formattedSuggestions = suggestions.map(s => ({
+      headline: s.headline,
+      text: s.text.substring(0, 100) + (s.text.length > 100 ? '...' : ''),
+    }));
+
+    res.json(formattedSuggestions);
+  } catch (error) {
+    console.error('Fehler beim Abrufen der Vorschläge:', error.message);
+    res.status(500).json({ error: 'Vorschläge konnten nicht geladen werden' });
   }
 }
 
