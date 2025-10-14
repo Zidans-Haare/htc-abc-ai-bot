@@ -96,7 +96,7 @@ model hochschuhl_abc_backup {
 
 model images {
   id          Int     @id @default(autoincrement())
-  filename    String
+  filename    String  @unique
   description String?
 }
 
@@ -117,7 +117,7 @@ model page_views {
 
 model pdfs {
   id          Int       @id @default(autoincrement())
-  filename    String
+  filename    String    @unique
   filepath    String
   description String?
   createdAt   DateTime?

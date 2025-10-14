@@ -31,8 +31,8 @@ module.exports = (authMiddleware) => {
     try {
       const client = getClient();
 
-      const allArticles = await HochschuhlABC.findAll({
-        attributes: ['headline', 'text'],
+      const allArticles = await HochschuhlABC.findMany({
+        select: { headline: true, text: true },
         where: { active: true },
       });
       const context = allArticles.map(a => `Überschrift: ${a.headline}\nText: ${a.text}`).join('\n\n---\n\n');

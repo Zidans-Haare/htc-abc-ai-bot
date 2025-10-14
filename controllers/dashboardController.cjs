@@ -83,10 +83,10 @@ router.get('/kpis', async (req, res) => {
 
 router.get('/recent-feedback', async (req, res) => {
     try {
-        const recentFeedback = await Feedback.findAll({
-            order: [['timestamp', 'DESC']],
-            limit: 5,
-            attributes: ['feedback_text', 'timestamp']
+        const recentFeedback = await Feedback.findMany({
+            orderBy: { timestamp: 'desc' },
+            take: 5,
+            select: { feedback_text: true, timestamp: true }
         });
 
         res.json(recentFeedback);
@@ -536,13 +536,12 @@ router.get('/language-stats', async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         
         // Get recent messages (user messages only) and detect their language
-        const recentMessages = await Message.findAll({
+        const recentMessages = await Message.findMany({
             where: {
                 role: 'user'
             },
-            order: [['created_at', 'DESC']],
-            limit: 1000, // Analyze last 1000 user messages for language detection
-            raw: true
+            orderBy: { created_at: 'desc' },
+            take: 1000 // Analyze last 1000 user messages for language detection
         });
 
         const languageCount = {};
@@ -704,17 +703,16 @@ router.get('/frequent-questions', async (req, res) => {
         console.log('[Dashboard] Starting real-time frequent questions analysis...');
         
         // Get recent user messages (limit to avoid performance issues)
-        const recentMessages = await Message.findAll({
+        const recentMessages = await Message.findMany({
             where: {
                 role: 'user',
                 created_at: {
-                    [Op.gte]: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Reduce to 7 days for real-time
+                    gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Reduce to 7 days for real-time
                 }
             },
-            attributes: ['content', 'role', 'created_at'],
-            order: [['created_at', 'DESC']],
-            limit: 200, // Reduce limit for real-time analysis
-            raw: true
+            select: { content: true, role: true, created_at: true },
+            orderBy: { created_at: 'desc' },
+            take: 200 // Reduce limit for real-time analysis
         });
 
         console.log(`[Dashboard] Found ${recentMessages.length} recent messages`);
@@ -979,16 +977,15 @@ router.post('/trigger-analysis', async (req, res) => {
         }
 
         // Get recent messages for analysis
-        const recentMessages = await Message.findAll({
+        const recentMessages = await Message.findMany({
             where: {
                 role: 'user',
                 created_at: {
-                    [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+                    gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
                 }
             },
-            attributes: ['content', 'role', 'created_at'],
-            order: [['created_at', 'DESC']],
-            raw: true
+            select: { content: true, role: true, created_at: true },
+            orderBy: { created_at: 'desc' }
         });
 
         if (recentMessages.length === 0) {

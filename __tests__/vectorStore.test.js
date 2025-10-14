@@ -12,7 +12,7 @@ jest.mock('uuid', () => ({
 
 jest.mock('../controllers/db.cjs', () => ({
   HochschuhlABC: {
-    findAll: jest.fn(() => Promise.resolve([]))
+    findMany: jest.fn(() => Promise.resolve([]))
   }
 }));
 

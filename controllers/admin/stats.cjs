@@ -5,7 +5,7 @@ const { HochschuhlABC } = require('../db.cjs');
 module.exports = (adminAuth) => {
   router.get('/stats', adminAuth, async (req, res) => {
     try {
-      const entries = await HochschuhlABC.findAll();
+      const entries = await HochschuhlABC.findMany();
       const perEditor = {};
       entries.forEach(e => {
         const name = e.editor || 'unknown';

@@ -13,12 +13,14 @@ module.exports = (adminAuth) => {
       let entry;
       if (newHeadline) {
         entry = await HochschuhlABC.create({
-          headline: newHeadline,
-          text: `**${question}**\n${answer}`,
-          editor: req.user.username,
-          lastUpdated: new Date(),
-          active: true,
-          archived: null
+          data: {
+            headline: newHeadline,
+            text: `**${question}**\n${answer}`,
+            editor: req.user.username,
+            lastUpdated: new Date(),
+            active: true,
+            archived: null
+          }
         });
       } else {
         entry = await HochschuhlABC.findUnique({ where: { id: parseInt(headlineId) } });
@@ -89,12 +91,14 @@ module.exports = (adminAuth) => {
     }
     try {
       const entry = await HochschuhlABC.create({
-        headline,
-        text,
-        editor: req.user,
-        lastUpdated: new Date(),
-        active: active !== false,
-        archived: null
+        data: {
+          headline,
+          text,
+          editor: req.user,
+          lastUpdated: new Date(),
+          active: active !== false,
+          archived: null
+        }
       });
       res.status(201).json(entry);
     } catch (err) {
@@ -116,12 +120,14 @@ module.exports = (adminAuth) => {
         data: { active: false, archived: new Date() }
       });
       const newEntry = await HochschuhlABC.create({
-        headline,
-        text,
-        editor: req.user,
-        lastUpdated: new Date(),
-        active: active !== false,
-        archived: null
+        data: {
+          headline,
+          text,
+          editor: req.user,
+          lastUpdated: new Date(),
+          active: active !== false,
+          archived: null
+        }
       });
       res.json(newEntry);
     } catch (err) {

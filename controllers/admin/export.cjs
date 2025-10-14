@@ -7,7 +7,7 @@ const { HochschuhlABC } = require('../db.cjs');
 module.exports = (adminAuth) => {
   router.get('/export', adminAuth, async (req, res) => {
     try {
-      const entries = await HochschuhlABC.findAll();
+      const entries = await HochschuhlABC.findMany();
       const unansweredFile = path.resolve(__dirname, '../../ai_fragen/offene_fragen.txt');
       const unanswered = (await fs.readFile(unansweredFile, 'utf8')).split(/\n+/).filter(Boolean);
       const faqFile = path.resolve(__dirname, '../../ai_input/faq.txt');

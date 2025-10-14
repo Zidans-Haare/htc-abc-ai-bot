@@ -13,10 +13,14 @@ async function createSession(username, role) {
   const expiresAt = new Date(Date.now() + SESSION_MAX_DURATION_MS);
   try {
     await AuthSession.create({
-      session_token: token,
-      username,
-      role,
-      expires_at: expiresAt
+      data: {
+        session_token: token,
+        username,
+        role,
+        created_at: new Date(),
+        last_activity: new Date(),
+        expires_at: expiresAt
+      }
     });
     return token;
   } catch (err) {
@@ -52,6 +56,13 @@ async function getSession(token) {
 
     // Check max usage
     if (now.getTime() - createdAt.getTime() > SESSION_MAX_DURATION_MS) {
+      await AuthSession.deleteMany({ where: { session_token: token } });
+      return null;
+    }
+
+    // Check expiration
+    const expiresAt = new Date(session.expires_at);
+    if (now > expiresAt) {
       await AuthSession.deleteMany({ where: { session_token: token } });
       return null;
     }
@@ -102,7 +113,7 @@ async function verifyUser(username, password) {
 async function createUser(username, password, role) {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ username, password: hashedPassword, role });
+    const user = await User.create({ data: { username, password: hashedPassword, role } });
     return { id: user.id, username: user.username, role: user.role };
   } catch (err) {
     console.error('Create user error:', err);

@@ -6,8 +6,8 @@ module.exports = (authMiddleware) => {
 
   router.get('/feedback', authMiddleware, async (req, res) => {
     try {
-      const feedback = await Feedback.findAll({
-        order: [['timestamp', 'DESC']],
+      const feedback = await Feedback.findMany({
+        orderBy: { timestamp: 'desc' },
       });
       res.json(feedback);
     } catch (err) {

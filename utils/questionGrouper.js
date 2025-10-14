@@ -151,16 +151,15 @@ function generateCacheKey(questions) {
 
 async function getCachedResults(cacheKey) {
     try {
-        const cached = await QuestionAnalysisCache.findAll({
+        const cached = await QuestionAnalysisCache.findMany({
             where: {
                 cache_key: cacheKey,
                 last_updated: {
-                    [require('sequelize').Op.gte]: new Date(Date.now() - CACHE_VALIDITY_HOURS * 60 * 60 * 1000)
+                    gte: new Date(Date.now() - CACHE_VALIDITY_HOURS * 60 * 60 * 1000)
                 },
                 is_processing: false
             },
-            order: [['question_count', 'DESC']],
-            raw: true
+            orderBy: { question_count: 'desc' }
         });
 
         if (cached.length > 0) {
@@ -180,9 +179,8 @@ async function getCachedResults(cacheKey) {
 
 async function getProcessingStatus(cacheKey) {
     try {
-        const processing = await QuestionAnalysisCache.findAll({
-            where: { cache_key: cacheKey, is_processing: true },
-            raw: true
+        const processing = await QuestionAnalysisCache.findMany({
+            where: { cache_key: cacheKey, is_processing: true }
         });
 
         if (processing.length > 0) {
@@ -209,11 +207,10 @@ async function getProcessingStatus(cacheKey) {
 
 async function getPartialResults(cacheKey) {
     try {
-        const results = await QuestionAnalysisCache.findAll({
+        const results = await QuestionAnalysisCache.findMany({
             where: { cache_key: cacheKey },
-            order: [['question_count', 'DESC']],
-            limit: 5,
-            raw: true
+            orderBy: { question_count: 'desc' },
+            take: 5
         });
 
         return results.map(row => ({

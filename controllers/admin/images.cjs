@@ -29,8 +29,8 @@ module.exports = (authMiddleware) => {
     // GET all images
     router.get('/images', authMiddleware, async (req, res) => {
         try {
-            const images = await Images.findAll({
-                order: [['id', 'DESC']]
+            const images = await Images.findMany({
+                orderBy: { id: 'desc' }
             });
             res.json(images);
         } catch (error) {
@@ -51,9 +51,11 @@ module.exports = (authMiddleware) => {
 
             // Save image info to the database
             const newImage = await Images.create({
-                filename: req.file.filename,
-                filepath: `/uploads/${req.file.filename}`,
-                description: description || null // Save description, or null if it's empty
+                data: {
+                    filename: req.file.filename,
+                    filepath: `/uploads/${req.file.filename}`,
+                    description: description || null // Save description, or null if it's empty
+                }
             });
             res.status(201).json(newImage);
         } catch (error) {
@@ -78,16 +80,12 @@ module.exports = (authMiddleware) => {
         }
 
         try {
-            const image = await Images.findOne({ where: { filename } });
+            const updatedImage = await Images.update({
+                where: { filename },
+                data: { description: description.trim() }
+            });
 
-            if (!image) {
-                return res.status(404).json({ message: 'Bild nicht gefunden.' });
-            }
-
-            image.description = description.trim();
-            await image.save();
-
-            res.status(200).json(image);
+            res.status(200).json(updatedImage);
         } catch (error) {
             console.error(`Fehler beim Aktualisieren der Beschreibung für ${filename}:`, error);
             res.status(500).json({ message: 'Serverfehler beim Aktualisieren der Beschreibung.' });
@@ -98,8 +96,8 @@ module.exports = (authMiddleware) => {
     router.delete('/images/:filename', authMiddleware, async (req, res) => {
         const { filename } = req.params;
         try {
-            // Find the image in the database
-            const image = await Images.findOne({ where: { filename } });
+            // Check if the image exists in the database
+            const image = await Images.findUnique({ where: { filename } });
             if (!image) {
                 return res.status(404).json({ message: 'Bild nicht in der Datenbank gefunden.' });
             }
@@ -117,7 +115,7 @@ module.exports = (authMiddleware) => {
             }
 
             // Delete the image from the database
-            await image.destroy();
+            await Images.delete({ where: { filename } });
 
             res.status(200).json({ message: 'Bild erfolgreich gelöscht.' });
         } catch (error) {

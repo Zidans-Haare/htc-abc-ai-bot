@@ -29,8 +29,8 @@ module.exports = (authMiddleware) => {
     // GET all PDFs
     router.get('/pdfs', authMiddleware, async (req, res) => {
         try {
-            const pdfs = await PDFs.findAll({
-                order: [['id', 'DESC']]
+            const pdfs = await PDFs.findMany({
+                orderBy: { id: 'desc' }
             });
             res.json(pdfs);
         } catch (error) {
@@ -51,9 +51,11 @@ module.exports = (authMiddleware) => {
 
             // Save PDF info to the database
             const newPDF = await PDFs.create({
-                filename: req.file.filename,
-                filepath: `/pdf/${req.file.filename}`,
-                description: description || null // Save description, or null if it's empty
+                data: {
+                    filename: req.file.filename,
+                    filepath: `/pdf/${req.file.filename}`,
+                    description: description || null // Save description, or null if it's empty
+                }
             });
             res.status(201).json(newPDF);
         } catch (error) {
@@ -78,16 +80,12 @@ module.exports = (authMiddleware) => {
         }
 
         try {
-            const pdf = await PDFs.findOne({ where: { filename } });
+            const updatedPdf = await PDFs.update({
+                where: { filename },
+                data: { description: description.trim() }
+            });
 
-            if (!pdf) {
-                return res.status(404).json({ message: 'PDF nicht gefunden.' });
-            }
-
-            pdf.description = description.trim();
-            await pdf.save();
-
-            res.status(200).json(pdf);
+            res.status(200).json(updatedPdf);
         } catch (error) {
             console.error(`Fehler beim Aktualisieren der Beschreibung für ${filename}:`, error);
             res.status(500).json({ message: 'Serverfehler beim Aktualisieren der Beschreibung.' });
@@ -98,8 +96,8 @@ module.exports = (authMiddleware) => {
     router.delete('/pdfs/:filename', authMiddleware, async (req, res) => {
         const { filename } = req.params;
         try {
-            // Find the PDF in the database
-            const pdf = await PDFs.findOne({ where: { filename } });
+            // Check if the PDF exists in the database
+            const pdf = await PDFs.findUnique({ where: { filename } });
             if (!pdf) {
                 return res.status(404).json({ message: 'PDF nicht in der Datenbank gefunden.' });
             }
@@ -117,7 +115,7 @@ module.exports = (authMiddleware) => {
             }
 
             // Delete the PDF from the database
-            await pdf.destroy();
+            await PDFs.delete({ where: { filename } });
 
             res.status(200).json({ message: 'PDF erfolgreich gelöscht.' });
         } catch (error) {

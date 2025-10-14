@@ -30,16 +30,15 @@ class DailyAnalysisScheduler {
 
         try {
             // Get all user messages from the last 30 days for comprehensive analysis
-            const recentMessages = await Message.findAll({
+            const recentMessages = await Message.findMany({
                 where: {
                     role: 'user',
                     created_at: {
-                        [sequelize.Sequelize.Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
                     }
                 },
-                attributes: ['content', 'role', 'created_at'],
-                order: [['created_at', 'DESC']],
-                raw: true
+                select: { content: true, role: true, created_at: true },
+                orderBy: { created_at: 'desc' }
             });
 
             console.log(`Found ${recentMessages.length} messages to analyze`);

@@ -9,10 +9,10 @@ const router = express.Router();
 // GET /api/admin/conversations - List all conversations
 router.get('/', async (req, res) => {
   try {
-    const conversations = await Conversation.findAll({
-      attributes: ['id', 'anonymous_user_id', 'created_at', 'category', 'ai_confidence'],
-      order: [['created_at', 'DESC']],
-      limit: 100, // Limit to the last 100 conversations for performance
+    const conversations = await Conversation.findMany({
+      select: { id: true, anonymous_user_id: true, created_at: true, category: true, ai_confidence: true },
+      orderBy: { created_at: 'desc' },
+      take: 100, // Limit to the last 100 conversations for performance
     });
     res.json(conversations);
   } catch (error) {
@@ -25,9 +25,9 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const conversationId = req.params.id;
-    const messages = await Message.findAll({
+    const messages = await Message.findMany({
       where: { conversation_id: conversationId },
-      order: [['created_at', 'ASC']],
+      orderBy: { created_at: 'asc' },
     });
 
     if (!messages || messages.length === 0) {

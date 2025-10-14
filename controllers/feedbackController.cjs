@@ -12,11 +12,13 @@ router.post('/', async (req, res) => {
     console.log(`Received feedback: ${feedback_text}`);
 
     try {
-        await Feedback.create({ 
-            feedback_text: feedback_text,
-            email: email,
-            conversation_id: conversation_id,
-            attached_chat_history: attached_chat_history
+        await Feedback.create({
+            data: {
+                feedback_text: feedback_text,
+                email: email,
+                conversation_id: conversation_id,
+                attached_chat_history: attached_chat_history
+            }
         });
         res.sendStatus(200);
     } catch (err) {
