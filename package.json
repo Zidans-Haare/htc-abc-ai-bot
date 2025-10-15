@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node server.cjs",
     "test": "jest",
+    "build:admin-css": "npx @tailwindcss/cli -i src/admin.css -o public/admin/css/tailwind.css",
+    "watch:admin-css": "npx @tailwindcss/cli -i src/admin.css -o public/admin/css/tailwind.css --watch",
     "postinstall": "npx prisma generate"
   },
   "overrides": {
@@ -64,9 +66,13 @@
   "license": "ISC",
   "devDependencies": {
     "@prisma/client": "^6.17.1",
+    "@tailwindcss/cli": "^4.1.14",
+    "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.10",
     "jest": "^30.2.0",
+    "postcss": "^8.5.6",
     "prisma": "^6.17.1",
-    "supertest": "^7.1.4"
+    "supertest": "^7.1.4",
+    "tailwindcss": "^4.1.14"
   }
 }
