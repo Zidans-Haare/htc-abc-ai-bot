@@ -134,7 +134,35 @@ async function migrateTable(table) {
   });
 }
 
+async function checkIfMigrated() {
+  return new Promise((resolve) => {
+    // Check if users table exists and has created_at (snake_case indicator)
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", [], (err, row) => {
+      if (err || !row) {
+        resolve(false);
+        return;
+      }
+      // Check if created_at column exists
+      db.all("PRAGMA table_info(users)", [], (err, columns) => {
+        if (err) {
+          resolve(false);
+          return;
+        }
+        const hasCreatedAt = columns.some(col => col.name === 'created_at');
+        resolve(hasCreatedAt);
+      });
+    });
+  });
+}
+
 async function runMigration() {
+  const isMigrated = await checkIfMigrated();
+  if (isMigrated) {
+    console.log('Database appears to be already migrated (snake_case schema detected). Skipping migration.');
+    db.close();
+    return;
+  }
+
   console.log('Starting Prisma migration data fixes...');
   for (const table of tables) {
     await migrateTable(table);
