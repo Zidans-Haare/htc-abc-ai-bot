@@ -41,10 +41,10 @@ describe('Auth Integration Tests', () => {
 
   describe('POST /auth/login', () => {
     it('should login successfully and set cookie', async () => {
-      const mockUser = { username: 'user', password: 'hashed', role: 'admin' };
+      const mockUser = { id: 'userId', username: 'user', password: 'hashed', role: 'admin' };
       User.findFirst.mockResolvedValue(mockUser);
       bcrypt.compare.mockResolvedValue(true);
-      AuthSession.create.mockResolvedValue({ session_token: 'token123' });
+      AuthSession.create.mockResolvedValue({ id: 'sessionId', token: 'token123' });
 
       const response = await request(app)
         .post('/auth/login')
@@ -79,10 +79,10 @@ describe('Auth Integration Tests', () => {
   describe('GET /auth/validate', () => {
     it('should validate session successfully', async () => {
       const mockSession = {
-        username: 'user',
-        role: 'admin',
-        last_activity: new Date(),
+        updated_at: new Date(),
         created_at: new Date(),
+        expires_at: new Date(Date.now() + 1000000),
+        user: { username: 'user', role: 'admin' }
       };
       AuthSession.findFirst.mockResolvedValue(mockSession);
       AuthSession.updateMany.mockResolvedValue();
@@ -117,7 +117,7 @@ describe('Auth Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ success: true });
-      expect(AuthSession.deleteMany).toHaveBeenCalledWith({ where: { session_token: 'token123' } });
+      expect(AuthSession.deleteMany).toHaveBeenCalledWith({ where: { token: 'token123' } });
     });
   });
 });

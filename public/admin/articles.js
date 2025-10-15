@@ -412,7 +412,7 @@ function renderArticles(items, append = false) {
   });
 }
 
-export async function loadEntry(id) {
+async function loadEntry(id) {
   try {
     console.log('Fetching entry:', id);
     const entry = await fetchAndParse(`/api/admin/entries/${id}`);
@@ -442,7 +442,7 @@ export async function loadEntry(id) {
   }
 }
 
-export async function saveEntry() {
+async function saveEntry() {
   // remove strikethroughs from the editor content 
   const cleanedText = editor.getMarkdown().replace(/~~/g, '');
   const payload = {
@@ -527,18 +527,18 @@ async function deleteEntry() {
   }
 }
 
-export function selectArticle(id) {
+function selectArticle(id) {
   const articleElement = listEl.querySelector(`li[data-id='${id}']`);
   if (articleElement) {
     articleElement.click();
   }
 }
 
-export function getCurrentId() {
+function getCurrentId() {
   return currentId;
 }
 
-export function initArticles() {
+function initArticles() {
   saveBtn.addEventListener('click', saveEntry);
   deleteBtn.addEventListener('click', deleteEntry);
    addBtn.addEventListener('click', () => {

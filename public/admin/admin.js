@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    });
 
   // Initialize all modules
-  initHeadlines();
+  initArticles();
   const questionsManager = initQuestions({ updateOpenCount, showEditor });
   initArchive();
   initExport();
