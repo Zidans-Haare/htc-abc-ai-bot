@@ -86,7 +86,7 @@ router.get('/recent-feedback', async (req, res) => {
         const recentFeedback = await Feedback.findMany({
             orderBy: { timestamp: 'desc' },
             take: 5,
-            select: { feedback_text: true, timestamp: true }
+            select: { text: true, submitted_at: true }
         });
 
         res.json(recentFeedback);
@@ -140,13 +140,13 @@ router.get('/sessions', async (req, res) => {
         if (sessions.length === 0) {
             sessions = await sequelize.query(`
                 SELECT 
-                    DATE(datetime(lastUpdated, ?)) as date,
+                    DATE(datetime(last_updated, ?)) as date,
                     COUNT(*) as count
                 FROM questions 
-                WHERE datetime(lastUpdated, ?) >= datetime(?, ?)
+                WHERE datetime(last_updated, ?) >= datetime(?, ?)
                     AND spam = 0 
                     AND deleted = 0
-                GROUP BY DATE(datetime(lastUpdated, ?))
+                GROUP BY DATE(datetime(last_updated, ?))
                 ORDER BY date ASC
             `, {
                 replacements: [timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset],
@@ -226,13 +226,13 @@ router.get('/sessions/hourly', async (req, res) => {
         if (hourlyData.length === 0) {
             hourlyData = await sequelize.query(`
                 SELECT 
-                    CAST(strftime('%H', datetime(lastUpdated, ?)) AS INTEGER) as hour,
+                    CAST(strftime('%H', datetime(last_updated, ?)) AS INTEGER) as hour,
                     COUNT(*) as count
                 FROM questions 
-                WHERE DATE(datetime(lastUpdated, ?)) = ?
+                WHERE DATE(datetime(last_updated, ?)) = ?
                     AND spam = 0 
                     AND deleted = 0
-                GROUP BY strftime('%H', datetime(lastUpdated, ?))
+                GROUP BY strftime('%H', datetime(last_updated, ?))
                 ORDER BY hour ASC
             `, {
                 replacements: [timezoneOffset, timezoneOffset, date, timezoneOffset],
@@ -286,7 +286,7 @@ router.get('/feedback-stats', async (req, res) => {
         // Simple positive/negative classification based on keywords
         const positiveFeedback = await Feedback.count({
             where: {
-                feedback_text: {
+                text: {
                     [Op.or]: [
                         { [Op.like]: '%gut%' },
                         { [Op.like]: '%super%' },
@@ -302,7 +302,7 @@ router.get('/feedback-stats', async (req, res) => {
 
         const negativeFeedback = await Feedback.count({
             where: {
-                feedback_text: {
+                text: {
                     [Op.or]: [
                         { [Op.like]: '%schlecht%' },
                         { [Op.like]: '%fehler%' },
@@ -680,7 +680,7 @@ router.get('/frequent-questions', async (req, res) => {
                     isProcessing: false,
                     progress: 100,
                     message: `Vorberechnete Analyse von ${today}`,
-                    lastUpdated: today,
+                    last_updated: today,
                     source: 'daily_cache'
                 });
             }
@@ -814,7 +814,7 @@ router.get('/unanswered-questions', async (req, res) => {
                     isProcessing: false,
                     progress: 100,
                     message: `Vorberechnete Analyse von ${today}`,
-                    lastUpdated: today,
+                    last_updated: today,
                     source: 'daily_cache'
                 });
             }
@@ -1117,7 +1117,7 @@ router.get('/analysis-status', async (req, res) => {
             res.json({
                 hasData: true,
                 lastAnalysis: latest.analysis_date,
-                lastUpdated: latest.last_updated,
+                last_updated: latest.last_updated,
                 questionGroups: latest.question_groups,
                 daysSinceAnalysis: daysDiff,
                 isToday: daysDiff === 0,
@@ -1128,7 +1128,7 @@ router.get('/analysis-status', async (req, res) => {
             res.json({
                 hasData: false,
                 lastAnalysis: null,
-                lastUpdated: null,
+                last_updated: null,
                 questionGroups: 0,
                 daysSinceAnalysis: null,
                 isToday: false,

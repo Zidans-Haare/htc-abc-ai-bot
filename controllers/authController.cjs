@@ -8,17 +8,14 @@ const { User, AuthSession } = require('./db.cjs');
 const SESSION_INACTIVITY_TIMEOUT_MS = (parseInt(process.env.SESSION_INACTIVITY_TIMEOUT_MINUTES) || 1440) * 60 * 1000;
 const SESSION_MAX_DURATION_MS = (parseInt(process.env.SESSION_MAX_DURATION_MINUTES) || 43200) * 60 * 1000;
 
-async function createSession(username, role) {
+async function createSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + SESSION_MAX_DURATION_MS);
   try {
     await AuthSession.create({
       data: {
-        session_token: token,
-        username,
-        role,
-        created_at: new Date(),
-        last_activity: new Date(),
+        user_id: userId,
+        token,
         expires_at: expiresAt
       }
     });
@@ -31,7 +28,7 @@ async function createSession(username, role) {
 
 async function destroySession(token) {
   try {
-    await AuthSession.deleteMany({ where: { session_token: token } });
+    await AuthSession.deleteMany({ where: { token } });
   } catch (err) {
     console.error('Destroy session error:', err);
   }
@@ -39,41 +36,44 @@ async function destroySession(token) {
 
 async function getSession(token) {
   try {
-    const session = await AuthSession.findFirst({ where: { session_token: token } });
+    const session = await AuthSession.findFirst({
+      where: { token },
+      include: { user: { select: { username: true, role: true } } }
+    });
     if (!session) {
       return null;
     }
 
     const now = new Date();
-    const lastActivity = new Date(session.last_activity);
+    const updatedAt = new Date(session.updated_at);
     const createdAt = new Date(session.created_at);
 
-    // Check inactivity
-    if (now.getTime() - lastActivity.getTime() > SESSION_INACTIVITY_TIMEOUT_MS) {
-      await AuthSession.deleteMany({ where: { session_token: token } });
+    // Check inactivity (using updated_at as last activity)
+    if (now.getTime() - updatedAt.getTime() > SESSION_INACTIVITY_TIMEOUT_MS) {
+      await AuthSession.deleteMany({ where: { token } });
       return null;
     }
 
     // Check max usage
     if (now.getTime() - createdAt.getTime() > SESSION_MAX_DURATION_MS) {
-      await AuthSession.deleteMany({ where: { session_token: token } });
+      await AuthSession.deleteMany({ where: { token } });
       return null;
     }
 
     // Check expiration
     const expiresAt = new Date(session.expires_at);
     if (now > expiresAt) {
-      await AuthSession.deleteMany({ where: { session_token: token } });
+      await AuthSession.deleteMany({ where: { token } });
       return null;
     }
 
-    // Update last activity
+    // Update last activity (updated_at)
     await AuthSession.updateMany({
-      where: { session_token: token },
-      data: { last_activity: now }
-    });
+      where: { token },
+      data: {}
+    }); // updated_at auto-updates
 
-    return { username: session.username, role: session.role };
+    return { username: session.user.username, role: session.user.role };
   } catch (err) {
     console.error('Get session error:', err);
     return null;
@@ -87,7 +87,7 @@ async function cleanupExpiredSessions() {
       where: {
         OR: [
           { expires_at: { lt: now } },
-          { last_activity: { lt: new Date(now.getTime() - SESSION_INACTIVITY_TIMEOUT_MS) } },
+          { updated_at: { lt: new Date(now.getTime() - SESSION_INACTIVITY_TIMEOUT_MS) } },
           { created_at: { lt: new Date(now.getTime() - SESSION_MAX_DURATION_MS) } }
         ]
       }
@@ -103,7 +103,7 @@ async function verifyUser(username, password) {
     if (!user) return null;
     const match = await bcrypt.compare(password, user.password);
     if (!match) return null;
-    return { username: user.username, role: user.role };
+    return { id: user.id, username: user.username, role: user.role };
   } catch (err) {
     console.error('Verify user error:', err);
     throw err;
@@ -167,7 +167,7 @@ router.post('/login', async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    const token = await createSession(user.username, user.role);
+    const token = await createSession(user.id);
     const secureCookie = true; // Use HTTPS in production
     const sameSite = 'strict';
     res.cookie('session_token', token, {

@@ -21,7 +21,7 @@ module.exports = (getSession, logAction) => {
   const adminRouter = express.Router();
 
   adminRouter.use(require('./admin/questions.cjs')(authMiddleware));
-  adminRouter.use(require('./admin/headlines.cjs')(authMiddleware));
+  adminRouter.use(require('./admin/articles.cjs')(authMiddleware));
   adminRouter.use(require('./admin/archive.cjs')(authMiddleware));
   adminRouter.use(require('./admin/users.cjs')(authMiddleware));
   adminRouter.use(require('./admin/export.cjs')(authMiddleware));
