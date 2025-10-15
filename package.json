@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.cjs",
-    "test": "jest"
+    "test": "jest",
+    "postinstall": "npx prisma generate"
   },
   "overrides": {
     "@browserbasehq/stagehand": {
