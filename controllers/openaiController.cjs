@@ -158,10 +158,10 @@ async function streamChat(req, res) {
       // Fallback to full DB if vector DB not enabled
       const entries = await HochschuhlABC.findMany({
         where: { active: true, archived: null },
-        orderBy: { headline: 'desc' },
-        select: { headline: true, text: true },
+        orderBy: { article: 'desc' },
+        select: { article: true, description: true },
       });
-      hochschulContent = entries.map(entry => `## ${entry.headline}\n\n${entry.text}\n\n`).join('');
+      hochschulContent = entries.map(entry => `## ${entry.article}\n\n${entry.description}\n\n`).join('');
     }
 
     const images = await Images.findMany({
@@ -399,14 +399,14 @@ async function getSuggestions(req, res) {
   try {
     const suggestions = await HochschuhlABC.findMany({
       where: { active: true, archived: null },
-      select: { headline: true, text: true },
-      orderBy: { headline: 'asc' },
+      select: { article: true, description: true },
+      orderBy: { article: 'asc' },
       take: 10,
     });
 
     const formattedSuggestions = suggestions.map(s => ({
-      headline: s.headline,
-      text: s.text.substring(0, 100) + (s.text.length > 100 ? '...' : ''),
+      article: s.article,
+      description: s.description.substring(0, 100) + (s.description.length > 100 ? '...' : ''),
     }));
 
     res.json(formattedSuggestions);

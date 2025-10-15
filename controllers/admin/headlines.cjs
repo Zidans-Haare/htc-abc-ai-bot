@@ -4,38 +4,36 @@ const { HochschuhlABC, Questions } = require('../db.cjs');
 
 module.exports = (adminAuth) => {
   router.post('/move', adminAuth, async (req, res) => {
-    const { question, answer, headlineId, newHeadline } = req.body;
-    if (!question || !answer || (!headlineId && !newHeadline)) {
+    const { question, answer, articleId, newArticle } = req.body;
+    if (!question || !answer || (!articleId && !newArticle)) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
       let entry;
-      if (newHeadline) {
+      if (newArticle) {
         entry = await HochschuhlABC.create({
           data: {
-            headline: newHeadline,
-            text: `**${question}**\n${answer}`,
+            article: newArticle,
+            description: `**${question}**\n${answer}`,
             editor: req.user.username,
-            lastUpdated: new Date(),
             active: true,
             archived: null
           }
         });
       } else {
-        entry = await HochschuhlABC.findUnique({ where: { id: parseInt(headlineId) } });
+        entry = await HochschuhlABC.findUnique({ where: { id: parseInt(articleId) } });
         if (!entry) {
-          return res.status(404).json({ error: 'Headline not found' });
+          return res.status(404).json({ error: 'Article not found' });
         }
         await HochschuhlABC.update({
-          where: { id: parseInt(headlineId) },
+          where: { id: parseInt(articleId) },
           data: {
-            text: entry.text + `\n\n**${question}**\n${answer}`,
-            editor: req.user.username,
-            lastUpdated: new Date()
+            description: entry.description + `\n\n**${question}**\n${answer}`,
+            editor: req.user.username
           }
         });
-        entry.id = headlineId; // for return
+        entry.id = articleId; // for return
       }
 
       await Questions.updateMany({
@@ -50,29 +48,29 @@ module.exports = (adminAuth) => {
     }
   });
 
-  router.get('/headlines', adminAuth, async (req, res) => {
+  router.get('/articles', adminAuth, async (req, res) => {
     try {
       const where = { active: true };
       const { q } = req.query;
       if (q) {
         where.OR = [
-          { headline: { contains: q } },
-          { text: { contains: q } },
+          { article: { contains: q } },
+          { description: { contains: q } },
           { editor: { contains: q } }
         ];
       }
       const offset = parseInt(req.query.offset) || 0;
-       const headlines = await HochschuhlABC.findMany({
-         select: { id: true, headline: true, text: true },
-         where,
-         orderBy: { lastUpdated: 'desc' },
-         take: 100,
-         skip: offset
-       });
-      res.json(headlines);
+       const articles = await HochschuhlABC.findMany({
+        select: { id: true, article: true, description: true },
+        where,
+        orderBy: { last_updated: 'desc' },
+        take: 100,
+        skip: offset
+      });
+      res.json(articles);
     } catch (err) {
-      console.error('Failed to load headlines:', err);
-      res.status(500).json({ error: 'Failed to load headlines' });
+      console.error('Failed to load articles:', err);
+      res.status(500).json({ error: 'Failed to load articles' });
     }
   });
 
@@ -92,17 +90,16 @@ module.exports = (adminAuth) => {
   });
 
   router.post('/entries', adminAuth, async (req, res) => {
-    const { headline, text, active } = req.body;
-    if (!headline || !text) {
-      return res.status(400).json({ error: 'Headline and text are required' });
+    const { article, description, active } = req.body;
+    if (!article || !description) {
+      return res.status(400).json({ error: 'Article and description are required' });
     }
     try {
       const entry = await HochschuhlABC.create({
         data: {
-          headline,
-          text,
+          article,
+          description,
           editor: req.user,
-          lastUpdated: new Date(),
           active: active !== false,
           archived: null
         }
@@ -119,9 +116,9 @@ module.exports = (adminAuth) => {
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid ID' });
     }
-    const { headline, text, active } = req.body;
-    if (!headline || !text) {
-      return res.status(400).json({ error: 'Headline and text are required' });
+    const { article, description, active } = req.body;
+    if (!article || !description) {
+      return res.status(400).json({ error: 'Article and description are required' });
     }
     try {
       const oldEntry = await HochschuhlABC.findUnique({ where: { id } });
@@ -132,10 +129,9 @@ module.exports = (adminAuth) => {
       });
       const newEntry = await HochschuhlABC.create({
         data: {
-          headline,
-          text,
+          article,
+          description,
           editor: req.user,
-          lastUpdated: new Date(),
           active: active !== false,
           archived: null
         }

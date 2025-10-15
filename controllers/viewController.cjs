@@ -12,7 +12,7 @@ async function getPublishedArticles(req, res) {
         if (sort === 'alpha') {
             // Fetch all and sort in the application for proper locale-aware sorting
             const allArticles = await HochschuhlABC.findMany({
-                select: { headline: true, text: true },
+                select: { article: true, description: true },
                 where: {
                     active: true,
                     archived: null
@@ -21,22 +21,22 @@ async function getPublishedArticles(req, res) {
 
             // German locale, ignore case and accents
             const collator = new Intl.Collator('de', { sensitivity: 'base' });
-            allArticles.sort((a, b) => collator.compare(a.headline, b.headline));
-            articles = allArticles.slice(offset, offset + limit).map(a => ({ headline: a.headline, content: a.text }));
+            allArticles.sort((a, b) => collator.compare(a.article, b.article));
+            articles = allArticles.slice(offset, offset + limit).map(a => ({ article: a.article, content: a.description }));
 
         } else {
-            // Default sort by lastUpdated, most recent first
+            // Default sort by last_updated, most recent first
             articles = await HochschuhlABC.findMany({
-                select: { headline: true, text: true },
+                select: { article: true, description: true },
                 where: {
                     active: true,
                     archived: null
                 },
-                orderBy: { lastUpdated: 'desc' },
+                orderBy: { last_updated: 'desc' },
                 take: limit,
                 skip: offset
             });
-            articles = articles.map(a => ({ headline: a.headline, content: a.text }));
+            articles = articles.map(a => ({ article: a.article, content: a.description }));
         }
 
         res.json(articles);

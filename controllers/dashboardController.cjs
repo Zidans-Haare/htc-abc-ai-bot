@@ -260,13 +260,13 @@ router.get('/sessions/hourly', async (req, res) => {
 router.get('/most-viewed-articles', async (req, res) => {
     try {
         const articles = await sequelize.query(`
-            SELECT 
-                h.headline,
+            SELECT
+                h.article,
                 COUNT(av.id) as views
             FROM hochschuhl_abc h
             LEFT JOIN article_views av ON h.id = av.article_id
             WHERE h.active = 1
-            GROUP BY h.id, h.headline
+            GROUP BY h.id, h.article
             HAVING views > 0
             ORDER BY views DESC
             LIMIT 5

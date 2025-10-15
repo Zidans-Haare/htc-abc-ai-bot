@@ -68,7 +68,7 @@ module.exports = (adminAuth) => {
       const questions = await Questions.findMany({
         include: {
           hochschuhl_abc: {
-            select: { headline: true, text: true }
+            select: { article: true, description: true }
           }
         },
         where: {

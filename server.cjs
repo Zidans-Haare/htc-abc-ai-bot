@@ -96,7 +96,7 @@ const pid = process.pid;
 
 // CLI options
 program
-  .option('--init-vectordb', 'Initialize/populate vector DB from current headlines/articles')
+  .option('--init-vectordb', 'Initialize/populate vector DB from current articles')
   .option('--drop-vectordb', 'Drop/clear vector DB collections')
   .parse();
 
@@ -113,7 +113,7 @@ if (options.initVectordb) {
       console.log('Initializing vector DB...');
       const vectorStore = require('./lib/vectorStore');
       const stats = await vectorStore.initVectorDB();
-      console.log(`Vector DB initialized successfully: ${stats.chunks} chunks from ${stats.headlines} headlines and ${stats.pdfs} PDFs synced`);
+      console.log(`Vector DB initialized successfully: ${stats.chunks} chunks from ${stats.articles} articles and ${stats.pdfs} PDFs synced`);
       process.exit(0);
     } catch (err) {
       console.error('Vector DB initialization failed:', err);

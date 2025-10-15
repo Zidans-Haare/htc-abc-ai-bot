@@ -32,10 +32,10 @@ module.exports = (authMiddleware) => {
       const client = getClient();
 
       const allArticles = await HochschuhlABC.findMany({
-        select: { headline: true, text: true },
+        select: { article: true, description: true },
         where: { active: true },
       });
-      const context = allArticles.map(a => `Überschrift: ${a.headline}\nText: ${a.text}`).join('\n\n---\n\n');
+      const context = allArticles.map(a => `Überschrift: ${a.article}\nText: ${a.description}`).join('\n\n---\n\n');
 
       const prompt = `Du bist ein Lektor für die Wissensdatenbank einer Hochschule. Analysiere den folgenden Text und gib deine Antwort AUSSCHLIESSLICH als valides JSON-Objekt mit dem Schema {"correctedText": "", "corrections": [{"original": "", "corrected": "", "reason": ""}], "suggestions": [{"suggestion": "", "reason": ""}], "contradictions": [{"contradiction": "", "reason": ""}]}.\n\nText:\n---\n${text}\n---\n\nKontext aus bestehenden Artikeln:\n---\n${context}\n---`;
 
