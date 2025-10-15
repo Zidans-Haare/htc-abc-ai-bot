@@ -450,7 +450,7 @@ class DashboardManager {
                         ${index + 1}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-gray-900 font-medium truncate">${this.escapeHtml(article.headline)}</p>
+                        <p class="text-gray-900 font-medium truncate">${this.escapeHtml(article.article)}</p>
                     </div>
                 </div>
                 <span class="article-views">${article.views} Views</span>

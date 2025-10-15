@@ -100,9 +100,9 @@ body {
     justify-content: center;
 }
 
-/* Mobile headlines layout */
+/* Mobile articles layout */
 @media (max-width: 767px) {
-    #headlines-sidebar {
+    #articles-sidebar {
         position: relative;
     }
     #mobile-back-btn {
@@ -182,7 +182,7 @@ body {
 }
 
 @media (min-width: 768px) {
-  #headlines-sidebar {
+  #articles-sidebar {
     height: 100vh;
   }
   #editor-pane {

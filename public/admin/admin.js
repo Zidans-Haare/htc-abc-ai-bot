@@ -1,5 +1,5 @@
 import { fetchAndParse, overrideFetch } from './utils.js';
-import { initHeadlines, allHeadlines, loadHeadlines, selectHeadline, getCurrentId, loadEntry, saveEntry } from './articles.js';
+import { initArticles, allArticles, loadArticles, selectArticle, getCurrentId, loadEntry, saveEntry } from './articles.js';
 import { initQuestions } from './questions.js';
 import { initUsers, loadUsers } from './users.js';
 import { initArchive, loadArchive } from './archive.js';

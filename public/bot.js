@@ -53,10 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.className = 'suggestion-card';
                     
                     const title = document.createElement('h4');
-                    title.textContent = suggestion.headline;
+                    title.textContent = suggestion.article;
                     
                     const text = document.createElement('p');
-                    text.textContent = suggestion.text;
+                    text.textContent = suggestion.description;
                     
                     card.appendChild(title);
                     card.appendChild(text);

@@ -1,5 +1,5 @@
 import { fetchAndParse } from './utils.js';
-import { loadHeadlines } from './articles.js';
+import { loadArticles } from './articles.js';
 
 let archiveEntries = [];
 const archiveList = document.getElementById('archive-list');
@@ -52,8 +52,8 @@ function renderArchive(append = false) {
   const q = archiveSearch.value.toLowerCase();
   if (q) {
     items = items.filter(e =>
-      e.headline.toLowerCase().includes(q) ||
-      (e.text && e.text.toLowerCase().includes(q)) ||
+      e.article.toLowerCase().includes(q) ||
+      (e.description && e.description.toLowerCase().includes(q)) ||
       (e.editor && e.editor.toLowerCase().includes(q))
     );
   }
@@ -72,9 +72,9 @@ function renderArchive(append = false) {
     const div = document.createElement('div');
     div.className = 'border p-4 rounded';
     const date = e.archived ? new Date(e.archived).toLocaleString() : '';
-    div.innerHTML = `<h3 class="font-semibold mb-1">${e.headline}</h3>
+    div.innerHTML = `<h3 class="font-semibold mb-1">${e.article}</h3>
       <p class="text-sm text-gray-500 mb-2">${date} - ${e.editor || ''}</p>
-      <div class="text-sm mb-2">${e.text}</div>`;
+      <div class="text-sm mb-2">${e.description}</div>`;
     const btn = document.createElement('button');
     btn.className = 'btn-primary px-3 py-1 rounded-md mr-2';
     btn.textContent = 'Wiederherstellen';
@@ -86,7 +86,7 @@ function renderArchive(append = false) {
           headers: { 'Content-Type': 'application/json' },
         });
         if (resp.ok) {
-          await loadHeadlines();
+          await loadArticles();
           await loadArchive();
           alert('Wiederhergestellt');
         } else {

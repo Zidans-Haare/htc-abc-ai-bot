@@ -259,8 +259,8 @@ export function initQuestions({ updateOpenCount, showEditor }) {
          const form = document.createElement('form');
 
          let answerValue = p.answer || '';
-         if (p.HochschuhlABC && p.HochschuhlABC.headline && p.HochschuhlABC.text) {
-           answerValue = `${p.HochschuhlABC.headline}<br><br>${p.HochschuhlABC.text}`;
+          if (p.HochschuhlABC && p.HochschuhlABC.article && p.HochschuhlABC.description) {
+            answerValue = `${p.HochschuhlABC.article}<br><br>${p.HochschuhlABC.description}`;
          }
 
          form.innerHTML = `
@@ -285,10 +285,10 @@ export function initQuestions({ updateOpenCount, showEditor }) {
            }
 
            const answeredInDiv = document.getElementById('question-answered-in');
-           if (p.HochschuhlABC && p.HochschuhlABC.headline) {
-               answeredInDiv.style.display = 'block';
-               answeredInDiv.textContent = `Beantwortet in: ${p.HochschuhlABC.headline}`;
-           } else {
+            if (p.HochschuhlABC && p.HochschuhlABC.article) {
+                answeredInDiv.style.display = 'block';
+                answeredInDiv.textContent = `Beantwortet in: ${p.HochschuhlABC.article}`;
+            } else {
                answeredInDiv.style.display = 'none';
                answeredInDiv.textContent = '';
            }

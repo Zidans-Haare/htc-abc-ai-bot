@@ -338,7 +338,7 @@ function checkForChanges() {
 }
 
 async function loadArticles(append = false) {
-  console.log('Fetching headlines...');
+  console.log('Fetching articles...');
   if (!append) {
     articlesOffset = 0;
     allArticles = [];
@@ -346,38 +346,38 @@ async function loadArticles(append = false) {
   try {
     const q = encodeURIComponent(searchEl.value.trim());
     const articles = await fetchAndParse(`/api/admin/articles?q=${q}&offset=${articlesOffset}`);
-    console.log('Headlines received:', headlines);
+    console.log('Articles received:', articles);
     if (append) {
-      allArticles = allArticles.concat(headlines);
+      allArticles = allArticles.concat(articles);
     } else {
-      allArticles = headlines;
+      allArticles = articles;
       selectedArticleEl = null;
     }
      renderArticles(allArticles, append);
      articlesOffset += 100;
      // Add load more if we got 100
-     if (headlines.length === 100) {
-      let loadMoreBtn = document.getElementById('load-more-headlines');
+      if (articles.length === 100) {
+      let loadMoreBtn = document.getElementById('load-more-articles');
       if (!loadMoreBtn) {
         loadMoreBtn = document.createElement('li');
-        loadMoreBtn.id = 'load-more-headlines';
+        loadMoreBtn.id = 'load-more-articles';
         loadMoreBtn.className = 'p-2 text-center';
         loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
         loadMoreBtn.querySelector('button').addEventListener('click', () => loadArticles(true));
         listEl.appendChild(loadMoreBtn);
       }
     } else {
-      const loadMoreBtn = document.getElementById('load-more-headlines');
+      const loadMoreBtn = document.getElementById('load-more-articles');
       if (loadMoreBtn) loadMoreBtn.remove();
     }
   } catch (err) {
-    console.error('Failed to load headlines:', err);
+    console.error('Failed to load articles:', err);
     if (!append) listEl.innerHTML = '<div>Fehler beim Laden der Überschriften</div>';
   }
 }
 
 function renderArticles(items, append = false) {
-  console.log('Rendering headlines:', items);
+  console.log('Rendering articles:', items);
   if (!append) {
     listEl.innerHTML = '';
   }
@@ -385,11 +385,11 @@ function renderArticles(items, append = false) {
     listEl.innerHTML = '<div class="p-2 text-[var(--secondary-text)]">Keine Überschriften gefunden.</div>';
     return;
   }
-  const loadMoreBtn = document.getElementById('load-more-headlines');
+      const loadMoreBtn = document.getElementById('load-more-articles');
   const insertBefore = append && loadMoreBtn ? loadMoreBtn : null;
   items.forEach(h => {
     const li = document.createElement('li');
-    li.textContent = h.headline;
+    li.textContent = h.article;
     li.className = 'article-item p-2 cursor-pointer rounded transition-colors';
     li.dataset.id = h.id;
     li.addEventListener('click', () => {
@@ -446,11 +446,11 @@ export async function saveEntry() {
   // remove strikethroughs from the editor content 
   const cleanedText = editor.getMarkdown().replace(/~~/g, '');
   const payload = {
-    headline: headlineInput.value.trim(),
-    text: cleanedText.trim(),
+    article: articleInput.value.trim(),
+    description: cleanedText.trim(),
     active: true
   };
-  if (!payload.headline || !payload.text) return;
+  if (!payload.article || !payload.description) return;
   try {
     console.log('Saving entry:', payload);
     let res;
@@ -488,7 +488,7 @@ export async function saveEntry() {
         // Update banner text
         const answeredInDiv = document.getElementById('question-answered-in');
         if (answeredInDiv) {
-            answeredInDiv.innerHTML = `<strong>Beantwortet in:</strong> ${payload.headline}`;
+            answeredInDiv.innerHTML = `<strong>Beantwortet in:</strong> ${payload.article}`;
             answeredInDiv.style.display = 'block';
         }
       }
@@ -509,7 +509,7 @@ async function deleteEntry() {
     await fetchAndParse(`/api/admin/entries/${currentId}`, { method: 'DELETE' });
     console.log('Entry deleted');
      currentId = null;
-     headlineInput.value = '';
+     articleInput.value = '';
      editor.setMarkdown('');
      document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
      await loadArticles();
@@ -527,10 +527,10 @@ async function deleteEntry() {
   }
 }
 
-export function selectHeadline(id) {
-  const headlineElement = listEl.querySelector(`li[data-id='${id}']`);
-  if (headlineElement) {
-    headlineElement.click();
+export function selectArticle(id) {
+  const articleElement = listEl.querySelector(`li[data-id='${id}']`);
+  if (articleElement) {
+    articleElement.click();
   }
 }
 
@@ -538,13 +538,13 @@ export function getCurrentId() {
   return currentId;
 }
 
-export function initHeadlines() {
+export function initArticles() {
   saveBtn.addEventListener('click', saveEntry);
   deleteBtn.addEventListener('click', deleteEntry);
    addBtn.addEventListener('click', () => {
       console.log('Adding new heading...');
       currentId = null;
-      headlineInput.value = '';
+      articleInput.value = '';
       editor.setMarkdown('');
       originalArticle = '';
       originalDescription = '';
@@ -561,11 +561,11 @@ export function initHeadlines() {
       setTimeout(setEditorHeight, 100);
     });
   searchEl.addEventListener('input', () => {
-    console.log('Search input changed, loading headlines...');
+    console.log('Search input changed, loading articles...');
     loadArticles();
   });
 
-  headlineInput.addEventListener('input', checkForChanges);
+  articleInput.addEventListener('input', checkForChanges);
   editor.addHook('change', checkForChanges);
 
   aiCheckCloseBtn.addEventListener('click', () => {
@@ -616,4 +616,4 @@ export function initHeadlines() {
   loadArticles();
 }
 
-export { allArticles, loadArticles };
+export { initArticles, allArticles, loadArticles, selectArticle, getCurrentId, loadEntry, saveEntry };

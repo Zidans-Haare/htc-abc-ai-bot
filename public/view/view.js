@@ -37,10 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 articleDiv.className = 'article-entry';
 
                 const headline = document.createElement('h1');
-                headline.textContent = article.headline;
+                headline.textContent = article.article;
 
                 const content = document.createElement('p');
-                content.innerHTML = renderMarkup(article.content);
+                content.innerHTML = renderMarkup(article.description);
 
                 const separator = document.createElement('hr');
                 separator.className = 'separator';
