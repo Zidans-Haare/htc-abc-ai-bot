@@ -32,6 +32,7 @@
     "@toast-ui/editor": "^3.2.2",
     "@xenova/transformers": "*",
     "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^11.10.0",
     "body-parser": "^2.2.0",
     "chromadb": "^3.0.17",
     "commander": "^14.0.1",

@@ -5,39 +5,63 @@ const dbPath = path.join(__dirname, '../hochschuhl-abc.db');
 const db = new sqlite3.Database(dbPath);
 
 const tables = [
+  'users',
+  'auth_sessions',
+  'feedback',
+  'articles',
   'hochschuhl_abc',
   'questions',
-  'auth_sessions',
-  'chat_interactions',
   'conversations',
   'messages',
+  'images',
   'pdfs',
   'question_cache',
-  'user_sessions'
+  'user_sessions',
+  'chat_interactions',
+  'daily_question_stats',
+  'token_usage',
+  'page_views',
+  'question_analysis_cache'
 ];
 
 const dateFields = {
-  hochschuhl_abc: ['lastUpdated', 'updated_at', 'archived'],
-  questions: ['lastUpdated'],
-  auth_sessions: ['created_at', 'last_activity', 'expires_at'],
-  chat_interactions: ['timestamp'],
-  conversations: ['created_at'],
-  messages: ['created_at'],
-  pdfs: ['createdAt', 'updatedAt'],
-  question_cache: ['createdAt', 'updatedAt'],
-  user_sessions: ['started_at', 'last_activity', 'ended_at']
+  users: ['created_at', 'updated_at'],
+  auth_sessions: ['expires_at', 'created_at', 'updated_at'],
+  feedback: ['submitted_at', 'created_at', 'updated_at'],
+  articles: ['published_at', 'created_at', 'updated_at'],
+  hochschuhl_abc: ['last_updated', 'archived', 'created_at', 'updated_at'],
+  questions: ['last_updated', 'answered_at', 'created_at', 'updated_at'],
+  conversations: ['created_at', 'updated_at'],
+  messages: ['created_at', 'updated_at'],
+  images: ['created_at', 'updated_at'],
+  pdfs: ['created_at', 'updated_at'],
+  question_cache: ['created_at', 'updated_at'],
+  user_sessions: ['started_at', 'last_activity', 'ended_at', 'created_at', 'updated_at'],
+  chat_interactions: ['timestamp', 'created_at', 'updated_at'],
+  daily_question_stats: ['created_at', 'updated_at'],
+  token_usage: ['timestamp', 'created_at', 'updated_at'],
+  page_views: ['timestamp', 'created_at', 'updated_at'],
+  question_analysis_cache: ['last_updated', 'created_at', 'updated_at']
 };
 
 const textFields = {
-  hochschuhl_abc: ['headline', 'text', 'editor', 'pdfPath'],
+  users: ['username', 'password', 'role'],
+  auth_sessions: ['token'],
+  feedback: ['text'],
+  articles: ['title', 'content', 'slug'],
+  hochschuhl_abc: ['article', 'description', 'editor', 'pdf_path'],
   questions: ['question', 'answer', 'user', 'translation', 'feedback'],
-  auth_sessions: ['session_token', 'username', 'role'],
-  chat_interactions: ['session_id', 'question', 'answer', 'error_message'],
   conversations: ['id', 'anonymous_user_id', 'category'],
   messages: ['conversation_id', 'role', 'content'],
+  images: ['filename', 'description'],
   pdfs: ['filename', 'filepath', 'description'],
   question_cache: ['question', 'answer', 'status'],
-  user_sessions: ['session_id', 'ip_address', 'user_agent']
+  user_sessions: ['session_id', 'ip_address', 'user_agent'],
+  chat_interactions: ['session_id', 'question', 'answer', 'error_message'],
+  daily_question_stats: ['analysis_date', 'normalized_question', 'topic', 'languages_detected', 'original_questions'],
+  token_usage: [],
+  page_views: ['path'],
+  question_analysis_cache: ['cache_key', 'normalized_question', 'topic', 'languages_detected', 'original_questions']
 };
 
 async function migrateTable(table) {
