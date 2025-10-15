@@ -2,6 +2,7 @@ import { fetchAndParse } from './utils.js';
 
 let imagesView;
 let imagesList;
+let imagesOffset = 0;
 
 export function initImages() {
     imagesView = document.getElementById('images-view');
@@ -67,23 +68,42 @@ export function initImages() {
     }
 }
 
-async function loadImages() {
+async function loadImages(append = false) {
+    if (!append) {
+        imagesOffset = 0;
+        imagesList.innerHTML = '';
+    }
     try {
-        const images = await fetchAndParse('/api/admin/images');
-        renderImages(images);
+        const images = await fetchAndParse(`/api/admin/images?offset=${imagesOffset}`);
+        renderImages(images, append);
+        imagesOffset += 100;
+        if (images.length === 100) {
+            let loadMoreBtn = document.getElementById('load-more-images');
+            if (!loadMoreBtn) {
+                loadMoreBtn = document.createElement('div');
+                loadMoreBtn.id = 'load-more-images';
+                loadMoreBtn.className = 'col-span-full text-center mt-4';
+                loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+                loadMoreBtn.querySelector('button').addEventListener('click', () => loadImages(true));
+                imagesList.appendChild(loadMoreBtn);
+            }
+        } else {
+            const loadMoreBtn = document.getElementById('load-more-images');
+            if (loadMoreBtn) loadMoreBtn.remove();
+        }
     } catch (error) {
         console.error('Error loading images:', error);
-        imagesList.innerHTML = '<p class="text-red-500">Fehler beim Laden der Bilder.</p>';
+        if (!append) imagesList.innerHTML = '<p class="text-red-500">Fehler beim Laden der Bilder.</p>';
     }
 }
 
-function renderImages(images) {
+function renderImages(images, append = false) {
     if (!images || images.length === 0) {
-        imagesList.innerHTML = '<p class="text-gray-500">Keine Bilder gefunden.</p>';
+        if (!append) imagesList.innerHTML = '<p class="text-gray-500">Keine Bilder gefunden.</p>';
         return;
     }
 
-    imagesList.innerHTML = images.map(image => `
+    const html = images.map(image => `
         <div class="group border rounded-lg overflow-hidden shadow-sm flex flex-col">
             <div class="relative">
                 <img src="/uploads/${image.filename}" alt="${image.description || image.filename}" class="w-full h-48 object-cover">
@@ -105,6 +125,17 @@ function renderImages(images) {
             </div>
         </div>
     `).join('');
+
+    if (append) {
+        const loadMoreBtn = document.getElementById('load-more-images');
+        if (loadMoreBtn) {
+            loadMoreBtn.insertAdjacentHTML('beforebegin', html);
+        } else {
+            imagesList.insertAdjacentHTML('beforeend', html);
+        }
+    } else {
+        imagesList.innerHTML = html;
+    }
 
     // Add event listeners for the new buttons
     imagesList.querySelectorAll('.copy-url-btn').forEach(button => {

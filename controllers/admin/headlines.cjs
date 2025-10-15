@@ -62,13 +62,13 @@ module.exports = (adminAuth) => {
         ];
       }
       const offset = parseInt(req.query.offset) || 0;
-      const headlines = await HochschuhlABC.findMany({
-        select: { id: true, headline: true, text: true },
-        where,
-        orderBy: { lastUpdated: 'desc' },
-        take: 100,
-        skip: offset
-      });
+       const headlines = await HochschuhlABC.findMany({
+         select: { id: true, headline: true, text: true },
+         where,
+         orderBy: { lastUpdated: 'desc' },
+         take: 100,
+         skip: offset
+       });
       res.json(headlines);
     } catch (err) {
       console.error('Failed to load headlines:', err);

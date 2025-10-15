@@ -10,10 +10,13 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const offset = parseInt(req.query.offset) || 0;
+    const category = req.query.category;
+    const where = category && category !== 'All' ? { category } : {};
     const conversations = await Conversation.findMany({
+      where,
       select: { id: true, anonymous_user_id: true, created_at: true, category: true, ai_confidence: true },
       orderBy: { created_at: 'desc' },
-      take: 100,
+        take: 100,
       skip: offset
     });
     res.json(conversations);

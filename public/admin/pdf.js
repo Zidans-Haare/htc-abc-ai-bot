@@ -2,6 +2,7 @@ import { fetchAndParse } from './utils.js';
 
 let pdfView;
 let pdfList;
+let pdfOffset = 0;
 
 export function initPDFs() {
     pdfView = document.getElementById('pdf-view');
@@ -67,23 +68,42 @@ export function initPDFs() {
     }
 }
 
-async function loadPDFs() {
+async function loadPDFs(append = false) {
+    if (!append) {
+        pdfOffset = 0;
+        pdfList.innerHTML = '';
+    }
     try {
-        const pdfs = await fetchAndParse('/api/admin/pdfs');
-        renderPDFs(pdfs);
+        const pdfs = await fetchAndParse(`/api/admin/pdfs?offset=${pdfOffset}`);
+        renderPDFs(pdfs, append);
+        pdfOffset += 100;
+        if (pdfs.length === 100) {
+            let loadMoreBtn = document.getElementById('load-more-pdfs');
+            if (!loadMoreBtn) {
+                loadMoreBtn = document.createElement('div');
+                loadMoreBtn.id = 'load-more-pdfs';
+                loadMoreBtn.className = 'col-span-full text-center mt-4';
+                loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+                loadMoreBtn.querySelector('button').addEventListener('click', () => loadPDFs(true));
+                pdfList.appendChild(loadMoreBtn);
+            }
+        } else {
+            const loadMoreBtn = document.getElementById('load-more-pdfs');
+            if (loadMoreBtn) loadMoreBtn.remove();
+        }
     } catch (error) {
         console.error('Error loading PDFs:', error);
-        pdfList.innerHTML = '<p class="text-red-500">Fehler beim Laden der PDFs.</p>';
+        if (!append) pdfList.innerHTML = '<p class="text-red-500">Fehler beim Laden der PDFs.</p>';
     }
 }
 
-function renderPDFs(pdfs) {
+function renderPDFs(pdfs, append = false) {
     if (!pdfs || pdfs.length === 0) {
-        pdfList.innerHTML = '<p class="text-gray-500">Keine PDFs gefunden.</p>';
+        if (!append) pdfList.innerHTML = '<p class="text-gray-500">Keine PDFs gefunden.</p>';
         return;
     }
 
-    pdfList.innerHTML = pdfs.map(pdf => `
+    const html = pdfs.map(pdf => `
         <div class="group border rounded-lg overflow-hidden shadow-sm flex flex-col">
             <div class="relative">
                 <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
@@ -107,6 +127,17 @@ function renderPDFs(pdfs) {
             </div>
         </div>
     `).join('');
+
+    if (append) {
+        const loadMoreBtn = document.getElementById('load-more-pdfs');
+        if (loadMoreBtn) {
+            loadMoreBtn.insertAdjacentHTML('beforebegin', html);
+        } else {
+            pdfList.insertAdjacentHTML('beforeend', html);
+        }
+    } else {
+        pdfList.innerHTML = html;
+    }
 
     // Add event listeners for the new buttons
     pdfList.querySelectorAll('.copy-url-btn').forEach(button => {

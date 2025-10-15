@@ -5,6 +5,7 @@ let allHeadlines = [];
 let selectedHeadlineEl = null;
 let originalHeadline = '';
 let originalText = '';
+let headlinesOffset = 0;
 
 const listEl = document.getElementById('headline-list');
 const searchEl = document.getElementById('search');
@@ -336,27 +337,56 @@ function checkForChanges() {
   setSaveButtonState(hasChanged);
 }
 
-async function loadHeadlines() {
+async function loadHeadlines(append = false) {
   console.log('Fetching headlines...');
+  if (!append) {
+    headlinesOffset = 0;
+    allHeadlines = [];
+  }
   try {
     const q = encodeURIComponent(searchEl.value.trim());
-    allHeadlines = await fetchAndParse(`/api/admin/headlines?q=${q}`);
-    console.log('Headlines received:', allHeadlines);
-    selectedHeadlineEl = null;
-    renderHeadlines(allHeadlines);
+    const headlines = await fetchAndParse(`/api/admin/headlines?q=${q}&offset=${headlinesOffset}`);
+    console.log('Headlines received:', headlines);
+    if (append) {
+      allHeadlines = allHeadlines.concat(headlines);
+    } else {
+      allHeadlines = headlines;
+      selectedHeadlineEl = null;
+    }
+     renderHeadlines(allHeadlines, append);
+     headlinesOffset += 100;
+     // Add load more if we got 100
+     if (headlines.length === 100) {
+      let loadMoreBtn = document.getElementById('load-more-headlines');
+      if (!loadMoreBtn) {
+        loadMoreBtn = document.createElement('li');
+        loadMoreBtn.id = 'load-more-headlines';
+        loadMoreBtn.className = 'p-2 text-center';
+        loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+        loadMoreBtn.querySelector('button').addEventListener('click', () => loadHeadlines(true));
+        listEl.appendChild(loadMoreBtn);
+      }
+    } else {
+      const loadMoreBtn = document.getElementById('load-more-headlines');
+      if (loadMoreBtn) loadMoreBtn.remove();
+    }
   } catch (err) {
     console.error('Failed to load headlines:', err);
-    listEl.innerHTML = '<div>Fehler beim Laden der Überschriften</div>';
+    if (!append) listEl.innerHTML = '<div>Fehler beim Laden der Überschriften</div>';
   }
 }
 
-function renderHeadlines(items) {
+function renderHeadlines(items, append = false) {
   console.log('Rendering headlines:', items);
-  listEl.innerHTML = '';
-  if (items.length === 0) {
+  if (!append) {
+    listEl.innerHTML = '';
+  }
+  if (items.length === 0 && !append) {
     listEl.innerHTML = '<div class="p-2 text-[var(--secondary-text)]">Keine Überschriften gefunden.</div>';
     return;
   }
+  const loadMoreBtn = document.getElementById('load-more-headlines');
+  const insertBefore = append && loadMoreBtn ? loadMoreBtn : null;
   items.forEach(h => {
     const li = document.createElement('li');
     li.textContent = h.headline;
@@ -370,7 +400,11 @@ function renderHeadlines(items) {
       selectedHeadlineEl = li;
       loadEntry(h.id);
     });
-    listEl.appendChild(li);
+    if (insertBefore) {
+      listEl.insertBefore(li, insertBefore);
+    } else {
+      listEl.appendChild(li);
+    }
     if (currentId && String(currentId) === String(h.id)) {
       li.classList.add('active-headline');
       selectedHeadlineEl = li;

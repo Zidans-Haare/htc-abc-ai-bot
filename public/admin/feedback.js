@@ -3,26 +3,46 @@ export function setupFeedback(userRole) {
     const listContainer = document.getElementById('feedback-list-container');
     const detailContainer = document.getElementById('feedback-detail-container');
     const feedbackList = document.getElementById('feedback-list');
+    let feedbackOffset = 0;
 
-    async function loadFeedbackList() {
+    async function loadFeedbackList(append = false) {
+        if (!append) {
+            feedbackOffset = 0;
+            feedbackList.innerHTML = '';
+        }
         try {
-            const response = await fetch('/api/admin/feedback');
+            const response = await fetch(`/api/admin/feedback?offset=${feedbackOffset}`);
             if (!response.ok) throw new Error('Failed to fetch feedback');
             const feedbackData = await response.json();
-            renderFeedbackList(feedbackData);
+            renderFeedbackList(feedbackData, append);
+            feedbackOffset += 100;
+            if (feedbackData.length === 100) {
+                let loadMoreBtn = document.getElementById('load-more-feedback');
+                if (!loadMoreBtn) {
+                    loadMoreBtn = document.createElement('div');
+                    loadMoreBtn.id = 'load-more-feedback';
+                    loadMoreBtn.className = 'text-center mt-4';
+                    loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+                    loadMoreBtn.querySelector('button').addEventListener('click', () => loadFeedbackList(true));
+                    feedbackList.appendChild(loadMoreBtn);
+                }
+            } else {
+                const loadMoreBtn = document.getElementById('load-more-feedback');
+                if (loadMoreBtn) loadMoreBtn.remove();
+            }
         } catch (error) {
             console.error('Error loading feedback list:', error);
-            feedbackList.innerHTML = '<p class="text-red-500">Error loading feedback.</p>';
+            if (!append) feedbackList.innerHTML = '<p class="text-red-500">Error loading feedback.</p>';
         }
     }
 
-    function renderFeedbackList(feedbackData) {
+    function renderFeedbackList(feedbackData, append = false) {
         if (!feedbackData || feedbackData.length === 0) {
-            feedbackList.innerHTML = '<p>No feedback yet.</p>';
+            if (!append) feedbackList.innerHTML = '<p>No feedback yet.</p>';
             return;
         }
 
-        feedbackList.innerHTML = feedbackData.map(item => `
+        const html = feedbackData.map(item => `
             <div class="p-4 bg-white rounded shadow-md mb-4 cursor-pointer hover:shadow-lg transition-shadow" data-id="${item.id}">
                 <p class="text-gray-800 truncate">${item.feedback_text}</p>
                 <div class="text-sm text-gray-500 mt-2">
@@ -31,6 +51,17 @@ export function setupFeedback(userRole) {
                 </div>
             </div>
         `).join('');
+
+        if (append) {
+            const loadMoreBtn = document.getElementById('load-more-feedback');
+            if (loadMoreBtn) {
+                loadMoreBtn.insertAdjacentHTML('beforebegin', html);
+            } else {
+                feedbackList.insertAdjacentHTML('beforeend', html);
+            }
+        } else {
+            feedbackList.innerHTML = html;
+        }
 
         feedbackList.querySelectorAll('[data-id]').forEach(element => {
             element.addEventListener('click', () => showDetailView(element.dataset.id));

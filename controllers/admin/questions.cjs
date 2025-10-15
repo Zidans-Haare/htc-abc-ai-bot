@@ -14,7 +14,7 @@ module.exports = (adminAuth) => {
           spam: false
         },
         orderBy: { lastUpdated: 'desc' },
-        take: 100,
+         take: 100,
         skip: offset
       });
       res.json(questions);
@@ -77,7 +77,7 @@ module.exports = (adminAuth) => {
           deleted: false
         },
         orderBy: { lastUpdated: 'desc' },
-        take: 100,
+         take: 100,
         skip: offset
       });
       res.json(questions);

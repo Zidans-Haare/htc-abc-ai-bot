@@ -1,5 +1,8 @@
 import { fetchAndParse } from './utils.js';
 
+let usersOffset = 0;
+let allUsers = [];
+
 // --- Modal Elements ---
 const changePasswordModal = document.getElementById('change-password-modal');
 const changePasswordUsername = document.getElementById('change-password-username');
@@ -15,13 +18,37 @@ const removeUserConfirmInput = document.getElementById('remove-user-confirm-inpu
 
 let activeUsername = null;
 
-async function loadUsers() {
+async function loadUsers(append = false) {
+  if (!append) {
+    allUsers = [];
+    usersOffset = 0;
+  }
   try {
-    const users = await fetchAndParse('/api/admin/users');
-    renderUsers(users);
+    const users = await fetchAndParse(`/api/admin/users?offset=${usersOffset}`);
+    if (append) {
+      allUsers = allUsers.concat(users);
+    } else {
+      allUsers = users;
+    }
+    renderUsers(allUsers);
+    usersOffset += 100;
+    if (users.length === 100) {
+      let loadMoreBtn = document.getElementById('load-more-users');
+      if (!loadMoreBtn) {
+        loadMoreBtn = document.createElement('div');
+        loadMoreBtn.id = 'load-more-users';
+        loadMoreBtn.className = 'text-center mt-4';
+        loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+        loadMoreBtn.querySelector('button').addEventListener('click', () => loadUsers(true));
+        document.getElementById('user-list').appendChild(loadMoreBtn);
+      }
+    } else {
+      const loadMoreBtn = document.getElementById('load-more-users');
+      if (loadMoreBtn) loadMoreBtn.remove();
+    }
   } catch (error) {
     console.error('Failed to load users:', error);
-    document.getElementById('user-list').innerHTML = '<div>Fehler beim Laden der Benutzer.</div>';
+    if (!append) document.getElementById('user-list').innerHTML = '<div>Fehler beim Laden der Benutzer.</div>';
   }
 }
 

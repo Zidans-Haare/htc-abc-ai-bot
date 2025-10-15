@@ -4,14 +4,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('articles-container');
     const sortToggle = document.getElementById('sort-toggle');
     let currentSort = 'alpha'; // Initial sort is alphabetical
+    let offset = 0;
 
-    async function loadArticles(sort) {
+    async function loadArticles(sort, append = false) {
+        if (!append) {
+            offset = 0;
+            // Clear existing articles
+            const existingArticles = container.querySelectorAll('.article-entry, .separator, .load-more-btn');
+            existingArticles.forEach(el => el.remove());
+        }
         // Clear existing articles
         const existingArticles = container.querySelectorAll('.article-entry, .separator');
         existingArticles.forEach(el => el.remove());
 
         try {
-            const response = await fetch(`/api/view/articles?sort=${sort}`);
+            const response = await fetch(`/api/view/articles?sort=${sort}&offset=${offset}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -43,6 +50,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.appendChild(articleDiv);
                 container.appendChild(separator);
             });
+
+             offset += 100;
+             // Add load more button if we got 100 items
+             if (articles.length === 100) {
+                let loadMoreBtn = document.querySelector('.load-more-btn');
+                if (!loadMoreBtn) {
+                    loadMoreBtn = document.createElement('button');
+                    loadMoreBtn.className = 'load-more-btn mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600';
+                    loadMoreBtn.textContent = 'Mehr laden';
+                    loadMoreBtn.addEventListener('click', () => loadArticles(currentSort, true));
+                    container.appendChild(loadMoreBtn);
+                }
+            } else {
+                // Remove load more if exists
+                const loadMoreBtn = document.querySelector('.load-more-btn');
+                if (loadMoreBtn) loadMoreBtn.remove();
+            }
 
         } catch (error) {
             console.error('Fehler beim Laden der Artikel:', error);

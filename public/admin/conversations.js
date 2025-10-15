@@ -2,6 +2,7 @@
 
 let allConversations = [];
 let currentFilter = 'All';
+let conversationsOffset = 0;
 
 const CATEGORIES = [
     "All", "Unkategorisiert", "Immatrikulation & Bewerbung", "Prüfungen & Noten", 
@@ -22,13 +23,38 @@ window.initConversations = function(showConversationsCallback) {
     }
 }
 
-async function fetchConversations() {
+async function fetchConversations(append = false) {
+    if (!append) {
+        allConversations = [];
+        conversationsOffset = 0;
+    }
     try {
-        const response = await fetch('/api/admin/conversations');
+        const category = currentFilter !== 'All' ? currentFilter : '';
+        const response = await fetch(`/api/admin/conversations?offset=${conversationsOffset}&category=${encodeURIComponent(category)}`);
         if (!response.ok) throw new Error('Failed to fetch conversations');
-        allConversations = await response.json();
+        const conversations = await response.json();
+        if (append) {
+            allConversations = allConversations.concat(conversations);
+        } else {
+            allConversations = conversations;
+        }
         renderFilterButtons();
         renderConversations();
+        conversationsOffset += 100;
+        if (conversations.length === 100) {
+            let loadMoreBtn = document.getElementById('load-more-conversations');
+            if (!loadMoreBtn) {
+                loadMoreBtn = document.createElement('div');
+                loadMoreBtn.id = 'load-more-conversations';
+                loadMoreBtn.className = 'text-center mt-4';
+                loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+                loadMoreBtn.querySelector('button').addEventListener('click', () => fetchConversations(true));
+                document.getElementById('conversations-list').appendChild(loadMoreBtn);
+            }
+        } else {
+            const loadMoreBtn = document.getElementById('load-more-conversations');
+            if (loadMoreBtn) loadMoreBtn.remove();
+        }
     } catch (error) {
         console.error('Error fetching conversations:', error);
     }
@@ -65,7 +91,7 @@ function renderFilterButtons() {
         button.addEventListener('click', () => {
             currentFilter = category;
             renderFilterButtons();
-            renderConversations();
+            fetchConversations(false);
         });
         filterContainer.appendChild(button);
     });
