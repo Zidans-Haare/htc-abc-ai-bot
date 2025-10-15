@@ -7,10 +7,10 @@
   "scripts": {
     "start": "node server.cjs",
     "test": "jest",
-    "build:admin-css": "npx @tailwindcss/cli -i src/admin.css -o public/admin/css/tailwind.css",
-    "watch:admin-css": "npx @tailwindcss/cli -i src/admin.css -o public/admin/css/tailwind.css --watch",
     "build:main-css": "npx @tailwindcss/cli -i src/main.css -o public/css/tailwind.css",
     "watch:main-css": "npx @tailwindcss/cli -i src/main.css -o public/css/tailwind.css --watch",
+    "build:backend-css": "npx @tailwindcss/cli -c tailwind.backend.config.js -i src/backend.css -o public/css/backend-tailwind.css",
+    "watch:backend-css": "npx @tailwindcss/cli -c tailwind.backend.config.js -i src/backend.css -o public/css/backend-tailwind.css --watch",
     "postinstall": "npx prisma generate"
   },
   "overrides": {

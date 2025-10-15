@@ -469,19 +469,30 @@ const serverCallback = async () => {
       console.log('✓ Default admin user created (username: admin, password: admin)');
     }
 
-    // Build main CSS if source files changed
+    // Build CSS if source files changed
     const mainCssSrc = path.join(__dirname, 'src', 'main.css');
     const mainCssOut = path.join(__dirname, 'public', 'css', 'tailwind.css');
+    const backendCssSrc = path.join(__dirname, 'src', 'backend.css');
+    const backendCssOut = path.join(__dirname, 'public', 'css', 'backend-tailwind.css');
     try {
-      const srcStat = fs.statSync(mainCssSrc);
-      const outStat = fs.existsSync(mainCssOut) ? fs.statSync(mainCssOut) : { mtime: 0 };
-      if (!fs.existsSync(mainCssOut) || srcStat.mtime > outStat.mtime) {
+      // Main CSS
+      const mainSrcStat = fs.statSync(mainCssSrc);
+      const mainOutStat = fs.existsSync(mainCssOut) ? fs.statSync(mainCssOut) : { mtime: 0 };
+      if (!fs.existsSync(mainCssOut) || mainSrcStat.mtime > mainOutStat.mtime) {
         console.log('Main CSS source changed, rebuilding...');
         execSync('npm run build:main-css', { stdio: 'inherit' });
         console.log('✓ Main CSS rebuilt');
       }
+      // Backend CSS
+      const backendSrcStat = fs.statSync(backendCssSrc);
+      const backendOutStat = fs.existsSync(backendCssOut) ? fs.statSync(backendCssOut) : { mtime: 0 };
+      if (!fs.existsSync(backendCssOut) || backendSrcStat.mtime > backendOutStat.mtime) {
+        console.log('Backend CSS source changed, rebuilding...');
+        execSync('npm run build:backend-css', { stdio: 'inherit' });
+        console.log('✓ Backend CSS rebuilt');
+      }
     } catch (error) {
-      console.log('Warning: Could not check/rebuild main CSS:', error.message);
+      console.log('Warning: Could not check/rebuild CSS:', error.message);
     }
   } catch (error) {
     console.error('Warning: Could not connect to database:', error.message);

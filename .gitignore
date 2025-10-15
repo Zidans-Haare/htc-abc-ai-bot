@@ -28,3 +28,7 @@ public/pdf/
 .vectordb_last_sync
 
 /lib/generated/prisma
+
+# Built CSS
+public/css/tailwind.css
+public/css/backend-tailwind.css
