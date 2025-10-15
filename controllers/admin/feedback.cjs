@@ -6,8 +6,11 @@ module.exports = (authMiddleware) => {
 
   router.get('/feedback', authMiddleware, async (req, res) => {
     try {
+      const offset = parseInt(req.query.offset) || 0;
       const feedback = await Feedback.findMany({
         orderBy: { timestamp: 'desc' },
+        take: 100,
+        skip: offset
       });
       res.json(feedback);
     } catch (err) {

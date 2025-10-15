@@ -5,12 +5,15 @@ const { HochschuhlABC } = require('../db.cjs');
 module.exports = (adminAuth) => {
   router.get('/archive', adminAuth, async (req, res) => {
     try {
+      const offset = parseInt(req.query.offset) || 0;
       const archivedEntries = await HochschuhlABC.findMany({
         where: {
           active: false,
           archived: { not: null }
         },
-        orderBy: { archived: 'desc' }
+        orderBy: { archived: 'desc' },
+        take: 100,
+        skip: offset
       });
       res.json(archivedEntries);
     } catch (err) {

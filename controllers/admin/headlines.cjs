@@ -61,10 +61,13 @@ module.exports = (adminAuth) => {
           { editor: { contains: q } }
         ];
       }
+      const offset = parseInt(req.query.offset) || 0;
       const headlines = await HochschuhlABC.findMany({
         select: { id: true, headline: true, text: true },
         where,
-        orderBy: { lastUpdated: 'desc' }
+        orderBy: { lastUpdated: 'desc' },
+        take: 100,
+        skip: offset
       });
       res.json(headlines);
     } catch (err) {

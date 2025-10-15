@@ -9,10 +9,12 @@ const router = express.Router();
 // GET /api/admin/conversations - List all conversations
 router.get('/', async (req, res) => {
   try {
+    const offset = parseInt(req.query.offset) || 0;
     const conversations = await Conversation.findMany({
       select: { id: true, anonymous_user_id: true, created_at: true, category: true, ai_confidence: true },
       orderBy: { created_at: 'desc' },
-      take: 100, // Limit to the last 100 conversations for performance
+      take: 100,
+      skip: offset
     });
     res.json(conversations);
   } catch (error) {

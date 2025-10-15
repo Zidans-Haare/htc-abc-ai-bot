@@ -78,7 +78,7 @@ model hochschuhl_abc {
   active        Boolean? @default(true)
   archived      DateTime?
   pdfPath       String?
-   updated_at    DateTime                   @default(dbgenerated("'2025-10-13T19:59:08.431Z'"))
+   updated_at    DateTime                   @updatedAt
   article_views article_views[]
   questions     questions[]
 }

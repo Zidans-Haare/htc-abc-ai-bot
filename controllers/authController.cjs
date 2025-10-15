@@ -121,9 +121,13 @@ async function createUser(username, password, role) {
   }
 }
 
-async function listUsers() {
+async function listUsers(offset = 0) {
   try {
-    const users = await User.findMany({ select: { id: true, username: true, role: true } });
+    const users = await User.findMany({
+      select: { id: true, username: true, role: true },
+      take: 100,
+      skip: offset
+    });
     return users;
   } catch (err) {
     console.error('List users error:', err);

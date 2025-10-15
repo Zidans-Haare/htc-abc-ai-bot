@@ -4,8 +4,9 @@ const router = express.Router();
 module.exports = (adminAuth) => {
   router.get('/users', adminAuth, async (req, res) => {
     if (req.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+    const offset = parseInt(req.query.offset) || 0;
     const auth = require('../authController.cjs');
-    const users = await auth.listUsers();
+    const users = await auth.listUsers(offset);
     res.json(users);
   });
 

@@ -29,8 +29,11 @@ module.exports = (authMiddleware) => {
     // GET all PDFs
     router.get('/pdfs', authMiddleware, async (req, res) => {
         try {
+            const offset = parseInt(req.query.offset) || 0;
             const pdfs = await PDFs.findMany({
-                orderBy: { id: 'desc' }
+                orderBy: { id: 'desc' },
+                take: 100,
+                skip: offset
             });
             res.json(pdfs);
         } catch (error) {

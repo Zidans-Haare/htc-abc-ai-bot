@@ -5,6 +5,7 @@ const { Questions, HochschuhlABC } = require('../db.cjs');
 module.exports = (adminAuth) => {
   router.get('/unanswered', adminAuth, async (req, res) => {
     try {
+      const offset = parseInt(req.query.offset) || 0;
       const questions = await Questions.findMany({
         where: {
           answered: false,
@@ -12,7 +13,9 @@ module.exports = (adminAuth) => {
           deleted: false,
           spam: false
         },
-        orderBy: { lastUpdated: 'desc' }
+        orderBy: { lastUpdated: 'desc' },
+        take: 100,
+        skip: offset
       });
       res.json(questions);
     } catch (err) {
@@ -61,6 +64,7 @@ module.exports = (adminAuth) => {
 
   router.get('/answered', adminAuth, async (req, res) => {
     try {
+      const offset = parseInt(req.query.offset) || 0;
       const questions = await Questions.findMany({
         include: {
           hochschuhl_abc: {
@@ -72,7 +76,9 @@ module.exports = (adminAuth) => {
           archived: false,
           deleted: false
         },
-        orderBy: { lastUpdated: 'desc' }
+        orderBy: { lastUpdated: 'desc' },
+        take: 100,
+        skip: offset
       });
       res.json(questions);
     } catch (err) {
