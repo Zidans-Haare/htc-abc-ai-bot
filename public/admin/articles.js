@@ -1,22 +1,22 @@
 import { fetchAndParse } from './utils.js';
 
 let currentId = null;
-let allHeadlines = [];
-let selectedHeadlineEl = null;
-let originalHeadline = '';
-let originalText = '';
-let headlinesOffset = 0;
+let allArticles = [];
+let selectedArticleEl = null;
+let originalArticle = '';
+let originalDescription = '';
+let articlesOffset = 0;
 
-const listEl = document.getElementById('headline-list');
+const listEl = document.getElementById('article-list');
 const searchEl = document.getElementById('search');
-const headlineInput = document.getElementById('headline-input');
+const articleInput = document.getElementById('article-input');
 const saveBtn = document.getElementById('save-btn');
 const deleteBtn = document.getElementById('delete-btn');
 const addBtn = document.getElementById('add-heading');
 const aiCheckModal = document.getElementById('ai-check-modal');
 const aiCheckCloseBtn = document.getElementById('ai-check-close');
 const aiCheckResponseEl = document.getElementById('ai-check-response');
-const headlinesSidebar = document.getElementById('headlines-sidebar');
+const articlesSidebar = document.getElementById('articles-sidebar');
 const mobileBackBtn = document.getElementById('mobile-back-btn');
 
 const loadedScripts = {};
@@ -40,14 +40,14 @@ function loadScript(src) {
   });
 }
 
-async function markDiffInMarkdown(originalText, improvedText) {
+async function markDiffInMarkdown(originalDescription, improvedText) {
 
   try {
     await loadScript('/js/diff_match_patch.js');
 
     // Highlight changes in the editor
     const dmp = new diff_match_patch();
-    const diff = dmp.diff_main(originalText, improvedText);
+    const diff = dmp.diff_main(originalDescription, improvedText);
     dmp.diff_cleanupSemantic(diff);
     
     let markdown = '';
@@ -70,9 +70,9 @@ async function markDiffInMarkdown(originalText, improvedText) {
 }
 
 async function handleImproveClick(suggestionText, textBeforeAiCheck) {
-  let originalText = editor.getMarkdown();
+  let originalDescription = editor.getMarkdown();
   // Remove strikethroughs from the original text
-  originalText = originalText.replace(/~~/g, '');
+  originalDescription = originalDescription.replace(/~~/g, '');
 
   // Show loading state
   const improveBtn = document.querySelector(`button[data-suggestion="${suggestionText}"]`);
@@ -86,7 +86,7 @@ async function handleImproveClick(suggestionText, textBeforeAiCheck) {
     const response = await fetch('/api/admin/improve-text', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: originalText, suggestion: suggestionText })
+      body: JSON.stringify({ text: originalDescription, suggestion: suggestionText })
     });
 
     if (!response.ok) {
@@ -331,30 +331,30 @@ function setSaveButtonState(enabled) {
 }
 
 function checkForChanges() {
-  const currentHeadline = headlineInput.value;
-  const currentText = editor.getMarkdown();
-  const hasChanged = currentHeadline !== originalHeadline || currentText !== originalText;
+  const currentArticle = articleInput.value;
+  const currentDescription = editor.getMarkdown();
+  const hasChanged = currentArticle !== originalArticle || currentDescription !== originalDescription;
   setSaveButtonState(hasChanged);
 }
 
-async function loadHeadlines(append = false) {
+async function loadArticles(append = false) {
   console.log('Fetching headlines...');
   if (!append) {
-    headlinesOffset = 0;
-    allHeadlines = [];
+    articlesOffset = 0;
+    allArticles = [];
   }
   try {
     const q = encodeURIComponent(searchEl.value.trim());
-    const headlines = await fetchAndParse(`/api/admin/headlines?q=${q}&offset=${headlinesOffset}`);
+    const articles = await fetchAndParse(`/api/admin/articles?q=${q}&offset=${articlesOffset}`);
     console.log('Headlines received:', headlines);
     if (append) {
-      allHeadlines = allHeadlines.concat(headlines);
+      allArticles = allArticles.concat(headlines);
     } else {
-      allHeadlines = headlines;
-      selectedHeadlineEl = null;
+      allArticles = headlines;
+      selectedArticleEl = null;
     }
-     renderHeadlines(allHeadlines, append);
-     headlinesOffset += 100;
+     renderArticles(allArticles, append);
+     articlesOffset += 100;
      // Add load more if we got 100
      if (headlines.length === 100) {
       let loadMoreBtn = document.getElementById('load-more-headlines');
@@ -363,7 +363,7 @@ async function loadHeadlines(append = false) {
         loadMoreBtn.id = 'load-more-headlines';
         loadMoreBtn.className = 'p-2 text-center';
         loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
-        loadMoreBtn.querySelector('button').addEventListener('click', () => loadHeadlines(true));
+        loadMoreBtn.querySelector('button').addEventListener('click', () => loadArticles(true));
         listEl.appendChild(loadMoreBtn);
       }
     } else {
@@ -376,7 +376,7 @@ async function loadHeadlines(append = false) {
   }
 }
 
-function renderHeadlines(items, append = false) {
+function renderArticles(items, append = false) {
   console.log('Rendering headlines:', items);
   if (!append) {
     listEl.innerHTML = '';
@@ -390,14 +390,14 @@ function renderHeadlines(items, append = false) {
   items.forEach(h => {
     const li = document.createElement('li');
     li.textContent = h.headline;
-    li.className = 'headline-item p-2 cursor-pointer rounded transition-colors';
+    li.className = 'article-item p-2 cursor-pointer rounded transition-colors';
     li.dataset.id = h.id;
     li.addEventListener('click', () => {
-      if (selectedHeadlineEl) {
-        selectedHeadlineEl.classList.remove('active-headline');
+      if (selectedArticleEl) {
+        selectedArticleEl.classList.remove('active-article');
       }
-      li.classList.add('active-headline');
-      selectedHeadlineEl = li;
+      li.classList.add('active-article');
+      selectedArticleEl = li;
       loadEntry(h.id);
     });
     if (insertBefore) {
@@ -406,8 +406,8 @@ function renderHeadlines(items, append = false) {
       listEl.appendChild(li);
     }
     if (currentId && String(currentId) === String(h.id)) {
-      li.classList.add('active-headline');
-      selectedHeadlineEl = li;
+      li.classList.add('active-article');
+      selectedArticleEl = li;
     }
   });
 }
@@ -418,10 +418,10 @@ export async function loadEntry(id) {
     const entry = await fetchAndParse(`/api/admin/entries/${id}`);
     console.log('Entry received:', entry);
     currentId = entry.id;
-    headlineInput.value = entry.headline;
-    editor.setMarkdown(entry.text);
-    originalHeadline = entry.headline;
-    originalText = entry.text;
+    articleInput.value = entry.article;
+    editor.setMarkdown(entry.description);
+    originalArticle = entry.article;
+    originalDescription = entry.description;
     const timestamp = entry.lastUpdated ? new Date(entry.lastUpdated) : null;
     const formattedDate = timestamp
       ? `${timestamp.getDate()}.${timestamp.getMonth() + 1}.'${String(timestamp.getFullYear()).slice(-2)} ${timestamp.getHours()}:${String(timestamp.getMinutes()).padStart(2, '0')}`
@@ -431,7 +431,7 @@ export async function loadEntry(id) {
 
     // Mobile: Hide sidebar and show back button
     if (window.innerWidth < 768) { // md breakpoint
-      headlinesSidebar.classList.add('hidden');
+      articlesSidebar.classList.add('hidden');
       mobileBackBtn.classList.remove('hidden');
     }
 
@@ -494,7 +494,7 @@ export async function saveEntry() {
       }
     }
 
-     await loadHeadlines();
+     await loadArticles();
      await loadEntry(currentId);
   } catch (err) {
     console.error('Failed to save entry:', err);
@@ -512,14 +512,14 @@ async function deleteEntry() {
      headlineInput.value = '';
      editor.setMarkdown('');
      document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
-     await loadHeadlines();
+     await loadArticles();
      alert('Gelöscht');
 
      // Mobile: Show sidebar after delete
      if (window.innerWidth < 768) {
-       headlinesSidebar.classList.remove('hidden');
+       articlesSidebar.classList.remove('hidden');
        mobileBackBtn.classList.add('hidden');
-       headlinesSidebar.scrollTop = 0;
+       articlesSidebar.scrollTop = 0;
      }
   } catch (err) {
     console.error('Failed to delete entry:', err);
@@ -546,14 +546,14 @@ export function initHeadlines() {
       currentId = null;
       headlineInput.value = '';
       editor.setMarkdown('');
-      originalHeadline = '';
-      originalText = '';
+      originalArticle = '';
+      originalDescription = '';
       document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
       checkForChanges();
 
       // Mobile: Hide sidebar and show back button
       if (window.innerWidth < 768) { // md breakpoint
-        headlinesSidebar.classList.add('hidden');
+        articlesSidebar.classList.add('hidden');
         mobileBackBtn.classList.remove('hidden');
       }
 
@@ -562,7 +562,7 @@ export function initHeadlines() {
     });
   searchEl.addEventListener('input', () => {
     console.log('Search input changed, loading headlines...');
-    loadHeadlines();
+    loadArticles();
   });
 
   headlineInput.addEventListener('input', checkForChanges);
@@ -574,15 +574,15 @@ export function initHeadlines() {
 
    // Mobile back button
    mobileBackBtn.querySelector('button').addEventListener('click', () => {
-     headlinesSidebar.classList.remove('hidden');
+     articlesSidebar.classList.remove('hidden');
      mobileBackBtn.classList.add('hidden');
      // Scroll to the last viewed item
      setTimeout(() => {
-       const activeLi = headlinesSidebar.querySelector('.active-headline');
+       const activeLi = articlesSidebar.querySelector('.active-article');
        if (activeLi) {
          activeLi.scrollIntoView({ behavior: 'smooth', block: 'center' });
        } else {
-         headlinesSidebar.scrollTop = 0;
+         articlesSidebar.scrollTop = 0;
        }
      }, 100);
      // Adjust editor height after layout changes
@@ -592,20 +592,20 @@ export function initHeadlines() {
    // Cancel edit question button
    document.getElementById('cancel-edit-question').addEventListener('click', () => {
      if (window.innerWidth < 768) {
-       headlinesSidebar.classList.remove('hidden');
+       articlesSidebar.classList.remove('hidden');
        mobileBackBtn.classList.add('hidden');
-       headlinesSidebar.scrollTop = 0;
+       articlesSidebar.scrollTop = 0;
      }
    });
 
    // Cancel button (mobile)
    document.getElementById('cancel-btn').addEventListener('click', () => {
      if (window.innerWidth < 768) {
-       headlinesSidebar.classList.remove('hidden');
+       articlesSidebar.classList.remove('hidden');
        mobileBackBtn.classList.add('hidden');
        // Scroll to the last edited item
        setTimeout(() => {
-         const activeLi = headlinesSidebar.querySelector('.active-headline');
+         const activeLi = articlesSidebar.querySelector('.active-article');
          if (activeLi) {
            activeLi.scrollIntoView({ behavior: 'smooth', block: 'center' });
          }
@@ -613,7 +613,7 @@ export function initHeadlines() {
      }
    });
 
-  loadHeadlines();
+  loadArticles();
 }
 
-export { allHeadlines, loadHeadlines };
+export { allArticles, loadArticles };

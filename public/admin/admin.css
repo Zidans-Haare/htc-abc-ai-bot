@@ -78,15 +78,15 @@ body {
     outline: 2px solid var(--accent-color);
     outline-offset: 2px;
 }
-.headline-item:hover {
+.article-item:hover {
     background-color: var(--content-bg);
 }
-.active-headline {
+.active-article {
     background-color: var(--accent-color) !important;
     color: white !important;
     font-weight: 500;
 }
-.active-headline:hover {
+.active-article:hover {
     background-color: var(--accent-dark) !important;
 }
 #sidebar.collapsed {

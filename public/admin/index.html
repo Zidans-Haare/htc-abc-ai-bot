@@ -154,7 +154,7 @@
     <!-- Editor View -->
     <div id="editor-view" class="flex flex-col md:flex-row flex-1">
         <!-- Left Sidebar: Headlines (25%) -->
-        <div id="headlines-sidebar" class="w-full md:w-1/4 bg-[var(--app-bg)] border-r border-[var(--border-color)] flex flex-col">
+        <div id="articles-sidebar" class="w-full md:w-1/4 bg-[var(--app-bg)] border-r border-[var(--border-color)] flex flex-col">
           <!-- Search Field -->
           <div class="p-4 border-b border-[var(--border-color)]">
             <input
@@ -164,9 +164,9 @@
               class="w-full px-3 py-2 border border-[var(--input-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)] bg-white"
             >
           </div>
-          <!-- Headlines List -->
+          <!-- Articles List -->
           <div class="flex-1 overflow-y-auto p-4">
-            <ul id="headline-list" class="space-y-2"></ul>
+            <ul id="article-list" class="space-y-2"></ul>
           </div>
         </div>
        <!-- Right Content Area: Text Editor (75%) -->
@@ -192,7 +192,7 @@
             </div>
         </div>
         <div class="p-4 border-b border-[var(--border-color)] flex space-x-4 items-center">
-          <input id="headline-input" class="p-2 border border-[var(--input-border)] rounded flex-1 bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Überschrift">
+          <input id="article-input" class="p-2 border border-[var(--input-border)] rounded flex-1 bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Artikel">
           <span id="last-edited-by" class="p-2 text-[var(--secondary-text)] text-sm text-right"></span>
         </div>
         <div id="editor" class="flex-grow"></div>
