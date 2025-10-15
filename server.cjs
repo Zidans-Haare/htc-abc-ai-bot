@@ -56,6 +56,27 @@ if (error) {
 
 const { prisma } = require('./controllers/db.cjs');
 
+// --- Graceful Shutdown ---
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  await prisma.$disconnect();  // Closes pool connections
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {  // Ctrl+C
+  console.log('SIGINT received, shutting down gracefully');
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+// Also handle uncaught errors
+process.on('uncaughtException', async (err) => {
+  console.error('Uncaught Exception:', err);
+  await prisma.$disconnect();
+  process.exit(1);
+});
+
 // --- Controller Imports (after dotenv) ---
 const { streamChat, getSuggestions, testApiKey } = require('./controllers/openaiController.cjs');
 const feedbackController = require('./controllers/feedbackController.cjs');
