@@ -72,7 +72,7 @@ export function initQuestions({ updateOpenCount, showEditor }) {
        const insertBefore = append && loadMoreBtn ? loadMoreBtn : null;
        filtered.forEach(q => {
          const div = document.createElement('div');
-         div.className = 'border border-[var(--border-color)] p-4 rounded-lg';
+         div.className = 'border border-(--border-color) p-4 rounded-lg';
 
          const header = document.createElement('div');
          header.className = 'flex justify-between items-start mb-2';
@@ -82,7 +82,7 @@ export function initQuestions({ updateOpenCount, showEditor }) {
 
          const cb = document.createElement('input');
          cb.type = 'checkbox';
-         cb.className = 'mt-1 h-4 w-4 text-[var(--accent-color)] focus:ring-[var(--accent-color)] border-[var(--input-border)] rounded';
+         cb.className = 'mt-1 h-4 w-4 text-(--accent-color) focus:ring-(--accent-color) border-(--input-border) rounded';
          cb.addEventListener('change', () => {
            if (cb.checked) selectedQuestions.add(q.question); else selectedQuestions.delete(q.question);
            deleteSelectedBtn.classList.toggle('hidden', selectedQuestions.size === 0);
@@ -96,7 +96,7 @@ export function initQuestions({ updateOpenCount, showEditor }) {
 
          if (q.translation) {
            const t = document.createElement('p');
-           t.className = 'text-sm text-[var(--secondary-text)] mt-1';
+           t.className = 'text-sm text-(--secondary-text) mt-1';
            t.textContent = `Übersetzung: ${q.translation}`;
            textContainer.appendChild(t);
          }
@@ -119,7 +119,7 @@ export function initQuestions({ updateOpenCount, showEditor }) {
          form.innerHTML = `
            <input type="hidden" name="question" value="${q.question}">
            <!--
-           <textarea name="answer" class="border border-[var(--input-border)] p-2 w-full mb-2 rounded-md" placeholder="Antwort hier eingeben..." required rows="3"></textarea>
+           <textarea name="answer" class="border border-(--input-border) p-2 w-full mb-2 rounded-md" placeholder="Antwort hier eingeben..." required rows="3"></textarea>
            <button class="btn-primary px-4 py-2 rounded-md" type="submit">Antworten</button>
            -->
            <button type="button" class="btn-primary px-4 py-2 rounded-md text-white btn-edit-question">Bearbeiten</button>
@@ -193,7 +193,7 @@ export function initQuestions({ updateOpenCount, showEditor }) {
         if (!loadMoreBtn) {
           loadMoreBtn = document.createElement('button');
           loadMoreBtn.id = 'load-more-open';
-          loadMoreBtn.className = 'mt-4 px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80';
+          loadMoreBtn.className = 'mt-4 px-4 py-2 bg-(--accent-color) text-white rounded hover:bg-opacity-80';
           loadMoreBtn.textContent = 'Mehr laden';
           loadMoreBtn.addEventListener('click', () => loadOpen(true));
           openList.appendChild(loadMoreBtn);
@@ -255,7 +255,7 @@ export function initQuestions({ updateOpenCount, showEditor }) {
        const insertBefore = append && loadMoreBtn ? loadMoreBtn : null;
        filtered.forEach(p => {
          const div = document.createElement('div');
-         div.className = 'border border-[var(--border-color)] p-4 rounded-lg';
+         div.className = 'border border-(--border-color) p-4 rounded-lg';
          const form = document.createElement('form');
 
          let answerValue = p.answer || '';
@@ -319,7 +319,7 @@ export function initQuestions({ updateOpenCount, showEditor }) {
         if (!loadMoreBtn) {
           loadMoreBtn = document.createElement('button');
           loadMoreBtn.id = 'load-more-answered';
-          loadMoreBtn.className = 'mt-4 px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80';
+          loadMoreBtn.className = 'mt-4 px-4 py-2 bg-(--accent-color) text-white rounded hover:bg-opacity-80';
           loadMoreBtn.textContent = 'Mehr laden';
           loadMoreBtn.addEventListener('click', () => loadAnswered(true));
           answeredList.appendChild(loadMoreBtn);

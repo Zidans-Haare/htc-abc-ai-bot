@@ -38,7 +38,7 @@ async function loadUsers(append = false) {
         loadMoreBtn = document.createElement('div');
         loadMoreBtn.id = 'load-more-users';
         loadMoreBtn.className = 'text-center mt-4';
-        loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+        loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-(--accent-color) text-white rounded hover:bg-opacity-80">Mehr laden</button>';
         loadMoreBtn.querySelector('button').addEventListener('click', () => loadUsers(true));
         document.getElementById('user-list').appendChild(loadMoreBtn);
       }
@@ -56,12 +56,12 @@ function renderUsers(users) {
   const userListDiv = document.getElementById('user-list');
   userListDiv.innerHTML = '';
   if (users.length === 0) {
-    userListDiv.innerHTML = '<p class="text-[var(--secondary-text)]">Keine Benutzer gefunden.</p>';
+    userListDiv.innerHTML = '<p class="text-(--secondary-text)">Keine Benutzer gefunden.</p>';
     return;
   }
   users.forEach(user => {
     const userElement = document.createElement('div');
-    userElement.className = 'flex items-center justify-between p-3 border-b border-[var(--border-color)]';
+    userElement.className = 'flex items-center justify-between p-3 border-b border-(--border-color)';
     
     const userInfo = document.createElement('div');
     
@@ -70,7 +70,7 @@ function renderUsers(users) {
     usernameP.textContent = user.username;
 
     const roleP = document.createElement('p');
-    roleP.className = 'text-sm text-[var(--secondary-text)]';
+    roleP.className = 'text-sm text-(--secondary-text)';
     roleP.textContent = user.role;
 
     userInfo.appendChild(usernameP);

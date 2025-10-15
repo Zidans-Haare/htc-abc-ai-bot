@@ -7,10 +7,10 @@
   "scripts": {
     "start": "node server.cjs",
     "test": "jest",
-    "build:main-css": "npx tailwindcss -i src/main.css -o public/css/tailwind.css",
-    "watch:main-css": "npx tailwindcss -i src/main.css -o public/css/tailwind.css --watch",
-    "build:backend-css": "npx tailwindcss --config tailwind.backend.config.js -i src/backend.css -o public/css/backend-tailwind.css",
-    "watch:backend-css": "npx tailwindcss --config tailwind.backend.config.js -i src/backend.css -o public/css/backend-tailwind.css --watch",
+    "build:main-css": "npx @tailwindcss/cli -i src/main.css -o public/css/tailwind.css",
+    "watch:main-css": "npx @tailwindcss/cli -i src/main.css -o public/css/tailwind.css --watch",
+    "build:backend-css": "npx @tailwindcss/cli -i src/backend.css -o public/css/backend-tailwind.css",
+    "watch:backend-css": "npx @tailwindcss/cli -i src/backend.css -o public/css/backend-tailwind.css --watch",
     "postinstall": "npx prisma generate"
   },
   "overrides": {
@@ -68,12 +68,13 @@
   "license": "ISC",
   "devDependencies": {
     "@prisma/client": "^6.17.1",
+    "@tailwindcss/cli": "^4.1.14",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.10",
     "jest": "^30.2.0",
     "postcss": "^8.5.6",
     "prisma": "^6.17.1",
     "supertest": "^7.1.4",
-    "tailwindcss": "^3.4.0"
+    "tailwindcss": "^4.1.14"
   }
 }

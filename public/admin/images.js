@@ -21,7 +21,7 @@ export function initImages() {
                     <label for="image-upload-input" class="cursor-pointer btn-primary px-6 py-2 rounded-full">Bild wählen</label>
                     <p id="image-file-name" class="text-sm text-gray-500 mt-2">Kein Bild ausgewählt</p>
                 </div>
-                <textarea id="image-description-input" class="flex-grow p-2 border border-[var(--input-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="Bildbeschreibung..."></textarea>
+                <textarea id="image-description-input" class="grow p-2 border border-(--input-border) rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-(--accent-color)" placeholder="Bildbeschreibung..."></textarea>
                 <button id="image-upload-button" class="btn-primary px-6 py-2 rounded-full">Hochladen</button>
             </div>
         </div>
@@ -83,7 +83,7 @@ async function loadImages(append = false) {
                 loadMoreBtn = document.createElement('div');
                 loadMoreBtn.id = 'load-more-images';
                 loadMoreBtn.className = 'col-span-full text-center mt-4';
-                loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+                loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-(--accent-color) text-white rounded hover:bg-opacity-80">Mehr laden</button>';
                 loadMoreBtn.querySelector('button').addEventListener('click', () => loadImages(true));
                 imagesList.appendChild(loadMoreBtn);
             }
@@ -108,7 +108,7 @@ function renderImages(images, append = false) {
             <div class="relative">
                 <img src="/uploads/${image.filename}" alt="${image.description || image.filename}" class="w-full h-48 object-cover">
                 <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="copy-url-btn text-white hover:text-[var(--accent-color)] transition-colors" data-url="/uploads/${image.filename}" title="URL kopieren">
+                    <button class="copy-url-btn text-white hover:text-(--accent-color) transition-colors" data-url="/uploads/${image.filename}" title="URL kopieren">
                         <i class="fas fa-copy fa-lg"></i>
                     </button>
                     <button class="edit-image-btn text-white hover:text-yellow-400 transition-colors ml-4" data-filename="${image.filename}" data-description="${image.description || ''}" title="Beschreibung bearbeiten">

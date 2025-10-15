@@ -393,7 +393,7 @@ class DashboardManager {
                     <div class="relative w-12 flex flex-col justify-end bg-gray-100 rounded-lg overflow-hidden shadow-inner" 
                          style="height: 120px;" 
                          title="Klicken für Stundenansicht - ${this.formatDateShort(session.date)}: ${session.count} Sessions">
-                        <div class="w-full ${session.count === 0 ? 'bg-gray-300' : 'bg-gradient-to-t from-orange-600 via-orange-500 to-orange-400'} 
+                        <div class="w-full ${session.count === 0 ? 'bg-gray-300' : 'bg-linear-to-t from-orange-600 via-orange-500 to-orange-400'} 
                                     transition-all duration-500 ease-out hover:brightness-110 rounded-t-lg" 
                              style="height: ${height}%;">
                         </div>
@@ -446,7 +446,7 @@ class DashboardManager {
         container.innerHTML = articles.map((article, index) => `
             <div class="article-item">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                    <div class="shrink-0 w-8 h-8 bg-linear-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
                         ${index + 1}
                     </div>
                     <div class="flex-1 min-w-0">
@@ -658,7 +658,7 @@ class DashboardManager {
         wrapper.innerHTML = messages.map((msg, index) => `
             <div class="message-item flex items-start justify-between p-3 bg-white rounded-lg border border-gray-100 hover:shadow-sm transition-shadow">
                 <div class="flex items-start space-x-3 flex-1">
-                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm shrink-0">
                         ${index + 1}
                     </div>
                     <div class="flex-1 min-w-0">
@@ -679,7 +679,7 @@ class DashboardManager {
                         </div>
                     </div>
                 </div>
-                <div class="text-right flex-shrink-0 ml-3">
+                <div class="text-right shrink-0 ml-3">
                     <div class="text-lg font-bold text-gray-900">${msg.count}×</div>
                     <div class="text-xs text-gray-500">gefragt</div>
                 </div>
@@ -731,10 +731,10 @@ class DashboardManager {
         const mainWrapper = document.createElement('div');
         mainWrapper.className = 'space-y-4';
         mainWrapper.innerHTML = questions.map((q, index) => `
-            <div class="question-item p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+            <div class="question-item p-4 bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
                 <div class="flex items-start justify-between">
                     <div class="flex items-start space-x-3 flex-1">
-                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
                             ${index + 1}
                         </div>
                         <div class="flex-1 min-w-0">
@@ -919,7 +919,7 @@ class DashboardManager {
                                 <div class="flex flex-col items-center">
                                     <div class="text-xs font-bold text-gray-800 mb-1">${hour.count}</div>
                                     <div class="w-8 bg-gray-100 rounded overflow-hidden flex flex-col justify-end" style="height: 80px;">
-                                        <div class="w-full ${hour.count === 0 ? 'bg-gray-300' : 'bg-gradient-to-t from-blue-600 via-blue-500 to-blue-400'} rounded-t" 
+                                        <div class="w-full ${hour.count === 0 ? 'bg-gray-300' : 'bg-linear-to-t from-blue-600 via-blue-500 to-blue-400'} rounded-t" 
                                              style="height: ${height}%;" 
                                              title="${hour.hour.toString().padStart(2, '0')}:00 Uhr - ${hour.count} Sessions"></div>
                                     </div>
@@ -1060,10 +1060,10 @@ class DashboardManager {
         const mainWrapper = document.createElement('div');
         mainWrapper.className = 'space-y-4';
         mainWrapper.innerHTML = questions.map((q, index) => `
-            <div class="question-item p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-200">
+            <div class="question-item p-4 bg-linear-to-r from-orange-50 to-red-50 rounded-lg border border-orange-200">
                 <div class="flex items-start justify-between">
                     <div class="flex items-start space-x-3 flex-1">
-                        <div class="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        <div class="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
                             ${index + 1}
                         </div>
                         <div class="flex-1 min-w-0">

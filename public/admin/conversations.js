@@ -47,7 +47,7 @@ async function fetchConversations(append = false) {
                 loadMoreBtn = document.createElement('div');
                 loadMoreBtn.id = 'load-more-conversations';
                 loadMoreBtn.className = 'text-center mt-4';
-                loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+                loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-(--accent-color) text-white rounded hover:bg-opacity-80">Mehr laden</button>';
                 loadMoreBtn.querySelector('button').addEventListener('click', () => fetchConversations(true));
                 document.getElementById('conversations-list').appendChild(loadMoreBtn);
             }
@@ -87,7 +87,7 @@ function renderFilterButtons() {
     CATEGORIES.forEach(category => {
         const button = document.createElement('button');
         button.textContent = category;
-        button.className = `px-2 py-1 text-xs rounded-md border ${currentFilter === category ? 'bg-[var(--accent-color)] text-white border-[var(--accent-color)]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`;
+        button.className = `px-2 py-1 text-xs rounded-md border ${currentFilter === category ? 'bg-(--accent-color) text-white border-(--accent-color)' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`;
         button.addEventListener('click', () => {
             currentFilter = category;
             renderFilterButtons();

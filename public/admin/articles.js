@@ -362,7 +362,7 @@ async function loadArticles(append = false) {
         loadMoreBtn = document.createElement('li');
         loadMoreBtn.id = 'load-more-articles';
         loadMoreBtn.className = 'p-2 text-center';
-        loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+        loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-(--accent-color) text-white rounded hover:bg-opacity-80">Mehr laden</button>';
         loadMoreBtn.querySelector('button').addEventListener('click', () => loadArticles(true));
         listEl.appendChild(loadMoreBtn);
       }
@@ -382,7 +382,7 @@ function renderArticles(items, append = false) {
     listEl.innerHTML = '';
   }
   if (items.length === 0 && !append) {
-    listEl.innerHTML = '<div class="p-2 text-[var(--secondary-text)]">Keine Überschriften gefunden.</div>';
+    listEl.innerHTML = '<div class="p-2 text-(--secondary-text)">Keine Überschriften gefunden.</div>';
     return;
   }
       const loadMoreBtn = document.getElementById('load-more-articles');

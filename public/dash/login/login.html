@@ -38,22 +38,22 @@
     }
   </style>
 </head>
-<body class="bg-[var(--bg-color)] flex items-center justify-center h-screen">
+<body class="bg-(--bg-color) flex items-center justify-center h-screen">
   <div class="w-full max-w-md">
-    <div class="bg-[var(--content-bg)] p-8 rounded-xl shadow-lg">
+    <div class="bg-(--content-bg) p-8 rounded-xl shadow-lg">
       <div class="flex justify-center mb-8">
         <img src="/image/HTW.svg" alt="HTW Logo" class="h-20">
       </div>
-      <h2 class="text-2xl font-bold text-center text-[var(--primary-text)] mb-2">Dashboard Login</h2>
-      <p class="text-center text-[var(--secondary-text)] mb-8">Bitte melden Sie sich an, um fortzufahren.</p>
+      <h2 class="text-2xl font-bold text-center text-(--primary-text) mb-2">Dashboard Login</h2>
+      <p class="text-center text-(--secondary-text) mb-8">Bitte melden Sie sich an, um fortzufahren.</p>
       <form id="login-form" class="space-y-6">
         <div>
           <label for="login-user" class="sr-only">Benutzername</label>
-          <input id="login-user" name="username" type="text" required class="w-full px-4 py-3 border border-[var(--input-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]" placeholder="Benutzername">
+          <input id="login-user" name="username" type="text" required class="w-full px-4 py-3 border border-(--input-border) rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-(--accent-color)" placeholder="Benutzername">
         </div>
         <div>
           <label for="login-pass" class="sr-only">Passwort</label>
-          <input id="login-pass" name="password" type="password" required class="w-full px-4 py-3 border border-[var(--input-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]" placeholder="Passwort">
+          <input id="login-pass" name="password" type="password" required class="w-full px-4 py-3 border border-(--input-border) rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-(--accent-color)" placeholder="Passwort">
         </div>
         <div>
           <button type="submit" class="w-full btn-primary font-bold py-3 px-4 rounded-lg">

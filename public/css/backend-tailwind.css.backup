@@ -113,11 +113,11 @@
 .flex-1 {
   flex: 1;
 }
-.flex-shrink-0 {
-  flex-shrink: 0;
+.shrink-0 {
+  shrink: 0;
 }
-.flex-grow {
-  flex-grow: 1;
+.grow {
+  grow: 1;
 }
 .-translate-x-1\/2 {
   --tw-translate-x: calc(calc(1/2 * 100%) * -1);
@@ -259,15 +259,15 @@
 .bg-\[var\(--content-bg\)\] {
   background-color: var(--content-bg);
 }
-.bg-gradient-to-br {
+.bg-linear-to-br {
   --tw-gradient-position: to bottom right in oklab;
   background-image: linear-gradient(var(--tw-gradient-stops));
 }
-.bg-gradient-to-r {
+.bg-linear-to-r {
   --tw-gradient-position: to right in oklab;
   background-image: linear-gradient(var(--tw-gradient-stops));
 }
-.bg-gradient-to-t {
+.bg-linear-to-t {
   --tw-gradient-position: to top in oklab;
   background-image: linear-gradient(var(--tw-gradient-stops));
 }

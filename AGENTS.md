@@ -15,4 +15,4 @@
 - Embedding uses free Xenova models; tests added for vector store functionality.
 - Context7 MCP tool is available; it exposes local context7 knowledge services and should be used whenever tasks can benefit from that capability.
 - Investigated 'serialize' npm modules: serialize-error and dom-serializer were unused dependencies, removed from package.json. No serialization logic needed porting to Prisma.
-- Tailwind CSS is built using @tailwindcss/cli v4. Modify src/admin.css or src/main.css for directives, update tailwind.config.js for content paths, then run npm run build:admin-css or build:main-css. The server auto-rebuilds main CSS on start if sources changed.
+- Tailwind CSS is built using @tailwindcss/cli v4. Modify src/main.css or src/backend.css for @source directives to specify content paths, then run npm run build:main-css or npm run build:backend-css. The server auto-rebuilds main CSS on start if sources changed.

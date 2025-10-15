@@ -1,3 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@source "../public/admin/**/*.{html,js}";
+@source "../public/dash/**/*.{html,js}";
+@source "../public/login/**/*.{html,js}";
+@source "../public/insufficient-permissions.html";

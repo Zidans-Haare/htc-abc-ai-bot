@@ -22,7 +22,7 @@ export function setupFeedback(userRole) {
                     loadMoreBtn = document.createElement('div');
                     loadMoreBtn.id = 'load-more-feedback';
                     loadMoreBtn.className = 'text-center mt-4';
-                    loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+                    loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-(--accent-color) text-white rounded hover:bg-opacity-80">Mehr laden</button>';
                     loadMoreBtn.querySelector('button').addEventListener('click', () => loadFeedbackList(true));
                     feedbackList.appendChild(loadMoreBtn);
                 }

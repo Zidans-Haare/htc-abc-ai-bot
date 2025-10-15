@@ -21,7 +21,7 @@ export function initPDFs() {
                     <label for="pdf-upload-input" class="cursor-pointer btn-primary px-6 py-2 rounded-full">PDF wählen</label>
                     <p id="pdf-file-name" class="text-sm text-gray-500 mt-2">Kein PDF ausgewählt</p>
                 </div>
-                <textarea id="pdf-description-input" class="flex-grow p-2 border border-[var(--input-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-color)]" placeholder="PDF-Beschreibung..."></textarea>
+                <textarea id="pdf-description-input" class="grow p-2 border border-(--input-border) rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-(--accent-color)" placeholder="PDF-Beschreibung..."></textarea>
                 <button id="pdf-upload-button" class="btn-primary px-6 py-2 rounded-full">Hochladen</button>
             </div>
         </div>
@@ -83,7 +83,7 @@ async function loadPDFs(append = false) {
                 loadMoreBtn = document.createElement('div');
                 loadMoreBtn.id = 'load-more-pdfs';
                 loadMoreBtn.className = 'col-span-full text-center mt-4';
-                loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-[var(--accent-color)] text-white rounded hover:bg-opacity-80">Mehr laden</button>';
+                loadMoreBtn.innerHTML = '<button class="px-4 py-2 bg-(--accent-color) text-white rounded hover:bg-opacity-80">Mehr laden</button>';
                 loadMoreBtn.querySelector('button').addEventListener('click', () => loadPDFs(true));
                 pdfList.appendChild(loadMoreBtn);
             }
@@ -110,7 +110,7 @@ function renderPDFs(pdfs, append = false) {
                     <i class="fas fa-file-pdf fa-3x text-red-500"></i>
                 </div>
                 <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     <button class="copy-url-btn text-white hover:text-[var(--accent-color)] transition-colors" data-url="/pdf/${pdf.filename}" title="URL kopieren">
+                     <button class="copy-url-btn text-white hover:text-(--accent-color) transition-colors" data-url="/pdf/${pdf.filename}" title="URL kopieren">
                         <i class="fas fa-copy fa-lg"></i>
                     </button>
                     <button class="edit-pdf-btn text-white hover:text-yellow-400 transition-colors ml-4" data-filename="${pdf.filename}" data-description="${pdf.description || ''}" title="Beschreibung bearbeiten">
