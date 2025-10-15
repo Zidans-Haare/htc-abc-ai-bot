@@ -7,11 +7,11 @@ module.exports = (authMiddleware) => {
   router.get('/feedback', authMiddleware, async (req, res) => {
     try {
       const offset = parseInt(req.query.offset) || 0;
-      const feedback = await Feedback.findMany({
-        orderBy: { timestamp: 'desc' },
-        take: 100,
-        skip: offset
-      });
+    const feedback = await Feedback.findMany({
+      orderBy: { submitted_at: 'desc' },
+      take: 100,
+      skip: offset
+    });
       res.json(feedback);
     } catch (err) {
       console.error(err.message);
@@ -22,7 +22,7 @@ module.exports = (authMiddleware) => {
   router.get('/feedback/:id', authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
-      const feedbackItem = await Feedback.findByPk(id);
+      const feedbackItem = await Feedback.findUnique({ where: { id: parseInt(id) } });
 
       if (!feedbackItem) {
         return res.status(404).json({ msg: 'Feedback not found' });
@@ -38,13 +38,13 @@ module.exports = (authMiddleware) => {
   router.delete('/feedback/:id', authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
-      const feedbackItem = await Feedback.findByPk(id);
+      const feedbackItem = await Feedback.findUnique({ where: { id: parseInt(id) } });
 
       if (!feedbackItem) {
         return res.status(404).json({ msg: 'Feedback not found' });
       }
 
-      await feedbackItem.destroy();
+      await Feedback.delete({ where: { id: parseInt(id) } });
       res.status(204).send();
     } catch (err) {
       console.error(err.message);
