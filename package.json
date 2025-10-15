@@ -9,6 +9,8 @@
     "test": "jest",
     "build:admin-css": "npx @tailwindcss/cli -i src/admin.css -o public/admin/css/tailwind.css",
     "watch:admin-css": "npx @tailwindcss/cli -i src/admin.css -o public/admin/css/tailwind.css --watch",
+    "build:main-css": "npx @tailwindcss/cli -i src/main.css -o public/css/tailwind.css",
+    "watch:main-css": "npx @tailwindcss/cli -i src/main.css -o public/css/tailwind.css --watch",
     "postinstall": "npx prisma generate"
   },
   "overrides": {
