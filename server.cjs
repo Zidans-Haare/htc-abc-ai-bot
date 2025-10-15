@@ -12,6 +12,8 @@ const Joi = require('joi');
 const { program } = require('commander');
 const winston = require('winston');
 const promClient = require('prom-client');
+const bcrypt = require('bcryptjs');
+const { execSync } = require('child_process');
 
 
 
@@ -439,6 +441,33 @@ const serverCallback = async () => {
   try {
     await prisma.$connect();
     console.log('✓ Database connection established');
+
+    // Create schema if tables don't exist (for SQLite)
+    try {
+      await prisma.users.count();
+    } catch (error) {
+      if (error.code === 'P2021') { // Table does not exist
+        console.log('Database tables not found, creating schema...');
+        execSync('npx prisma db push --skip-generate', { stdio: 'inherit' });
+        console.log('✓ Database schema created');
+      } else {
+        throw error;
+      }
+    }
+
+    // Create default admin user if no users exist
+    const userCount = await prisma.users.count();
+    if (userCount === 0) {
+      const hashedPassword = await bcrypt.hash('admin', 10);
+      await prisma.users.create({
+        data: {
+          username: 'admin',
+          password: hashedPassword,
+          role: 'admin',
+        },
+      });
+      console.log('✓ Default admin user created (username: admin, password: admin)');
+    }
   } catch (error) {
     console.error('Warning: Could not connect to database:', error.message);
   }

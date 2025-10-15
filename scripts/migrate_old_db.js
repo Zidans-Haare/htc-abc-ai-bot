@@ -8,12 +8,23 @@ const oldDb = new Database('./abc_old.db');
 async function migrate() {
   console.log('Starting migration from old DB...');
 
-  // Users already migrated
+  // Migrate users
+  console.log('Migrating users...');
+  const oldUsers = oldDb.prepare('SELECT * FROM users').all();
   const userMap = {};
-  const newUsers = await prisma.users.findMany({ select: { id: true, username: true } });
-  for (const user of newUsers) {
-    userMap[user.username] = user.id;
+  for (const user of oldUsers) {
+    const newUser = await prisma.users.create({
+      data: {
+        username: user.username,
+        password: user.password, // assuming already hashed
+        role: user.role || 'editor',
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+    userMap[user.username] = newUser.id;
   }
+  console.log(`Migrated ${oldUsers.length} users`);
 
   // Migrate auth_sessions (if exists)
   try {
