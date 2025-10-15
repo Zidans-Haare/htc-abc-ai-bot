@@ -14,7 +14,6 @@ const winston = require('winston');
 const promClient = require('prom-client');
 const bcrypt = require('bcryptjs');
 const { execSync } = require('child_process');
-const path = require('path');
 
 
 
@@ -473,12 +472,10 @@ const serverCallback = async () => {
     // Build main CSS if source files changed
     const mainCssSrc = path.join(__dirname, 'src', 'main.css');
     const mainCssOut = path.join(__dirname, 'public', 'css', 'tailwind.css');
-    const indexHtml = path.join(__dirname, 'public', 'index.html');
     try {
       const srcStat = fs.statSync(mainCssSrc);
-      const htmlStat = fs.statSync(indexHtml);
       const outStat = fs.existsSync(mainCssOut) ? fs.statSync(mainCssOut) : { mtime: 0 };
-      if (srcStat.mtime > outStat.mtime || htmlStat.mtime > outStat.mtime) {
+      if (!fs.existsSync(mainCssOut) || srcStat.mtime > outStat.mtime) {
         console.log('Main CSS source changed, rebuilding...');
         execSync('npm run build:main-css', { stdio: 'inherit' });
         console.log('✓ Main CSS rebuilt');
