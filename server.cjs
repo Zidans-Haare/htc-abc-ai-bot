@@ -432,23 +432,8 @@ app.use((req, res) => {
 
 // --- Server Start ---
 const serverCallback = async () => {
-  // Ensure auth sessions table exists
-  try {
-    const createAuthSessionsTable = require('./scripts/create_auth_sessions_table.js');
-    await createAuthSessionsTable(false); // Don't close connection
-    console.log('✓ Auth sessions table initialized');
-  } catch (error) {
-    console.error('Warning: Could not initialize auth sessions table:', error.message);
-  }
-
-  // Ensure dashboard tables exist
-  try {
-    const createDashboardTables = require('./scripts/create_dashboard_tables.js');
-    await createDashboardTables(false); // Don't close connection
-    console.log('✓ Dashboard tables initialized');
-  } catch (error) {
-    console.error('Warning: Could not initialize dashboard tables:', error.message);
-  }
+  // Auth sessions and dashboard tables are now handled by Prisma schema
+  // Removed manual table creation scripts as Prisma manages the schema
 
   // Connect to database
   try {
