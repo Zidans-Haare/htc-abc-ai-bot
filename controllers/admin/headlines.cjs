@@ -74,8 +74,12 @@ module.exports = (adminAuth) => {
   });
 
   router.get('/entries/:id', adminAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid ID' });
+    }
     try {
-      const entry = await HochschuhlABC.findUnique({ where: { id: parseInt(req.params.id) } });
+      const entry = await HochschuhlABC.findUnique({ where: { id } });
       if (!entry) return res.status(404).json({ error: 'Entry not found' });
       res.json(entry);
     } catch (err) {
@@ -108,15 +112,19 @@ module.exports = (adminAuth) => {
   });
 
   router.put('/entries/:id', adminAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid ID' });
+    }
     const { headline, text, active } = req.body;
     if (!headline || !text) {
       return res.status(400).json({ error: 'Headline and text are required' });
     }
     try {
-      const oldEntry = await HochschuhlABC.findUnique({ where: { id: parseInt(req.params.id) } });
+      const oldEntry = await HochschuhlABC.findUnique({ where: { id } });
       if (!oldEntry) return res.status(404).json({ error: 'Entry not found' });
       await HochschuhlABC.update({
-        where: { id: parseInt(req.params.id) },
+        where: { id },
         data: { active: false, archived: new Date() }
       });
       const newEntry = await HochschuhlABC.create({
