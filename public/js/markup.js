@@ -27,3 +27,5 @@ function renderMarkup(text) {
 // Make it global
 window.renderMarkup = renderMarkup;
 console.log('markup.js loaded, renderMarkup defined');
+
+export { renderMarkup };
