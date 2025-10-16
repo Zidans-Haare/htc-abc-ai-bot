@@ -228,10 +228,10 @@ async function getPartialResults(cacheKey) {
 
 async function markAsProcessing(cacheKey, processing) {
     try {
-        await QuestionAnalysisCache.update(
-            { is_processing: processing },
-            { where: { cache_key: cacheKey } }
-        );
+        await QuestionAnalysisCache.update({
+            where: { cache_key: cacheKey },
+            data: { is_processing: processing }
+        });
     } catch (error) {
         console.error('[QuestionGrouper] Mark processing error:', error);
     }
@@ -240,7 +240,7 @@ async function markAsProcessing(cacheKey, processing) {
 async function savePartialResults(cacheKey, groups, progress) {
     try {
         // Clear existing cache for this key
-        await QuestionAnalysisCache.destroy({ where: { cache_key: cacheKey } });
+        await QuestionAnalysisCache.deleteMany({ where: { cache_key: cacheKey } });
 
         // Save new results
         const cacheEntries = groups.slice(0, 10).map(group => ({
@@ -254,7 +254,7 @@ async function savePartialResults(cacheKey, groups, progress) {
             last_updated: new Date()
         }));
 
-        await QuestionAnalysisCache.bulkCreate(cacheEntries);
+        await QuestionAnalysisCache.createMany({ data: cacheEntries });
     } catch (error) {
         console.error('[QuestionGrouper] Save partial results error:', error);
     }

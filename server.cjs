@@ -362,9 +362,6 @@ const protect = (req, res, next) => {
 app.use(protect);
 
 // --- Dashboard Routes ---
-app.get('/dash/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dash', 'login', 'login.html'));
-});
 
 // --- Static Files ---
 
