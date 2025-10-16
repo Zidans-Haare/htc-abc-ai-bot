@@ -1,7 +1,7 @@
 // This module relies on 'marked' and 'DOMPurify' being available in the global scope,
 // loaded from <script> tags in the HTML.
 
-export function renderMarkup(text) {
+function renderMarkup(text) {
     if (typeof text !== 'string') {
         return '';
     }
@@ -20,3 +20,6 @@ export function renderMarkup(text) {
         return window.DOMPurify.sanitize(text.replace(/\n/g, '<br>'));
     }
 }
+
+// Make it global
+window.renderMarkup = renderMarkup;

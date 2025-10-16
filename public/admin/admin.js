@@ -5,7 +5,7 @@ import { initUsers, loadUsers } from './users.js';
 import { initArchive, loadArchive } from './archive.js';
 import { initExport } from './export.js';
 import { setupFeedback } from './feedback.js';
-import { renderMarkup } from '../js/markup.js';
+
 import { initImages } from './images.js';
 import { initDocuments } from './documents.js';
 import { initStats } from './stats.js';
@@ -307,19 +307,19 @@ document.addEventListener('DOMContentLoaded', async () => {
        editorBtn.addEventListener('click', showEditor);
        questionsBtn.addEventListener('click', showQuestions);
        archiveBtn.addEventListener('click', showArchive);
-        userBtn.addEventListener('click', showUserAdmin);
-        feedbackBtn.addEventListener('click', showFeedback);
-        if(imagesBtn) imagesBtn.addEventListener('click', showImages);
-        if(documentsBtn) documentsBtn.addEventListener('click', showDocuments);
+         userBtn.addEventListener('click', showUserAdmin);
+         feedbackBtn.addEventListener('click', showFeedback);
+         if(imagesBtn) imagesBtn.addEventListener('click', showImages);
+         if(documentsBtn) documentsBtn.addEventListener('click', showDocuments);
 
         // Mobile events
        if(mobileEditorBtn) mobileEditorBtn.addEventListener('click', () => { showEditor(); mobileMenu.classList.add('hidden'); });
        if(mobileQuestionsBtn) mobileQuestionsBtn.addEventListener('click', () => { showQuestions(); mobileMenu.classList.add('hidden'); });
        if(mobileArchiveBtn) mobileArchiveBtn.addEventListener('click', () => { showArchive(); mobileMenu.classList.add('hidden'); });
        if(mobileUserBtn) mobileUserBtn.addEventListener('click', () => { showUserAdmin(); mobileMenu.classList.add('hidden'); });
-        if(mobileFeedbackBtn) mobileFeedbackBtn.addEventListener('click', () => { showFeedback(); mobileMenu.classList.add('hidden'); });
-        if(mobileImagesBtn) mobileImagesBtn.addEventListener('click', () => { showImages(); mobileMenu.classList.add('hidden'); });
-        if(mobileDocumentsBtn) mobileDocumentsBtn.addEventListener('click', () => { showDocuments(); mobileMenu.classList.add('hidden'); });
+         if(mobileFeedbackBtn) mobileFeedbackBtn.addEventListener('click', () => { showFeedback(); mobileMenu.classList.add('hidden'); });
+         if(mobileImagesBtn) mobileImagesBtn.addEventListener('click', () => { showImages(); mobileMenu.classList.add('hidden'); });
+         if(mobileDocumentsBtn) mobileDocumentsBtn.addEventListener('click', () => { showDocuments(); mobileMenu.classList.add('hidden'); });
 
         showEditor();
        break;
@@ -362,25 +362,26 @@ document.addEventListener('DOMContentLoaded', async () => {
        if(mobileExportBtn) mobileExportBtn.classList.remove('hidden');
        if(mobileConversationsBtn) mobileConversationsBtn.classList.remove('hidden');
 
-       feedbackBtn.addEventListener('click', showFeedback);
+        feedbackBtn.addEventListener('click', showFeedback);
 
-       // Mobile events
-       if(mobileFeedbackBtn) mobileFeedbackBtn.addEventListener('click', () => { showFeedback(); mobileMenu.classList.add('hidden'); });
+        // Mobile events
+        if(mobileFeedbackBtn) mobileFeedbackBtn.addEventListener('click', () => { showFeedback(); mobileMenu.classList.add('hidden'); });
 
-       showFeedback();
-       break;
-    default:
-      // Fallback for unknown roles
-      editorView.classList.add('hidden');
-      questionsView.classList.add('hidden');
-      archiveView.classList.add('hidden');
-      userView.classList.add('hidden');
-      feedbackView.classList.add('hidden');
-       imagesView.classList.add('hidden');
-       documentsView.classList.add('hidden');
-       if(conversationsView) conversationsView.classList.add('hidden');
-      break;
-  }
+        showFeedback();
+        break;
+     default:
+       // Fallback for unknown roles
+       console.log('Unknown role, hiding all views');
+       editorView.classList.add('hidden');
+       questionsView.classList.add('hidden');
+       archiveView.classList.add('hidden');
+       userView.classList.add('hidden');
+       feedbackView.classList.add('hidden');
+        imagesView.classList.add('hidden');
+        documentsView.classList.add('hidden');
+        conversationsView.classList.add('hidden');
+        statsView.classList.add('hidden');
+     }
 
    // --- Always-on Event Listeners & Initializations ---
    logoutBtn.addEventListener('click', async () => {
@@ -410,9 +411,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupFeedback();
   initImages();
   initDocuments();
-  if (window.initConversations) {
-    initConversations(showConversations);
-  }
+   if (window.initConversations) {
+     initConversations(showConversations);
+   }
   
   document.addEventListener('update-username', (e) => {
     const currentUserSpan = document.getElementById('last-edited-by');
@@ -504,7 +505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const json = JSON.parse(jsonString);
                     if (json.token) {
                         fullResponse += json.token;
-                        aiResponse.innerHTML = renderMarkup(fullResponse);
+                        aiResponse.innerHTML = window.renderMarkup(fullResponse);
                     }
                 } catch (e) {
                     console.error('Failed to parse stream chunk:', e, 'Chunk:', jsonString);

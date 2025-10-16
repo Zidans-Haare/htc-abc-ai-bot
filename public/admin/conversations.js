@@ -1,7 +1,5 @@
 // conversations.js - im alten Stil, ohne Module
 
-import { renderMarkup } from '../js/markup.js';
-
 let allConversations = [];
 let currentFilter = 'All';
 let conversationsOffset = 0;
@@ -14,14 +12,24 @@ const CATEGORIES = [
 
 window.initConversations = function(showConversationsCallback) {
     const conversationsNav = document.getElementById('btn-conversations');
+    const mobileConversationsNav = document.getElementById('mobile-btn-conversations');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    const handleClick = (e) => {
+        e.preventDefault();
+        if (typeof showConversationsCallback === 'function') {
+            showConversationsCallback();
+        }
+        fetchConversations();
+        // Close mobile menu if open
+        if (mobileMenu) mobileMenu.classList.add('hidden');
+    };
+    
     if (conversationsNav) {
-        conversationsNav.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (typeof showConversationsCallback === 'function') {
-                showConversationsCallback();
-            }
-            fetchConversations();
-        });
+        conversationsNav.addEventListener('click', handleClick);
+    }
+    if (mobileConversationsNav) {
+        mobileConversationsNav.addEventListener('click', handleClick);
     }
 }
 
@@ -103,7 +111,7 @@ function renderConversations(selectedConversationId) {
     const listContainer = document.getElementById('conversations-list');
     if (!listContainer) return;
 
-    const filteredConversations = allConversations.filter(c => 
+    const filteredConversations = allConversations.filter(c =>
         currentFilter === 'All' || c.category === currentFilter
     );
 
@@ -148,7 +156,7 @@ function renderMessages(messages) {
             content.textContent = msg.content;
         } else {
             // For bot messages, parse markdown and sanitize
-            content.innerHTML = renderMarkup(msg.content);
+            content.innerHTML = window.renderMarkup(msg.content);
             content.querySelectorAll('img').forEach(img => {
                 img.classList.add('max-w-full', 'h-auto', 'rounded-lg', 'mt-2');
             });
