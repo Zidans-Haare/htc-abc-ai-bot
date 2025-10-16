@@ -115,7 +115,7 @@ if (options.initVectordb) {
       console.log('Initializing vector DB...');
       const vectorStore = require('./lib/vectorStore');
       const stats = await vectorStore.initVectorDB();
-      console.log(`Vector DB initialized successfully: ${stats.chunks} chunks from ${stats.articles} articles and ${stats.pdfs} PDFs synced`);
+      console.log(`Vector DB initialized successfully: ${stats.chunks} chunks from ${stats.headlines} articles, ${stats.pdfs} PDFs, and ${stats.images} images synced`);
       process.exit(0);
     } catch (err) {
       console.error('Vector DB initialization failed:', err);
