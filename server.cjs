@@ -235,7 +235,7 @@ if (isDev) {
 // --- Static Files ---
 // IMPORTANT: Serve static files before any protection middleware
 app.use((req, res, next) => {
-  if (req.url.startsWith('/admin') || (req.url.startsWith('/dash') && !req.url.startsWith('/dash/login'))) {
+  if (req.url.startsWith('/admin') || req.url.startsWith('/dash')) {
     return next();
   }
   express.static(path.join(__dirname, 'public'))(req, res, next);
@@ -312,7 +312,7 @@ const requireRole = (role, insufficientPath) => async (req, res, next) => {
 
 const protect = (req, res, next) => {
   // Allow access to login pages and insufficient permissions page
-  if (req.url.startsWith('/login') || req.url.startsWith('/dash/login') || req.url.startsWith('/insufficient-permissions')) {
+  if (req.url.startsWith('/login') || req.url.startsWith('/insufficient-permissions')) {
     return next();
   }
 
@@ -320,7 +320,7 @@ const protect = (req, res, next) => {
   if (req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
     const token = req.cookies.session_token;
     if (!token) {
-      return res.redirect('/login');
+      return res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
     }
     auth.getSession(token).then(session => {
       if (session && session.role === 'admin') {
@@ -340,18 +340,18 @@ const protect = (req, res, next) => {
   if (req.url.startsWith('/admin')) {
     const token = req.cookies.session_token;
     if (!token) {
-      return res.redirect('/login');
+      return res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
     }
     auth.getSession(token).then(session => {
       if (session) {
         req.session = session;
         next();
       } else {
-        res.redirect('/login');
+        res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
       }
     }).catch(err => {
       console.error('Auth error:', err);
-      res.redirect('/login');
+      res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
     });
     return;
   }
@@ -361,8 +361,12 @@ const protect = (req, res, next) => {
 };
 app.use(protect);
 
+// --- Dashboard Routes ---
+app.get('/dash/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dash', 'login', 'login.html'));
+});
+
 // --- Static Files ---
-app.use('/dash/login', express.static(path.join(__dirname, 'public', 'dash', 'login')));
 
 // --- API Routes ---
 app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
@@ -384,9 +388,6 @@ app.use('/api/dashboard', dashboardController);
 app.get("/api/view/articles", viewController.getPublishedArticles);
 
 // --- Dashboard Routes ---
-app.get('/dash/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dash', 'login', 'login.html'));
-});
 app.use('/dash', express.static(path.join(__dirname, 'public', 'dash')));
 app.get('/dash', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dash', 'index.html'));
