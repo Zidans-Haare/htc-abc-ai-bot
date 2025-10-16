@@ -446,9 +446,8 @@ app.use('/admin', async (req, res, next) => {
 
 // --- Favicon & 404 ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());
-app.use((req, res) => {
-  res.status(404).json({ error: `Cannot ${req.method} ${req.url}` });
-});
+
+module.exports = app;
 
 // --- Server Start ---
 const serverCallback = async () => {
@@ -550,7 +549,7 @@ const serverCallback = async () => {
   });
 };
 
-if (!cliMode && !isTest) {
+if (!cliMode && !isTest && process.env.NODE_ENV !== 'test') {
   if (useHttps) {
     try {
       const httpsOptions = {
