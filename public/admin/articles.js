@@ -16,8 +16,9 @@ const addBtn = document.getElementById('add-heading');
 const aiCheckModal = document.getElementById('ai-check-modal');
 const aiCheckCloseBtn = document.getElementById('ai-check-close');
 const aiCheckResponseEl = document.getElementById('ai-check-response');
-const articlesSidebar = document.getElementById('articles-sidebar');
-const mobileBackBtn = document.getElementById('mobile-back-btn');
+const editorListContainer = document.getElementById('editor-list-container');
+const editorEditContainer = document.getElementById('editor-edit-container');
+const editorBackBtn = document.getElementById('editor-back-btn');
 
 const loadedScripts = {};
 
@@ -284,7 +285,7 @@ function createMagicWandButton() {
 
 const editor = new toastui.Editor({
   el: document.getElementById('editor'),
-  height: '100%',
+  height: '400px', // initial height
   initialEditType: 'wysiwyg',
   previewStyle: 'vertical',
   toolbarItems: [
@@ -300,19 +301,13 @@ const editor = new toastui.Editor({
 
 // Set editor height dynamically to fill available space
 function setEditorHeight() {
-  const pane = document.getElementById('editor-pane');
-  if (!pane) return;
+  const pane = document.getElementById('editor-edit-container');
+  if (!pane || pane.classList.contains('hidden')) return;
 
-  if (window.innerWidth < 768) {
-    // On mobile, use viewport height minus approximate header/footer
-    const availableHeight = window.innerHeight - 300;
-    if (availableHeight > 100) {
-      editor.setHeight(availableHeight + 'px');
-    }
-    return;
-  }
-
-  // On desktop, let flexbox handle the height
+  // Calculate available height
+  const rect = pane.getBoundingClientRect();
+  const availableHeight = window.innerHeight - rect.top - 120; // subtract for header/footer
+  editor.setHeight(Math.max(availableHeight, 300) + 'px'); // minimum 300px
 }
 
 window.addEventListener('load', setEditorHeight);
@@ -392,21 +387,18 @@ function renderArticles(items, append = false) {
     li.textContent = h.article;
     li.className = 'article-item p-2 cursor-pointer rounded transition-colors';
     li.dataset.id = h.id;
-     li.addEventListener('click', () => {
-       if (selectedArticleEl) {
-         selectedArticleEl.classList.remove('active-article');
-       }
-       li.classList.add('active-article');
-       selectedArticleEl = li;
-       loadEntry(h.id);
-
-       // Mobile: Hide sidebar, show back button, hide add button
-       if (window.innerWidth < 768) {
-         articlesSidebar.classList.add('hidden');
-         mobileBackBtn.classList.remove('hidden');
-         addBtn.parentElement.classList.add('hidden');
-       }
-     });
+       li.addEventListener('click', () => {
+         if (selectedArticleEl) {
+           selectedArticleEl.classList.remove('active-article');
+         }
+         li.classList.add('active-article');
+         selectedArticleEl = li;
+         // Toggle to edit view
+         editorListContainer.classList.add('hidden');
+         editorEditContainer.classList.remove('hidden');
+         setEditorHeight(); // Set height immediately after showing
+         loadEntry(h.id);
+       });
     if (insertBefore) {
       listEl.insertBefore(li, insertBefore);
     } else {
@@ -436,15 +428,8 @@ async function loadEntry(id) {
     document.getElementById('last-edited-by').innerHTML = `last edit by:<br>${entry.editor || ''}<br>${formattedDate}`;
     setSaveButtonState(false);
 
-       // Mobile: Hide sidebar, show back button, hide add button
-       if (window.innerWidth < 768) { // md breakpoint
-         articlesSidebar.classList.add('hidden');
-         mobileBackBtn.classList.remove('hidden');
-         addBtn.parentElement.classList.add('hidden');
-       }
-
-    // Adjust editor height after layout changes
-    setTimeout(setEditorHeight, 100);
+     // Adjust editor height after layout changes
+     setTimeout(setEditorHeight, 100);
   } catch (err) {
     console.error('Failed to load entry:', err);
   }
@@ -520,15 +505,13 @@ async function deleteEntry() {
      articleInput.value = '';
      editor.setMarkdown('');
      document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
-     await loadArticles();
-     alert('Gelöscht');
+      await loadArticles();
+      alert('Gelöscht');
 
-     // Mobile: Show sidebar after delete
-     if (window.innerWidth < 768) {
-       articlesSidebar.classList.remove('hidden');
-       mobileBackBtn.classList.add('hidden');
-       articlesSidebar.scrollTop = 0;
-     }
+      // Show list after delete
+      editorEditContainer.classList.add('hidden');
+      editorListContainer.classList.remove('hidden');
+      editorListContainer.scrollTop = 0;
   } catch (err) {
     console.error('Failed to delete entry:', err);
     alert('Failed to delete entry: ' + err.message);
@@ -549,25 +532,24 @@ function getCurrentId() {
 function initArticles() {
   saveBtn.addEventListener('click', saveEntry);
   deleteBtn.addEventListener('click', deleteEntry);
-   addBtn.addEventListener('click', () => {
-      console.log('Adding new heading...');
-      currentId = null;
-      articleInput.value = '';
-      editor.setMarkdown('');
-      originalArticle = '';
-      originalDescription = '';
-      document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
-      checkForChanges();
+    addBtn.addEventListener('click', () => {
+       console.log('Adding new heading...');
+       currentId = null;
+       articleInput.value = '';
+       editor.setMarkdown('');
+       originalArticle = '';
+       originalDescription = '';
+       document.getElementById('last-edited-by').innerHTML = `last edit by:<br>`;
+       checkForChanges();
 
-      // Mobile: Hide sidebar and show back button
-      if (window.innerWidth < 768) { // md breakpoint
-        articlesSidebar.classList.add('hidden');
-        mobileBackBtn.classList.remove('hidden');
-      }
+        // Toggle to edit view
+        editorListContainer.classList.add('hidden');
+        editorEditContainer.classList.remove('hidden');
+        setEditorHeight(); // Set height immediately
 
-      // Adjust editor height after layout changes
-      setTimeout(setEditorHeight, 100);
-    });
+        // Adjust editor height after layout changes
+        setTimeout(setEditorHeight, 100);
+     });
   searchEl.addEventListener('input', () => {
     console.log('Search input changed, loading articles...');
     loadArticles();
@@ -580,49 +562,31 @@ function initArticles() {
     aiCheckModal.classList.add('hidden');
   });
 
-   // Mobile back button
-    mobileBackBtn.querySelector('button').addEventListener('click', () => {
-      articlesSidebar.classList.remove('hidden');
-      mobileBackBtn.classList.add('hidden');
-      addBtn.parentElement.classList.remove('hidden');
-     // Scroll to the last viewed item
-     setTimeout(() => {
-       const activeLi = articlesSidebar.querySelector('.active-article');
-       if (activeLi) {
-         activeLi.scrollIntoView({ behavior: 'smooth', block: 'center' });
-       } else {
-         articlesSidebar.scrollTop = 0;
-       }
-     }, 100);
-     // Adjust editor height after layout changes
-     setTimeout(setEditorHeight, 100);
-   });
-
-    // Cancel edit question button
-    document.getElementById('cancel-edit-question').addEventListener('click', () => {
-      if (window.innerWidth < 768) {
-        articlesSidebar.classList.remove('hidden');
-        mobileBackBtn.classList.add('hidden');
-        addBtn.parentElement.classList.remove('hidden');
-        articlesSidebar.scrollTop = 0;
-      }
+    // Back button
+     editorBackBtn.addEventListener('click', () => {
+       editorEditContainer.classList.add('hidden');
+       editorListContainer.classList.remove('hidden');
+      // Scroll to the last viewed item
+      setTimeout(() => {
+        const activeLi = editorListContainer.querySelector('.active-article');
+        if (activeLi) {
+          activeLi.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          editorListContainer.scrollTop = 0;
+        }
+      }, 100);
+      // Adjust editor height after layout changes
+      setTimeout(setEditorHeight, 100);
     });
 
-    // Cancel button (mobile)
-    document.getElementById('cancel-btn').addEventListener('click', () => {
-      if (window.innerWidth < 768) {
-        articlesSidebar.classList.remove('hidden');
-        mobileBackBtn.classList.add('hidden');
-        addBtn.parentElement.classList.remove('hidden');
-       // Scroll to the last edited item
-       setTimeout(() => {
-         const activeLi = articlesSidebar.querySelector('.active-article');
-         if (activeLi) {
-           activeLi.scrollIntoView({ behavior: 'smooth', block: 'center' });
-         }
-       }, 100);
-     }
-   });
+     // Cancel edit question button
+     document.getElementById('cancel-edit-question').addEventListener('click', () => {
+       editorEditContainer.classList.add('hidden');
+       editorListContainer.classList.remove('hidden');
+       editorListContainer.scrollTop = 0;
+     });
+
+
 
   loadArticles();
 }

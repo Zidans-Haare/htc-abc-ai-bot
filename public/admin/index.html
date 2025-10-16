@@ -155,10 +155,16 @@
         </div>
       </div>
     </div>
-    <!-- Editor View -->
-    <div id="editor-view" class="flex flex-col md:flex-row flex-1">
-        <!-- Left Sidebar: Headlines (25%) -->
-        <div id="articles-sidebar" class="w-full md:w-1/4 bg-(--app-bg) border-r border-(--border-color) flex flex-col">
+     <!-- Editor View -->
+     <div id="editor-view" class="flex flex-col flex-1">
+        <!-- List View -->
+        <div id="editor-list-container" class="flex flex-col flex-1">
+          <div class="p-4 border-b border-(--border-color) flex justify-between items-center">
+            <h2 class="text-lg font-semibold">Artikel</h2>
+            <button id="add-heading" class="px-4 py-2 rounded-md btn-primary">
+              Neuer Artikel
+            </button>
+          </div>
           <!-- Search Field -->
           <div class="p-4 border-b border-(--border-color)">
             <input
@@ -167,57 +173,74 @@
               placeholder="Suchen..."
               class="w-full px-3 py-2 border border-(--input-border) rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-(--accent-color) bg-white"
             >
-          </div>
+       </div>
           <!-- Articles List -->
           <div class="flex-1 overflow-y-auto p-4">
             <ul id="article-list" class="space-y-2"></ul>
           </div>
         </div>
-       <!-- Right Content Area: Text Editor (75%) -->
-       <div id="editor-pane" class="w-full md:w-3/4 flex flex-col bg-white">
-         <!-- Mobile Back Button -->
-         <div id="mobile-back-btn" class="hidden md:hidden p-4 border-b border-(--border-color) flex items-center">
-           <button class="px-4 py-2 rounded-md btn-secondary flex items-center space-x-2">
-             <i class="fa-solid fa-arrow-left"></i>
-             <span>Zurück zur Liste</span>
-           </button>
-         </div>
-        <div id="question-edit-banner" class="hidden p-4 bg-blue-100 border-b border-blue-200 flex items-center justify-between">
+        <!-- Edit View -->
+        <div id="editor-edit-container" class="hidden flex flex-col flex-1">
+          <div class="p-4 border-b border-(--border-color) flex items-center">
+            <button id="editor-back-btn" class="mr-4 px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm">
+              <i class="fas fa-arrow-left mr-1"></i>Back
+            </button>
+            <h2 class="text-lg font-semibold">Artikel bearbeiten</h2>
+          </div>
+          <div id="question-edit-banner" class="hidden p-4 bg-blue-100 border-b border-blue-200 flex items-center justify-between">
             <div>
-                <span class="font-semibold text-blue-800">Frage:</span>
-                <span id="question-edit-label" class="text-blue-800"></span>
-                <div id="question-edit-translation" class="text-sm mt-1" style="color: var(--primary-text); display: none;"></div>
-                <div id="question-answered-in" class="text-sm mt-1" style="color: var(--primary-text); display: none;"></div>
-                <input type="hidden" id="question-edit-id">
+              <span class="font-semibold text-blue-800">Frage:</span>
+              <span id="question-edit-label" class="text-blue-800"></span>
+              <div id="question-edit-translation" class="text-sm mt-1" style="color: var(--primary-text); display: none;"></div>
+              <div id="question-answered-in" class="text-sm mt-1" style="color: var(--primary-text); display: none;"></div>
+              <input type="hidden" id="question-edit-id">
             </div>
             <div class="flex items-center space-x-2">
-                <button id="cancel-edit-question" class="font-bold px-4 py-2 rounded-md" style="background-color: transparent; color: cornflowerblue; border: 1px solid cornflowerblue;">Abbrechen</button>
-                <button id="mark-as-answered-btn" class="px-4 py-2 rounded-md btn-primary" disabled>Beantwortet</button>
+              <button id="cancel-edit-question" class="font-bold px-4 py-2 rounded-md" style="background-color: transparent; color: cornflowerblue; border: 1px solid cornflowerblue;">Abbrechen</button>
+              <button id="mark-as-answered-btn" class="px-4 py-2 rounded-md btn-primary" disabled>Beantwortet</button>
             </div>
+          </div>
+          <div class="p-4 border-b border-(--border-color) flex space-x-4 items-center">
+            <input id="article-input" class="p-2 border border-(--input-border) rounded flex-1 bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-(--accent-color)" placeholder="Artikel">
+            <span id="last-edited-by" class="p-2 text-(--secondary-text) text-sm text-right"></span>
+          </div>
+          <div id="editor" class="grow"></div>
+          <div class="p-4 border-t border-(--border-color) flex justify-between items-center">
+            <button id="delete-btn" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">Löschen</button>
+            <div class="flex space-x-4 items-center">
+              <div id="question-context-actions" class="hidden items-center space-x-2">
+                <button id="test-ai-response" class="px-4 py-2 rounded-md text-white" style="background-color: green;">Speichern + Test</button>
+              </div>
+              <button id="save-btn" class="px-4 py-2 rounded-md btn-primary" disabled>Speichern</button>
+            </div>
+          </div>
         </div>
-        <div class="p-4 border-b border-(--border-color) flex space-x-4 items-center">
-          <input id="article-input" class="p-2 border border-(--input-border) rounded flex-1 bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-(--accent-color)" placeholder="Artikel">
-          <span id="last-edited-by" class="p-2 text-(--secondary-text) text-sm text-right"></span>
-        </div>
-        <div id="editor" class="grow"></div>
+      </div>
+       </div>
+       <!-- Edit View -->
+       <div id="editor-edit-container" class="hidden flex flex-col flex-1">
+         <div class="p-4 border-b border-(--border-color) flex items-center">
+           <button id="editor-back-btn" class="mr-4 px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm">
+             <i class="fas fa-arrow-left mr-1"></i>Back
+           </button>
+           <h2 class="text-lg font-semibold">Artikel bearbeiten</h2>
+         </div>
+         <div class="p-4 border-b border-(--border-color) flex space-x-4 items-center">
+           <input id="article-input" class="p-2 border border-(--input-border) rounded flex-1 bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-(--accent-color)" placeholder="Artikel">
+           <span id="last-edited-by" class="p-2 text-(--secondary-text) text-sm text-right"></span>
+         </div>
+         <div id="editor" class="grow"></div>
          <div class="p-4 border-t border-(--border-color) flex justify-between items-center">
            <button id="delete-btn" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">Löschen</button>
            <div class="flex space-x-4 items-center">
              <div id="question-context-actions" class="hidden items-center space-x-2">
                <button id="test-ai-response" class="px-4 py-2 rounded-md text-white" style="background-color: green;">Speichern + Test</button>
              </div>
-             <button id="cancel-btn" class="md:hidden px-4 py-2 rounded-md btn-secondary">Abbrechen</button>
              <button id="save-btn" class="px-4 py-2 rounded-md btn-primary" disabled>Speichern</button>
            </div>
          </div>
-         </div>
-     </div>
-     <!-- Mobile Add Button -->
-     <div class="md:hidden fixed bottom-4 right-4 z-50">
-        <button id="add-heading" class="px-3 py-2 rounded-md btn-primary">
-          Neuer Artikel
-        </button>
-     </div>
+       </div>
+      </div>
      <!-- Question Management View -->
     <div id="questions-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
       <input id="question-search" class="p-2 border border-(--input-border) rounded-md mb-2 w-full max-w-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-(--accent-color)" placeholder="Suche...">
