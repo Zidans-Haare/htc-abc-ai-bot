@@ -1,6 +1,9 @@
 // This module relies on 'marked' and 'DOMPurify' being available in the global scope,
 // loaded from <script> tags in the HTML.
 
+console.log('DOMPurify available:', typeof window.DOMPurify);
+console.log('marked available:', typeof window.marked);
+
 function renderMarkup(text) {
     if (typeof text !== 'string') {
         return '';
@@ -23,3 +26,4 @@ function renderMarkup(text) {
 
 // Make it global
 window.renderMarkup = renderMarkup;
+console.log('markup.js loaded, renderMarkup defined');

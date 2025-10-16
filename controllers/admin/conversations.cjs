@@ -30,10 +30,12 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const conversationId = req.params.id;
+    console.log('Fetching messages for conversationId:', conversationId);
     const messages = await Message.findMany({
       where: { conversation_id: conversationId },
       orderBy: { created_at: 'asc' },
     });
+    console.log('Found messages:', messages.length);
 
     if (!messages || messages.length === 0) {
       return res.status(404).json({ error: 'Conversation not found.' });

@@ -11,9 +11,12 @@
       <link href="/admin/admin.css" rel="stylesheet">
       <link href="/css/backend-tailwind.css" rel="stylesheet">
       <script src="/admin/js/disable-analytics.js"></script>
+      <script src="/js/purify.min.js"></script>
+      <script src="/js/marked.min.js"></script>
+      <script src="/js/markup.js"></script>
       <script src="/admin/toastui/toastui-editor.min.js"></script>
-     <script defer type="module" src="/admin/admin.js"></script>
-     <script src="/admin/conversations.js"></script>
+      <script defer type="module" src="/admin/admin.js"></script>
+      <script src="/admin/conversations.js"></script>
   <link rel="icon" href="/favicon.ico">
   
   </head>
@@ -264,27 +267,32 @@
         <!-- Details will be rendered here by JS -->
       </div>
     </div>
-    <!-- Conversations View -->
-    <div id="conversations-view" class="flex flex-col md:flex-row flex-1 hidden overflow-hidden">
-        <div class="w-full md:w-1/3 bg-(--app-bg) border-r border-(--border-color) flex flex-col">
-            <div class="p-4 border-b border-(--border-color)">
-                <h2 class="text-lg font-semibold">Conversations</h2>
-            </div>
-            <div id="conversation-filter-container" class="p-2 border-b border-(--border-color) flex flex-wrap gap-2">
-                <!-- Filter buttons will be added here by JS -->
-            </div>
-            <div id="conversations-list" class="flex-1 overflow-y-auto p-4 space-y-2">
-                <!-- Conversation list will be populated here -->
-            </div>
-        </div>
-        <div class="w-full md:w-2/3 flex flex-col bg-white">
-            <div class="p-4 border-b border-(--border-color)">
-                <h2 id="conversation-detail-title" class="text-lg font-semibold">Select a conversation</h2>
-            </div>
-            <div id="conversation-detail-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
-                <!-- Messages will be populated here -->
-            </div>
+     <!-- Conversations View -->
+     <div id="conversations-view" class="flex flex-col flex-1 hidden overflow-hidden">
+       <!-- List View -->
+       <div id="conversations-list-container" class="flex flex-col flex-1 overflow-hidden">
+         <div class="p-4 border-b border-(--border-color)">
+             <h2 class="text-lg font-semibold">Conversations</h2>
          </div>
+         <div id="conversation-filter-container" class="p-2 border-b border-(--border-color) flex flex-wrap gap-2">
+             <!-- Filter buttons will be added here by JS -->
+         </div>
+         <div id="conversations-list" class="flex-1 overflow-y-auto p-4 space-y-2">
+             <!-- Conversation list will be populated here -->
+         </div>
+       </div>
+       <!-- Detail View -->
+       <div id="conversations-detail-container" class="hidden flex flex-col flex-1 overflow-hidden">
+         <div class="p-4 border-b border-(--border-color) flex items-center">
+           <button id="conversations-back-btn" class="mr-4 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
+             <i class="fas fa-arrow-left mr-1"></i>Back
+           </button>
+           <h2 id="conversation-detail-title" class="text-lg font-semibold">Conversation Details</h2>
+         </div>
+         <div id="conversation-detail-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+             <!-- Messages will be populated here -->
+         </div>
+       </div>
      </div>
      <!-- Stats View -->
      <div id="stats-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">

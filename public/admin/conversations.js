@@ -31,6 +31,17 @@ window.initConversations = function(showConversationsCallback) {
     if (mobileConversationsNav) {
         mobileConversationsNav.addEventListener('click', handleClick);
     }
+
+    // Back button
+    const backBtn = document.getElementById('conversations-back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            const listContainer = document.getElementById('conversations-list-container');
+            const detailContainer = document.getElementById('conversations-detail-container');
+            detailContainer.classList.add('hidden');
+            listContainer.classList.remove('hidden');
+        });
+    }
 }
 
 async function fetchConversations(append = false) {
@@ -71,7 +82,11 @@ async function fetchConversations(append = false) {
 }
 
 async function fetchAndDisplayMessages(conversationId) {
-    renderConversations(conversationId); // Re-render to show selection
+    // Toggle to detail view
+    const listContainer = document.getElementById('conversations-list-container');
+    const detailContainer = document.getElementById('conversations-detail-container');
+    listContainer.classList.add('hidden');
+    detailContainer.classList.remove('hidden');
 
     const messagesContainer = document.getElementById('conversation-detail-messages');
     const titleContainer = document.getElementById('conversation-detail-title');
@@ -79,9 +94,10 @@ async function fetchAndDisplayMessages(conversationId) {
     titleContainer.textContent = `Conversation ${conversationId.substring(0, 8)}...`;
 
     try {
-        const response = await fetch(`/api/admin/conversations/${conversationId}`);
+        const response = await fetch(`/api/admin/conversations/${encodeURIComponent(conversationId)}`);
         if (!response.ok) throw new Error('Failed to fetch messages');
         const messages = await response.json();
+        console.log('Received messages from API:', messages);
         renderMessages(messages);
     } catch (error) {
         console.error(`Error fetching messages for ${conversationId}:`, error);
@@ -139,14 +155,20 @@ function renderConversations(selectedConversationId) {
 }
 
 function renderMessages(messages) {
-    const messagesContainer = document.getElementById('conversation-detail-messages');
-    messagesContainer.innerHTML = '';
-    if (messages.length === 0) {
-        messagesContainer.innerHTML = '<p>No messages in this conversation.</p>';
-        return;
-    }
+    console.log('Rendering messages:', messages);
+    try {
+        const messagesContainer = document.getElementById('conversation-detail-messages');
+        if (!messagesContainer) {
+            console.error('messagesContainer not found');
+            return;
+        }
+        messagesContainer.innerHTML = '';
+        if (messages.length === 0) {
+            messagesContainer.innerHTML = '<p>No messages in this conversation.</p>';
+            return;
+        }
 
-    messages.forEach(msg => {
+        messages.forEach(msg => {
         const bubble = document.createElement('div');
         const isUser = msg.role === 'user';
         
@@ -156,7 +178,12 @@ function renderMessages(messages) {
             content.textContent = msg.content;
         } else {
             // For bot messages, parse markdown and sanitize
-            content.innerHTML = window.renderMarkup(msg.content);
+            if (window.renderMarkup) {
+                content.innerHTML = window.renderMarkup(msg.content);
+            } else {
+                console.error('window.renderMarkup not defined');
+                content.textContent = msg.content;
+            }
             content.querySelectorAll('img').forEach(img => {
                 img.classList.add('max-w-full', 'h-auto', 'rounded-lg', 'mt-2');
             });
@@ -185,4 +212,11 @@ function renderMessages(messages) {
 
         messagesContainer.appendChild(wrapper);
     });
+    } catch (error) {
+        console.error('Error rendering messages:', error);
+        const messagesContainer = document.getElementById('conversation-detail-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = '<p class="text-red-500">Error rendering messages.</p>';
+        }
+    }
 }
