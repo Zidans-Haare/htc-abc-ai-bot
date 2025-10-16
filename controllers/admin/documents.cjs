@@ -69,12 +69,12 @@ module.exports = (authMiddleware) => {
             // Save document info to the database
             const newDocument = await Documents.create({
                 data: {
-                    filepath: `documents/${req.file.filename}`,
+                    filepath: req.file.filename,
                     file_type: fileType,
                     description: description || null
                 }
             });
-            res.status(201).json(newPDF);
+            res.status(201).json(newDocument);
         } catch (error) {
             console.error('Fehler beim Speichern des PDFs in der DB:', error);
             // If DB write fails, delete the uploaded file
