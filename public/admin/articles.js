@@ -392,14 +392,21 @@ function renderArticles(items, append = false) {
     li.textContent = h.article;
     li.className = 'article-item p-2 cursor-pointer rounded transition-colors';
     li.dataset.id = h.id;
-    li.addEventListener('click', () => {
-      if (selectedArticleEl) {
-        selectedArticleEl.classList.remove('active-article');
-      }
-      li.classList.add('active-article');
-      selectedArticleEl = li;
-      loadEntry(h.id);
-    });
+     li.addEventListener('click', () => {
+       if (selectedArticleEl) {
+         selectedArticleEl.classList.remove('active-article');
+       }
+       li.classList.add('active-article');
+       selectedArticleEl = li;
+       loadEntry(h.id);
+
+       // Mobile: Hide sidebar, show back button, hide add button
+       if (window.innerWidth < 768) {
+         articlesSidebar.classList.add('hidden');
+         mobileBackBtn.classList.remove('hidden');
+         addBtn.parentElement.classList.add('hidden');
+       }
+     });
     if (insertBefore) {
       listEl.insertBefore(li, insertBefore);
     } else {
@@ -429,11 +436,12 @@ async function loadEntry(id) {
     document.getElementById('last-edited-by').innerHTML = `last edit by:<br>${entry.editor || ''}<br>${formattedDate}`;
     setSaveButtonState(false);
 
-    // Mobile: Hide sidebar and show back button
-    if (window.innerWidth < 768) { // md breakpoint
-      articlesSidebar.classList.add('hidden');
-      mobileBackBtn.classList.remove('hidden');
-    }
+       // Mobile: Hide sidebar, show back button, hide add button
+       if (window.innerWidth < 768) { // md breakpoint
+         articlesSidebar.classList.add('hidden');
+         mobileBackBtn.classList.remove('hidden');
+         addBtn.parentElement.classList.add('hidden');
+       }
 
     // Adjust editor height after layout changes
     setTimeout(setEditorHeight, 100);
@@ -573,9 +581,10 @@ function initArticles() {
   });
 
    // Mobile back button
-   mobileBackBtn.querySelector('button').addEventListener('click', () => {
-     articlesSidebar.classList.remove('hidden');
-     mobileBackBtn.classList.add('hidden');
+    mobileBackBtn.querySelector('button').addEventListener('click', () => {
+      articlesSidebar.classList.remove('hidden');
+      mobileBackBtn.classList.add('hidden');
+      addBtn.parentElement.classList.remove('hidden');
      // Scroll to the last viewed item
      setTimeout(() => {
        const activeLi = articlesSidebar.querySelector('.active-article');
@@ -589,20 +598,22 @@ function initArticles() {
      setTimeout(setEditorHeight, 100);
    });
 
-   // Cancel edit question button
-   document.getElementById('cancel-edit-question').addEventListener('click', () => {
-     if (window.innerWidth < 768) {
-       articlesSidebar.classList.remove('hidden');
-       mobileBackBtn.classList.add('hidden');
-       articlesSidebar.scrollTop = 0;
-     }
-   });
+    // Cancel edit question button
+    document.getElementById('cancel-edit-question').addEventListener('click', () => {
+      if (window.innerWidth < 768) {
+        articlesSidebar.classList.remove('hidden');
+        mobileBackBtn.classList.add('hidden');
+        addBtn.parentElement.classList.remove('hidden');
+        articlesSidebar.scrollTop = 0;
+      }
+    });
 
-   // Cancel button (mobile)
-   document.getElementById('cancel-btn').addEventListener('click', () => {
-     if (window.innerWidth < 768) {
-       articlesSidebar.classList.remove('hidden');
-       mobileBackBtn.classList.add('hidden');
+    // Cancel button (mobile)
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+      if (window.innerWidth < 768) {
+        articlesSidebar.classList.remove('hidden');
+        mobileBackBtn.classList.add('hidden');
+        addBtn.parentElement.classList.remove('hidden');
        // Scroll to the last edited item
        setTimeout(() => {
          const activeLi = articlesSidebar.querySelector('.active-article');
