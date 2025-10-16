@@ -10,7 +10,7 @@ const HochschuhlABC = prisma.hochschuhl_abc;
 const Questions = prisma.questions;
 const Feedback = prisma.feedback;
 const Images = prisma.images;
-const PDFs = prisma.pdfs;
+const Documents = prisma.documents;
 const AuthSession = prisma.auth_sessions;
 const UserSessions = prisma.user_sessions;
 const ArticleViews = prisma.article_views;
@@ -19,4 +19,4 @@ const Conversation = prisma.conversations;
 const Message = prisma.messages;
 const QuestionAnalysisCache = prisma.question_analysis_cache;
 
-module.exports = { prisma, User, HochschuhlABC, Questions, Feedback, Images, PDFs, AuthSession, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache };
+module.exports = { prisma, User, HochschuhlABC, Questions, Feedback, Images, Documents, AuthSession, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache };
