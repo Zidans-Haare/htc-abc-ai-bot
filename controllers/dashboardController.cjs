@@ -1,6 +1,5 @@
 const express = require('express');
-const { Op } = require('sequelize');
-const { sequelize, UserSessions, ChatInteractions, ArticleViews, HochschuhlABC, Questions, Feedback, Conversation, Message, QuestionAnalysisCache } = require('./db.cjs');
+const { prisma, UserSessions, ChatInteractions, ArticleViews, HochschuhlABC, Questions, Feedback, Conversation, Message, QuestionAnalysisCache } = require('./db.cjs');
 
 // Optional import for question grouper (requires server-side OpenAI-compatible API key)
 let groupSimilarQuestions, extractQuestions;
@@ -30,7 +29,8 @@ router.get('/kpis', async (req, res) => {
         const todaySessions = await UserSessions.count({
             where: {
                 started_at: {
-                    [Op.between]: [today, todayEnd]
+                    gte: today,
+                    lte: todayEnd
                 }
             }
         });
@@ -107,51 +107,42 @@ router.get('/sessions', async (req, res) => {
         const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
         const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
         
-        let sessions = await sequelize.query(`
-            SELECT 
+        let sessions = await prisma.$queryRaw(`
+            SELECT
                 DATE(datetime(started_at, ?)) as date,
                 COUNT(*) as count
-            FROM user_sessions 
+            FROM user_sessions
             WHERE datetime(started_at, ?) >= datetime(?, ?)
             GROUP BY DATE(datetime(started_at, ?))
             ORDER BY date ASC
-        `, {
-            replacements: [timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset],
-            type: sequelize.QueryTypes.SELECT
-        });
+        `, timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset);
 
         // If no user_sessions data, use feedback as activity proxy
         if (sessions.length === 0) {
-            sessions = await sequelize.query(`
-                SELECT 
+            sessions = await prisma.$queryRaw(`
+                SELECT
                     DATE(datetime(timestamp, ?)) as date,
                     COUNT(DISTINCT conversation_id) as count
-                FROM feedback 
+                FROM feedback
                 WHERE datetime(timestamp, ?) >= datetime(?, ?)
                 GROUP BY DATE(datetime(timestamp, ?))
                 ORDER BY date ASC
-            `, {
-                replacements: [timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset],
-                type: sequelize.QueryTypes.SELECT
-            });
+            `, timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset);
         }
 
         // If still no data, use questions as activity proxy
         if (sessions.length === 0) {
-            sessions = await sequelize.query(`
-                SELECT 
+            sessions = await prisma.$queryRaw(`
+                SELECT
                     DATE(datetime(last_updated, ?)) as date,
                     COUNT(*) as count
-                FROM questions 
+                FROM questions
                 WHERE datetime(last_updated, ?) >= datetime(?, ?)
-                    AND spam = 0 
+                    AND spam = 0
                     AND deleted = 0
                 GROUP BY DATE(datetime(last_updated, ?))
                 ORDER BY date ASC
-            `, {
-                replacements: [timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset],
-                type: sequelize.QueryTypes.SELECT
-            });
+            `, timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset);
         }
 
         // Fill missing days with 0
@@ -193,51 +184,42 @@ router.get('/sessions/hourly', async (req, res) => {
         const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
         const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
         
-        let hourlyData = await sequelize.query(`
-            SELECT 
+        let hourlyData = await prisma.$queryRaw(`
+            SELECT
                 CAST(strftime('%H', datetime(started_at, ?)) AS INTEGER) as hour,
                 COUNT(*) as count
-            FROM user_sessions 
+            FROM user_sessions
             WHERE DATE(datetime(started_at, ?)) = ?
             GROUP BY strftime('%H', datetime(started_at, ?))
             ORDER BY hour ASC
-        `, {
-            replacements: [timezoneOffset, timezoneOffset, date, timezoneOffset],
-            type: sequelize.QueryTypes.SELECT
-        });
+        `, timezoneOffset, timezoneOffset, date, timezoneOffset);
 
         // If no user_sessions data, use feedback as activity proxy
         if (hourlyData.length === 0) {
-            hourlyData = await sequelize.query(`
-                SELECT 
+            hourlyData = await prisma.$queryRaw(`
+                SELECT
                     CAST(strftime('%H', datetime(timestamp, ?)) AS INTEGER) as hour,
                     COUNT(DISTINCT conversation_id) as count
-                FROM feedback 
+                FROM feedback
                 WHERE DATE(datetime(timestamp, ?)) = ?
                 GROUP BY strftime('%H', datetime(timestamp, ?))
                 ORDER BY hour ASC
-            `, {
-                replacements: [timezoneOffset, timezoneOffset, date, timezoneOffset],
-                type: sequelize.QueryTypes.SELECT
-            });
+            `, timezoneOffset, timezoneOffset, date, timezoneOffset);
         }
 
         // If still no data, use questions as activity proxy
         if (hourlyData.length === 0) {
-            hourlyData = await sequelize.query(`
-                SELECT 
+            hourlyData = await prisma.$queryRaw(`
+                SELECT
                     CAST(strftime('%H', datetime(last_updated, ?)) AS INTEGER) as hour,
                     COUNT(*) as count
-                FROM questions 
+                FROM questions
                 WHERE DATE(datetime(last_updated, ?)) = ?
-                    AND spam = 0 
+                    AND spam = 0
                     AND deleted = 0
                 GROUP BY strftime('%H', datetime(last_updated, ?))
                 ORDER BY hour ASC
-            `, {
-                replacements: [timezoneOffset, timezoneOffset, date, timezoneOffset],
-                type: sequelize.QueryTypes.SELECT
-            });
+            `, timezoneOffset, timezoneOffset, date, timezoneOffset);
         }
 
         // Fill missing hours with 0 (0-23)
@@ -259,7 +241,7 @@ router.get('/sessions/hourly', async (req, res) => {
 
 router.get('/most-viewed-articles', async (req, res) => {
     try {
-        const articles = await sequelize.query(`
+        const articles = await prisma.$queryRaw(`
             SELECT
                 h.article,
                 COUNT(av.id) as views
@@ -270,9 +252,7 @@ router.get('/most-viewed-articles', async (req, res) => {
             HAVING views > 0
             ORDER BY views DESC
             LIMIT 5
-        `, {
-            type: sequelize.QueryTypes.SELECT
-        });
+        `);
 
         res.json(articles);
     } catch (error) {
@@ -286,32 +266,28 @@ router.get('/feedback-stats', async (req, res) => {
         // Simple positive/negative classification based on keywords
         const positiveFeedback = await Feedback.count({
             where: {
-                text: {
-                    [Op.or]: [
-                        { [Op.like]: '%gut%' },
-                        { [Op.like]: '%super%' },
-                        { [Op.like]: '%toll%' },
-                        { [Op.like]: '%danke%' },
-                        { [Op.like]: '%hilfreich%' },
-                        { [Op.like]: '%perfekt%' },
-                        { [Op.like]: '%klasse%' }
-                    ]
-                }
+                OR: [
+                    { text: { contains: 'gut' } },
+                    { text: { contains: 'super' } },
+                    { text: { contains: 'toll' } },
+                    { text: { contains: 'danke' } },
+                    { text: { contains: 'hilfreich' } },
+                    { text: { contains: 'perfekt' } },
+                    { text: { contains: 'klasse' } }
+                ]
             }
         });
 
         const negativeFeedback = await Feedback.count({
             where: {
-                text: {
-                    [Op.or]: [
-                        { [Op.like]: '%schlecht%' },
-                        { [Op.like]: '%fehler%' },
-                        { [Op.like]: '%falsch%' },
-                        { [Op.like]: '%problem%' },
-                        { [Op.like]: '%schwierig%' },
-                        { [Op.like]: '%unverständlich%' }
-                    ]
-                }
+                OR: [
+                    { text: { contains: 'schlecht' } },
+                    { text: { contains: 'fehler' } },
+                    { text: { contains: 'falsch' } },
+                    { text: { contains: 'problem' } },
+                    { text: { contains: 'schwierig' } },
+                    { text: { contains: 'unverständlich' } }
+                ]
             }
         });
 
@@ -319,18 +295,15 @@ router.get('/feedback-stats', async (req, res) => {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const feedbackOverTime = await sequelize.query(`
-            SELECT 
+        const feedbackOverTime = await prisma.$queryRaw(`
+            SELECT
                 DATE(timestamp) as date,
                 COUNT(*) as count
-            FROM feedback 
+            FROM feedback
             WHERE timestamp >= ?
             GROUP BY DATE(timestamp)
             ORDER BY date ASC
-        `, {
-            replacements: [sevenDaysAgo.toISOString()],
-            type: sequelize.QueryTypes.SELECT
-        });
+        `, sevenDaysAgo.toISOString());
 
         res.json({
             positiveFeedback,
@@ -366,17 +339,17 @@ router.get('/content-stats', async (req, res) => {
 router.get('/top-questions', async (req, res) => {
     try {
         // Top 5 häufigste Fragen (egal ob beantwortet oder nicht)
-        const questions = await sequelize.query(`
-            SELECT 
+        const questions = await prisma.$queryRaw(`
+            SELECT
                 MIN(q.question) as question,
                 COUNT(*) as count,
                 GROUP_CONCAT(DISTINCT q.question) as similar_questions,
                 SUM(CASE WHEN q.answered = 1 THEN 1 ELSE 0 END) as answered_count,
                 SUM(CASE WHEN q.answered = 0 THEN 1 ELSE 0 END) as unanswered_count
             FROM questions q
-            WHERE q.spam = 0 
+            WHERE q.spam = 0
                 AND q.deleted = 0
-            GROUP BY 
+            GROUP BY
                 LOWER(
                     REPLACE(
                         REPLACE(
@@ -388,33 +361,33 @@ router.get('/top-questions', async (req, res) => {
                                                 REPLACE(
                                                     REPLACE(
                                                         REPLACE(
-                                                            REPLACE(TRIM(q.question), '?', ''),
-                                                            '.', ''
+                                                            REPLACE(
+                                                                REPLACE(TRIM(q.question), '?', ''),
+                                                                '.', ''
+                                                            ),
+                                                            '!', ''
                                                         ),
-                                                        '!', ''
+                                                        'where is', 'wo ist'
                                                     ),
-                                                    'where is', 'wo ist'
+                                                    'how is', 'wie ist'
                                                 ),
-                                                'how is', 'wie ist'
+                                                'what is', 'was ist'
                                             ),
-                                            'what is', 'was ist'
+                                            'when is', 'wann ist'
                                         ),
-                                        'when is', 'wann ist'
+                                        'canteen', 'mensa'
                                     ),
-                                    'canteen', 'mensa'
+                                    'cafeteria', 'mensa'
                                 ),
-                                'cafeteria', 'mensa'
+                                'library', 'bibliothek'
                             ),
-                            'library', 'bibliothek'
-                        ),
-                        '  ', ' '
+                            '  ', ' '
+                        )
                     )
                 )
             ORDER BY count DESC
             LIMIT 5
-        `, {
-            type: sequelize.QueryTypes.SELECT
-        });
+        `);
 
         const formattedQuestions = questions.map(q => ({
             question: q.question,
@@ -498,8 +471,8 @@ router.get('/category-stats', async (req, res) => {
         const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
         const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
         
-        const categories = await sequelize.query(`
-            SELECT 
+        const categories = await prisma.$queryRaw(`
+            SELECT
                 c.category,
                 COUNT(*) as count,
                 COUNT(CASE WHEN date(datetime(c.created_at, ?)) = date('now', ?) THEN 1 END) as today_count
@@ -508,10 +481,7 @@ router.get('/category-stats', async (req, res) => {
             GROUP BY c.category
             ORDER BY count DESC
             LIMIT ?
-        `, {
-            replacements: [timezoneOffset, timezoneOffset, limit],
-            type: sequelize.QueryTypes.SELECT
-        });
+        `, timezoneOffset, timezoneOffset, limit);
 
         // Get total conversations for percentage calculation
         const totalConversations = await Conversation.count();
@@ -583,14 +553,14 @@ router.get('/frequent-messages', async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         
         // Get most frequent user messages - simplified approach
-        const frequentMessages = await sequelize.query(`
-            SELECT 
+        const frequentMessages = await prisma.$queryRaw(`
+            SELECT
                 content,
                 COUNT(*) as count,
                 MIN(created_at) as first_seen,
                 MAX(created_at) as last_seen
-            FROM messages 
-            WHERE role = 'user' 
+            FROM messages
+            WHERE role = 'user'
             AND LENGTH(TRIM(content)) > 3
             AND content NOT LIKE '%<%'
             AND content NOT LIKE '%undefined%'
@@ -598,10 +568,7 @@ router.get('/frequent-messages', async (req, res) => {
             HAVING count > 1
             ORDER BY count DESC, last_seen DESC
             LIMIT ?
-        `, {
-            replacements: [limit],
-            type: sequelize.QueryTypes.SELECT
-        });
+        `, limit);
 
         // Simple post-processing for similar messages
         const processedMessages = [];
@@ -644,8 +611,8 @@ router.get('/frequent-questions', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
         
         try {
-            const dailyStats = await sequelize.query(`
-                SELECT 
+            const dailyStats = await prisma.$queryRaw(`
+                SELECT
                     normalized_question,
                     question_count,
                     topic,
@@ -655,10 +622,7 @@ router.get('/frequent-questions', async (req, res) => {
                 WHERE analysis_date = ?
                 ORDER BY question_count DESC
                 LIMIT ?
-            `, {
-                replacements: [today, limit],
-                type: sequelize.QueryTypes.SELECT
-            });
+            `, today, limit);
 
             if (dailyStats && dailyStats.length > 0) {
                 // Use pre-computed statistics (fast!)
@@ -778,8 +742,8 @@ router.get('/unanswered-questions', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
         
         try {
-            const dailyStats = await sequelize.query(`
-                SELECT 
+            const dailyStats = await prisma.$queryRaw(`
+                SELECT
                     normalized_question,
                     question_count,
                     topic,
@@ -789,10 +753,7 @@ router.get('/unanswered-questions', async (req, res) => {
                 WHERE analysis_date = ?
                 ORDER BY question_count DESC
                 LIMIT ?
-            `, {
-                replacements: [today, limit],
-                type: sequelize.QueryTypes.SELECT
-            });
+            `, today, limit);
 
             if (dailyStats && dailyStats.length > 0) {
                 // Use pre-computed statistics (fast!)
@@ -824,22 +785,22 @@ router.get('/unanswered-questions', async (req, res) => {
 
         // Fallback to real-time analysis
         // First get potentially unanswered messages using SQL
-        const potentialUnanswered = await sequelize.query(`
-            SELECT 
+        const potentialUnanswered = await prisma.$queryRaw(`
+            SELECT
                 m.content,
                 m.created_at,
                 c.category
             FROM messages m
             JOIN conversations c ON m.conversation_id = c.id
-            LEFT JOIN messages m_response ON m_response.conversation_id = c.id 
-                AND m_response.role = 'model' 
+            LEFT JOIN messages m_response ON m_response.conversation_id = c.id
+                AND m_response.role = 'model'
                 AND m_response.created_at > m.created_at
                 AND ABS(strftime('%s', m_response.created_at) - strftime('%s', m.created_at)) < 30
-            WHERE m.role = 'user' 
+            WHERE m.role = 'user'
             AND LENGTH(TRIM(m.content)) > 5
             AND m.content NOT LIKE '%<%'
             AND (
-                m_response.content IS NULL 
+                m_response.content IS NULL
                 OR m_response.content LIKE '%kann ich leider nicht%'
                 OR m_response.content LIKE '%keine Informationen%'
                 OR m_response.content LIKE '%tut mir leid%'
@@ -850,9 +811,7 @@ router.get('/unanswered-questions', async (req, res) => {
             AND m.created_at >= datetime('now', '-7 days')
             ORDER BY m.created_at DESC
             LIMIT 200
-        `, {
-            type: sequelize.QueryTypes.SELECT
-        });
+        `);
 
         if (potentialUnanswered.length === 0) {
             return res.json({
@@ -1021,7 +980,7 @@ router.post('/trigger-analysis', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
         
         // Create table if it doesn't exist
-        await sequelize.query(`
+        await prisma.$queryRaw(`
             CREATE TABLE IF NOT EXISTS daily_question_stats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 analysis_date TEXT NOT NULL,
@@ -1035,10 +994,7 @@ router.post('/trigger-analysis', async (req, res) => {
         `);
 
         // Clear today's statistics
-        await sequelize.query('DELETE FROM daily_question_stats WHERE analysis_date = ?', {
-            replacements: [today],
-            type: sequelize.QueryTypes.DELETE
-        });
+        await prisma.$queryRaw('DELETE FROM daily_question_stats WHERE analysis_date = ?', today);
 
         // Insert new statistics
         const statsData = groupingResult.results.map(group => ({
@@ -1062,12 +1018,9 @@ router.post('/trigger-analysis', async (req, res) => {
                 stat.original_questions
             ]);
 
-            await sequelize.query(
+            await prisma.$queryRaw(
                 `INSERT INTO daily_question_stats (analysis_date, normalized_question, question_count, topic, languages_detected, original_questions) VALUES ${placeholders}`,
-                {
-                    replacements: values,
-                    type: sequelize.QueryTypes.INSERT
-                }
+                ...values
             );
         }
 
@@ -1093,18 +1046,16 @@ router.post('/trigger-analysis', async (req, res) => {
 router.get('/analysis-status', async (req, res) => {
     try {
         // Check when last analysis was performed
-        const latestAnalysis = await sequelize.query(`
-            SELECT 
+        const latestAnalysis = await prisma.$queryRaw(`
+            SELECT
                 analysis_date,
                 COUNT(*) as question_groups,
                 MAX(created_at) as last_updated
-            FROM daily_question_stats 
-            GROUP BY analysis_date 
-            ORDER BY analysis_date DESC 
+            FROM daily_question_stats
+            GROUP BY analysis_date
+            ORDER BY analysis_date DESC
             LIMIT 1
-        `, {
-            type: sequelize.QueryTypes.SELECT
-        });
+        `);
 
         const analysisAvailable = groupSimilarQuestions && extractQuestions;
 
