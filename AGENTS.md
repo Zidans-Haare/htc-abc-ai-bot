@@ -8,6 +8,8 @@
 - Always update project-specific information inside this file (AGENTS.md) to document quirks, configurations, and details of this project for future reference.
 - Use Context7 for library docs during research, planning, troubleshooting, or library-related tasks (e.g., resolve IDs with context7_resolve_library_id, fetch docs with context7_get_library_docs).
 - Library/framework problems: Use Context7 to resolve library IDs and fetch docs (e.g., for Tailwind v4 migration).
+- You must not use any git actions that change the history.
+- If creating commits or branches, you must ask the user first (best with a: do you want this committed as: ...).
 
 # Project Information
 
