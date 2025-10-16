@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const userView = document.getElementById('user-view');
   const feedbackView = document.getElementById('feedback-view');
   const imagesView = document.getElementById('images-view');
-  const pdfView = document.getElementById('pdf-view');
+  const documentsView = document.getElementById('documents-view');
   const conversationsView = document.getElementById('conversations-view');
   const statsView = document.getElementById('stats-view');
 
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
-    pdfView.classList.add('hidden');
+    documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     statsView.classList.add('hidden');
     updateButtonStyles(editorBtn);
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
-    pdfView.classList.add('hidden');
+    documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     statsView.classList.add('hidden');
     updateButtonStyles(questionsBtn);
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
-    pdfView.classList.add('hidden');
+    documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(archiveBtn);
     loadArchive();
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
-    pdfView.classList.add('hidden');
+    documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(userBtn);
     loadUsers();
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     archiveView.classList.add('hidden');
     userView.classList.add('hidden');
     imagesView.classList.add('hidden');
-    pdfView.classList.add('hidden');
+    documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(feedbackBtn);
   }
@@ -190,12 +190,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
-    pdfView.classList.add('hidden');
+    documentsView.classList.add('hidden');
     updateButtonStyles(imagesBtn);
   }
 
-  function showPDFs() {
-    pdfView.classList.remove('hidden');
+  function showDocuments() {
+    documentsView.classList.remove('hidden');
     editorView.classList.add('hidden');
     questionsView.classList.add('hidden');
     archiveView.classList.add('hidden');
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
-    pdfView.classList.add('hidden');
+    documentsView.classList.add('hidden');
     updateButtonStyles(conversationsBtn);
   }
 
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userView.classList.add('hidden');
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
-    pdfView.classList.add('hidden');
+    documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     updateButtonStyles(statsBtn);
   }
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    if(mobileUserBtn) mobileUserBtn.classList.add('hidden');
    if(mobileFeedbackBtn) mobileFeedbackBtn.classList.add('hidden');
     if(mobileImagesBtn) mobileImagesBtn.classList.add('hidden');
-    if(mobilePdfBtn) mobilePdfBtn.classList.add('hidden');
+    if(mobileDocumentsBtn) mobileDocumentsBtn.classList.add('hidden');
    if(mobileConversationsBtn) mobileConversationsBtn.classList.add('hidden');
    if(mobileStatsBtn) mobileStatsBtn.classList.add('hidden');
 
@@ -301,7 +301,7 @@ document.addEventListener('DOMContentLoaded', async () => {
        if(mobileUserBtn) mobileUserBtn.classList.remove('hidden');
        if(mobileFeedbackBtn) mobileFeedbackBtn.classList.remove('hidden');
         if(mobileImagesBtn) mobileImagesBtn.classList.remove('hidden');
-        if(mobilePdfBtn) mobilePdfBtn.classList.remove('hidden');
+        if(mobileDocumentsBtn) mobileDocumentsBtn.classList.remove('hidden');
         if(mobileConversationsBtn) mobileConversationsBtn.classList.remove('hidden');
 
        editorBtn.addEventListener('click', showEditor);
@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       userView.classList.add('hidden');
       feedbackView.classList.add('hidden');
        imagesView.classList.add('hidden');
-       pdfView.classList.add('hidden');
+       documentsView.classList.add('hidden');
        if(conversationsView) conversationsView.classList.add('hidden');
       break;
   }
