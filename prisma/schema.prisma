@@ -107,6 +107,7 @@ model hochschuhl_abc {
   updated_at    DateTime                   @updatedAt
   article_views article_views[]
   questions     questions[]
+  documents     documents[]
   @@map("hochschul_abc")
 }
 
@@ -245,4 +246,16 @@ model users {
   feedback      feedback[]
   article_views article_views[]
   auth_sessions auth_sessions[]
+}
+
+model documents {
+  id          Int                        @id @default(autoincrement())
+  article_id  Int?
+  file_path   String
+  file_type   String
+  uploaded_at DateTime                   @default(now())
+  created_at  DateTime                   @default(now())
+  updated_at  DateTime                   @updatedAt
+  hochschuhl_abc hochschuhl_abc?         @relation(fields: [article_id], references: [id])
+  @@map("documents")
 }
