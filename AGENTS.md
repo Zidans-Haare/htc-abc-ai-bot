@@ -27,4 +27,5 @@
 
 
 - General: Check AGENTS.md for project quirks; run npm run build:* to verify.
+- Server Testing: Use `timeout 10s node server.cjs` instead of `node server.cjs` for testing to prevent hanging and allow prompt return.
 

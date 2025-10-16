@@ -99,13 +99,14 @@ const pid = process.pid;
 // CLI options
 program
   .option('--init-vectordb', 'Initialize/populate vector DB from current articles')
+  .option('--sync-vectordb', 'Sync vector DB with recent changes')
   .option('--drop-vectordb', 'Drop/clear vector DB collections')
   .parse();
 
 const options = program.opts();
 
 // Handle CLI options
-let cliMode = options.initVectordb || options.dropVectordb;
+let cliMode = options.initVectordb || options.dropVectordb || options.syncVectordb;
 if (options.initVectordb) {
   (async () => {
     try {
@@ -119,6 +120,23 @@ if (options.initVectordb) {
       process.exit(0);
     } catch (err) {
       console.error('Vector DB initialization failed:', err);
+      process.exit(1);
+    }
+  })();
+}
+if (options.syncVectordb) {
+  (async () => {
+    try {
+      // Ensure DB connection
+      await prisma.$connect();
+      console.log('DB connected for CLI');
+      console.log('Syncing vector DB...');
+      const vectorStore = require('./lib/vectorStore');
+      const stats = await vectorStore.syncVectorDB();
+      console.log(`Vector DB synced successfully: ${stats.chunks} chunks from ${stats.headlines} articles, ${stats.pdfs} PDFs, ${stats.images} images, ${stats.docx} DOCX, ${stats.md} MD, ${stats.odt} ODT, ${stats.ods} ODS, ${stats.odp} ODP, ${stats.xlsx} XLSX synced`);
+      process.exit(0);
+    } catch (err) {
+      console.error('Vector DB sync failed:', err);
       process.exit(1);
     }
   })();

@@ -83,45 +83,21 @@ model feedback {
   @@map("feedback")
 }
 
-model articles {
-  id           Int      @id @default(autoincrement())
-  title        String
-  content      String?
-  slug         String   @unique
-  published_at DateTime?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-  @@map("articles")
-}
-
 model hochschuhl_abc {
   id            Int                        @id @default(autoincrement())
   article       String
   description   String?
   editor        String?
   last_updated  DateTime?
-  active        Boolean?                   @default(true)
-  archived      DateTime?
-  pdf_path      String?
-  created_at    DateTime                   @default(now())
+   active        Boolean?                   @default(true)
+   archived      DateTime?
+   created_at    DateTime                   @default(now())
   updated_at    DateTime                   @updatedAt
   article_views article_views[]
   questions     questions[]
   documents     documents[]
   @@map("hochschul_abc")
 }
-
-model hochschuhl_abc_backup {
-  id          Int                        @id @default(autoincrement())
-  headline    String
-  text        String
-  lastUpdated DateTime?
-  active      Unsupported("tinyint(1)")? @default(dbgenerated("1"))
-  archived    DateTime?
-  editor      String?
-  views       Int                        @default(0)
-}
-
 model images {
   id          Int      @id @default(autoincrement())
   filename    String   @unique
