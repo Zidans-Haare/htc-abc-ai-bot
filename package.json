@@ -5,12 +5,12 @@
   "main": "server.cjs",
   "type": "commonjs",
   "scripts": {
-    "start": "node server.cjs",
+    "start": "npm run build:css && node server.cjs",
     "test": "jest",
-    "build:main-css": "npx postcss -c tailwind.postcss.config.main.js src/main.css -o public/css/tailwind.css",
-    "watch:main-css": "npx postcss src/main.css -o public/css/tailwind.css --watch",
-    "build:backend-css": "npx postcss -c tailwind.postcss.config.backend.js src/backend.css -o public/css/backend-tailwind.css",
-    "watch:backend-css": "npx postcss src/backend.css -o public/css/backend-tailwind.css --watch",
+    "build:css-main": "npx tailwindcss -i public/main/input.css -o public/dist/main.css --minify",
+    "build:css-backend": "npx tailwindcss -i public/backend/input.css -o public/dist/backend.css --minify",
+    "build:css": "npm run build:css-main && npm run build:css-backend",
+    "watch:css": "npx tailwindcss -i public/main/input.css -o public/dist/main.css --watch & npx tailwindcss -i public/backend/input.css -o public/dist/backend.css --watch",
     "postinstall": "npx prisma generate"
   },
   "overrides": {

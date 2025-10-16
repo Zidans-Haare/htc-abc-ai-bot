@@ -1,0 +1,10 @@
+@import "tailwindcss" source(none);
+
+@source "../index.html";
+@source "../js/**/*.js";
+@source "../view/**/*.html";
+@source "../view/**/*.js";
+@source "../insufficient-permissions.html";
+@source "../bot.js";
+@source "../mobile.css";
+@source "../styles.css";

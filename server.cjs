@@ -239,6 +239,9 @@ app.use((req, res, next) => {
   express.static(path.join(__dirname, 'public'))(req, res, next);
 });
 
+// Serve /dist separately
+app.use('/dist', express.static(path.join(__dirname, 'public', 'dist')));
+
 // --- Protection Middleware ---
 const requireAuth = (loginPath) => async (req, res, next) => {
   try {
