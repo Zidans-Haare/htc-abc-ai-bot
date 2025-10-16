@@ -180,7 +180,7 @@ node test_dashboard.js
 ### Debug Commands
 ```bash
 # Database schema prüfen
-node -e "const {sequelize} = require('./controllers/db.cjs'); sequelize.getQueryInterface().showAllTables().then(console.log)"
+node -e "const {prisma} = require('./controllers/db.cjs'); prisma.$queryRaw('SELECT name FROM sqlite_master WHERE type=\"table\"').then(console.log)"
 
 # Analytics testen  
 node test_dashboard.js

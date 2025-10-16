@@ -1,4 +1,4 @@
-const { QuestionAnalysisCache, sequelize } = require('../controllers/db.cjs');
+const { QuestionAnalysisCache, prisma } = require('../controllers/db.cjs');
 const { getOpenAIClient, DEFAULT_MODEL } = require('./openaiClient');
 const crypto = require('crypto');
 
@@ -20,17 +20,15 @@ const CACHE_VALIDITY_HOURS = 6;
  */
 async function getExistingCategories() {
     try {
-        const categories = await sequelize.query(`
-            SELECT DISTINCT category 
-            FROM conversations 
-            WHERE category IS NOT NULL 
-              AND category != 'Unkategorisiert' 
+        const categories = await prisma.$queryRaw`
+            SELECT DISTINCT category
+            FROM conversations
+            WHERE category IS NOT NULL
+              AND category != 'Unkategorisiert'
               AND category != ''
             ORDER BY category
-        `, {
-            type: sequelize.QueryTypes.SELECT
-        });
-        
+        `;
+
         return categories.map(cat => cat.category);
     } catch (error) {
         console.error('[QuestionGrouper] Error fetching existing categories:', error);
@@ -228,7 +226,7 @@ async function getPartialResults(cacheKey) {
 
 async function markAsProcessing(cacheKey, processing) {
     try {
-        await QuestionAnalysisCache.update({
+        await QuestionAnalysisCache.updateMany({
             where: { cache_key: cacheKey },
             data: { is_processing: processing }
         });
