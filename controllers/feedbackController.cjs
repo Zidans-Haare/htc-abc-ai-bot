@@ -3,7 +3,7 @@ const router = express.Router();
 const { Feedback } = require('./db.cjs');
 
 router.post('/', async (req, res) => {
-    const { text, conversation_id, captcha, expected_captcha, attached_chat_history } = req.body;
+    const { text, email, conversation_id, captcha, expected_captcha, attached_chat_history } = req.body;
 
     if (!text || typeof text !== 'string' || text.trim() === '') {
         return res.status(400).json({ message: 'Feedback text is required.' });
@@ -19,6 +19,7 @@ router.post('/', async (req, res) => {
         await Feedback.create({
             data: {
                 text: text,
+                email: email,
                 conversation_id: conversation_id,
                 attached_chat_history: attached_chat_history
             }

@@ -44,9 +44,9 @@ export function setupFeedback(userRole) {
 
         const html = feedbackData.map(item => `
             <div class="p-4 bg-white rounded shadow-md mb-4 cursor-pointer hover:shadow-lg transition-shadow" data-id="${item.id}">
-                <p class="text-gray-800 truncate">${item.feedback_text}</p>
+                <p class="text-gray-800 truncate">${item.text}</p>
                 <div class="text-sm text-gray-500 mt-2">
-                    <span>${new Date(item.timestamp).toLocaleString()}</span>
+                    <span>${new Date(item.submitted_at).toLocaleString()}</span>
                     ${item.email ? `| <span>${item.email}</span>` : ''}
                 </div>
             </div>
@@ -94,15 +94,15 @@ export function setupFeedback(userRole) {
                     <i class="fas fa-trash mr-2"></i>Diesen Fall löschen
                 </button>
             </div>
-            <div class="p-4 bg-white rounded shadow-md">
-                <div class="text-sm text-gray-600 mb-4">
-                    <p><strong>Zeitstempel:</strong> ${new Date(item.timestamp).toLocaleString()}</p>
-                    ${item.email ? `<p><strong>Email:</strong> ${item.email}</p>` : ''}
-                    ${item.conversation_id ? `<p><strong>Conversation ID:</strong> ${item.conversation_id}</p>` : ''}
-                </div>
-                <hr class="my-4">
-                <h3 class="text-lg font-semibold mb-2">Feedback</h3>
-                <p class="text-gray-800 mb-4">${item.feedback_text}</p>
+             <div class="p-4 bg-white rounded shadow-md">
+                 <div class="text-sm text-gray-600 mb-4">
+                     <p><strong>Zeitstempel:</strong> ${new Date(item.submitted_at).toLocaleString()}</p>
+                     ${item.email ? `<p><strong>Email:</strong> ${item.email}</p>` : ''}
+                     ${item.conversation_id ? `<p><strong>Conversation ID:</strong> ${item.conversation_id}</p>` : ''}
+                 </div>
+                 <hr class="my-4">
+                 <h3 class="text-lg font-semibold mb-2">Feedback</h3>
+                 <p class="text-gray-800 mb-4">${item.text}</p>
                 
                 ${item.attached_chat_history ? `
                     <h3 class="text-lg font-semibold mb-2">Angehängter Chat-Verlauf</h3>
@@ -111,19 +111,14 @@ export function setupFeedback(userRole) {
             </div>
         `;
 
-        // --- New logic to parse and display chat history with images ---
-        if (item.attached_chat_history) {
-            const chatContainer = document.getElementById('chat-history-content');
-            if (chatContainer) {
-                // Sanitize and parse the markdown content
-                chatContainer.innerHTML = DOMPurify.sanitize(marked.parse(item.attached_chat_history));
-                
-                // Style images within the chat history
-                chatContainer.querySelectorAll('img').forEach(img => {
-                    img.classList.add('max-w-full', 'h-auto', 'rounded-lg', 'mt-2');
-                });
-            }
-        }
+        // --- New logic to display chat history as plain text ---
+         if (item.attached_chat_history) {
+             const chatContainer = document.getElementById('chat-history-content');
+             if (chatContainer) {
+                 // Display as plain text, no markdown parsing
+                 chatContainer.textContent = item.attached_chat_history;
+             }
+         }
         // --- End of new logic ---
 
         document.getElementById('back-to-list').addEventListener('click', showListView);

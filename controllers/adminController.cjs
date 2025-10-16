@@ -32,9 +32,7 @@ module.exports = (getSession, logAction) => {
   adminRouter.use(require('./admin/ai.cjs')(authMiddleware));
   adminRouter.use('/conversations', authMiddleware, require('./admin/conversations.cjs'));
 
-  router.use('/admin', adminRouter);
-
-  router.use('/admin', adminRouter);
+   router.use('/admin', adminRouter);
 
   return router;
 };

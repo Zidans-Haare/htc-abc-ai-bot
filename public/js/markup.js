@@ -9,8 +9,14 @@ export function renderMarkup(text) {
     const options = {
         breaks: true
     };
-    // Use the global 'marked' object to parse the markdown
-    const dirty = window.marked.parse(text, options);
-    // Use the global 'DOMPurify' object to sanitize the HTML
-    return window.DOMPurify.sanitize(dirty);
+    try {
+        // Use the global 'marked' object to parse the markdown
+        const dirty = window.marked.parse(text, options);
+        // Use the global 'DOMPurify' object to sanitize the HTML
+        return window.DOMPurify.sanitize(dirty);
+    } catch (error) {
+        console.warn('Failed to parse markdown, falling back to plain text:', error);
+        // Fall back to plain text if markdown parsing fails
+        return window.DOMPurify.sanitize(text.replace(/\n/g, '<br>'));
+    }
 }

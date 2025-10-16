@@ -75,6 +75,7 @@ model feedback {
   id                    Int       @id @default(autoincrement())
   user_id               String?
   text                  String
+  email                 String?
   rating                Int?
   conversation_id       String?
   attached_chat_history String?

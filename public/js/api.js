@@ -212,7 +212,7 @@ export async function sendFeedback(app) {
 
     try {
         const payload = {
-            feedback_text: feedbackText,
+            text: feedbackText,
             email: email,
             conversation_id: app.conversationId,
             captcha: captcha,
