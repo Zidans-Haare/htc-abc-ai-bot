@@ -76,6 +76,8 @@ model feedback {
   user_id               String?
   text                  String
   rating                Int?
+  conversation_id       String?
+  attached_chat_history String?
   submitted_at          DateTime @default(now())
   created_at            DateTime @default(now())
   updated_at            DateTime @updatedAt

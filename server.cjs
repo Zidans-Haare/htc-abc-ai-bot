@@ -100,13 +100,15 @@ const pid = process.pid;
 program
   .option('--init-vectordb', 'Initialize/populate vector DB from current articles')
   .option('--sync-vectordb', 'Sync vector DB with recent changes')
-  .option('--drop-vectordb', 'Drop/clear vector DB collections')
-  .parse();
+  .option('--drop-vectordb', 'Drop/clear vector DB collections');
 
-const options = program.opts();
-
-// Handle CLI options
-let cliMode = options.initVectordb || options.dropVectordb || options.syncVectordb;
+let options = {};
+let cliMode = false;
+if (process.argv.some(arg => arg.startsWith('--init') || arg.startsWith('--sync') || arg.startsWith('--drop'))) {
+  program.parse();
+  options = program.opts();
+  cliMode = options.initVectordb || options.dropVectordb || options.syncVectordb;
+}
 if (options.initVectordb) {
   (async () => {
     try {
