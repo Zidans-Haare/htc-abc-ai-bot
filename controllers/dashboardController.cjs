@@ -295,15 +295,15 @@ router.get('/feedback-stats', async (req, res) => {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const feedbackOverTime = await prisma.$queryRaw(`
+        const feedbackOverTime = await prisma.$queryRaw`
             SELECT
                 DATE(timestamp) as date,
                 COUNT(*) as count
             FROM feedback
-            WHERE timestamp >= ?
+            WHERE timestamp >= ${sevenDaysAgo}
             GROUP BY DATE(timestamp)
             ORDER BY date ASC
-        `, sevenDaysAgo.toISOString());
+        `;
 
         res.json({
             positiveFeedback,
@@ -471,17 +471,17 @@ router.get('/category-stats', async (req, res) => {
         const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
         const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
         
-        const categories = await prisma.$queryRaw(`
+        const categories = await prisma.$queryRaw`
             SELECT
                 c.category,
                 COUNT(*) as count,
-                COUNT(CASE WHEN date(datetime(c.created_at, ?)) = date('now', ?) THEN 1 END) as today_count
+                COUNT(CASE WHEN date(datetime(c.created_at, ${timezoneOffset})) = date('now', ${timezoneOffset}) THEN 1 END) as today_count
             FROM conversations c
             WHERE c.category != 'Unkategorisiert' OR c.category IS NOT NULL
             GROUP BY c.category
             ORDER BY count DESC
-            LIMIT ?
-        `, timezoneOffset, timezoneOffset, limit);
+            LIMIT ${limit}
+        `;
 
         // Get total conversations for percentage calculation
         const totalConversations = await Conversation.count();
@@ -520,10 +520,10 @@ router.get('/language-stats', async (req, res) => {
 
         recentMessages.forEach(message => {
             const language = detectLanguage(message.content);
-            const messageDate = message.created_at.split('T')[0];
-            
+            const messageDate = message.created_at.toISOString().split('T')[0];
+
             languageCount[language] = (languageCount[language] || 0) + 1;
-            
+
             if (messageDate === today) {
                 languageToday[language] = (languageToday[language] || 0) + 1;
             }
@@ -553,7 +553,7 @@ router.get('/frequent-messages', async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         
         // Get most frequent user messages - simplified approach
-        const frequentMessages = await prisma.$queryRaw(`
+        const frequentMessages = await prisma.$queryRaw`
             SELECT
                 content,
                 COUNT(*) as count,
@@ -567,8 +567,8 @@ router.get('/frequent-messages', async (req, res) => {
             GROUP BY LOWER(TRIM(content))
             HAVING count > 1
             ORDER BY count DESC, last_seen DESC
-            LIMIT ?
-        `, limit);
+            LIMIT ${limit}
+        `;
 
         // Simple post-processing for similar messages
         const processedMessages = [];
@@ -611,7 +611,7 @@ router.get('/frequent-questions', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
         
         try {
-            const dailyStats = await prisma.$queryRaw(`
+            const dailyStats = await prisma.$queryRaw`
                 SELECT
                     normalized_question,
                     question_count,
@@ -619,10 +619,10 @@ router.get('/frequent-questions', async (req, res) => {
                     languages_detected,
                     original_questions
                 FROM daily_question_stats
-                WHERE analysis_date = ?
+                WHERE analysis_date = ${today}
                 ORDER BY question_count DESC
-                LIMIT ?
-            `, today, limit);
+                LIMIT ${limit}
+            `;
 
             if (dailyStats && dailyStats.length > 0) {
                 // Use pre-computed statistics (fast!)
@@ -742,7 +742,7 @@ router.get('/unanswered-questions', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
         
         try {
-            const dailyStats = await prisma.$queryRaw(`
+            const dailyStats = await prisma.$queryRaw`
                 SELECT
                     normalized_question,
                     question_count,
@@ -750,10 +750,10 @@ router.get('/unanswered-questions', async (req, res) => {
                     languages_detected,
                     original_questions
                 FROM daily_unanswered_stats
-                WHERE analysis_date = ?
+                WHERE analysis_date = ${today}
                 ORDER BY question_count DESC
-                LIMIT ?
-            `, today, limit);
+                LIMIT ${limit}
+            `;
 
             if (dailyStats && dailyStats.length > 0) {
                 // Use pre-computed statistics (fast!)
@@ -994,7 +994,7 @@ router.post('/trigger-analysis', async (req, res) => {
         `);
 
         // Clear today's statistics
-        await prisma.$queryRaw('DELETE FROM daily_question_stats WHERE analysis_date = ?', today);
+        await prisma.$queryRaw`DELETE FROM daily_question_stats WHERE analysis_date = ${today}`;
 
         // Insert new statistics
         const statsData = groupingResult.results.map(group => ({
@@ -1007,21 +1007,13 @@ router.post('/trigger-analysis', async (req, res) => {
         }));
 
         if (statsData.length > 0) {
-            // Bulk insert
-            const placeholders = statsData.map(() => '(?, ?, ?, ?, ?, ?)').join(',');
-            const values = statsData.flatMap(stat => [
-                stat.analysis_date,
-                stat.normalized_question,
-                stat.question_count,
-                stat.topic,
-                stat.languages_detected,
-                stat.original_questions
-            ]);
-
-            await prisma.$queryRaw(
-                `INSERT INTO daily_question_stats (analysis_date, normalized_question, question_count, topic, languages_detected, original_questions) VALUES ${placeholders}`,
-                ...values
-            );
+            // Individual inserts for each stat
+            for (const stat of statsData) {
+                await prisma.$queryRaw`
+                    INSERT INTO daily_question_stats (analysis_date, normalized_question, question_count, topic, languages_detected, original_questions)
+                    VALUES (${stat.analysis_date}, ${stat.normalized_question}, ${stat.question_count}, ${stat.topic}, ${stat.languages_detected}, ${stat.original_questions})
+                `;
+            }
         }
 
         console.log(`[Manual Analysis] Completed: ${statsData.length} question groups stored`);
