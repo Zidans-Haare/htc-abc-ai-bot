@@ -1,8 +1,8 @@
 const request = require('supertest');
-const app = require('../server.cjs');
-const auth = require('../controllers/authController.cjs');
+const app = require('../server/server.cjs');
+const auth = require('../server/controllers/authController.cjs');
 const sinon = require('sinon');
-const { User } = require('../controllers/db.cjs');
+const { User } = require('../server/controllers/db.cjs');
 
 describe('API Endpoints', () => {
   let agent;

@@ -1,5 +1,5 @@
-const { Chroma } = require("@langchain/community/vectorstores/chroma");
-const { Weaviate } = require("@langchain/community/vectorstores/weaviate");
+// Vector store classes loaded dynamically
+let Chroma, Weaviate;
 
 // Factory to create embeddings based on library
 const createEmbeddings = (modelName) => {
@@ -182,6 +182,17 @@ class VectorStoreManager {
 
     try {
       if (type === 'chroma') {
+        if (!Chroma) {
+          try {
+            const chromaModule = require("@langchain/community/vectorstores/chroma");
+            Chroma = chromaModule.Chroma;
+          } catch (error) {
+            console.log('Installing chromadb...');
+            execSync('npm install chromadb', { stdio: 'inherit' });
+            const chromaModule = require("@langchain/community/vectorstores/chroma");
+            Chroma = chromaModule.Chroma;
+          }
+        }
         const url = new URL(process.env.CHROMA_URL);
         this.store = new Chroma(this.embeddings, {
           collectionName: process.env.CHROMA_COLLECTION,
@@ -190,11 +201,30 @@ class VectorStoreManager {
           ssl: url.protocol === 'https:'
         });
       } else if (type === 'weaviate') {
-        const weaviate = require('weaviate-client');
-        const client = weaviate.client({
-          scheme: 'http',
-          host: process.env.WEAVIATE_URL.replace('http://', '').replace('https://', ''),
-          apiKey: process.env.WEAVIATE_API_KEY ? new weaviate.ApiKey(process.env.WEAVIATE_API_KEY) : undefined
+        if (!Weaviate) {
+          try {
+            const weaviateModule = require("@langchain/community/vectorstores/weaviate");
+            Weaviate = weaviateModule.Weaviate;
+          } catch (error) {
+            console.log('Installing weaviate-client...');
+            execSync('npm install weaviate-client', { stdio: 'inherit' });
+            const weaviateModule = require("@langchain/community/vectorstores/weaviate");
+            Weaviate = weaviateModule.Weaviate;
+          }
+        }
+        let weaviate;
+        try {
+          weaviate = require('weaviate-client');
+        } catch (error) {
+          console.log('Installing weaviate-client...');
+          execSync('npm install weaviate-client', { stdio: 'inherit' });
+          weaviate = require('weaviate-client');
+        }
+        const url = new URL(process.env.WEAVIATE_URL);
+        const client = await weaviate.connectToLocal({
+          host: url.hostname,
+          port: url.port,
+          authCredentials: process.env.WEAVIATE_API_KEY ? new weaviate.ApiKey(process.env.WEAVIATE_API_KEY) : undefined
         });
         this.store = new Weaviate(client, {
           indexName: process.env.WEAVIATE_COLLECTION || 'htw-kb',

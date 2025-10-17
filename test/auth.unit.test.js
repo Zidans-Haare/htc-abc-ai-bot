@@ -1,8 +1,8 @@
 const { describe, it, expect, beforeEach, afterEach, beforeAll } = require('@jest/globals');
-const auth = require('../controllers/authController.cjs');
+const auth = require('../server/controllers/authController.cjs');
 const bcrypt = require('bcryptjs');
 const sinon = require('sinon');
-const { User } = require('../controllers/db.cjs');
+const { User } = require('../server/controllers/db.cjs');
 
 describe('Auth Utils', () => {
   let clock;

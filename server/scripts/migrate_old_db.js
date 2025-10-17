@@ -1,16 +1,21 @@
-const Database = require('better-sqlite3');
+const sqlite3 = require('sqlite3').verbose();
 const { PrismaClient } = require('../lib/generated/prisma');
 const { v4: uuidv4 } = require('uuid'); // for cuid, but cuid is better, but uuid is fine
 
 const prisma = new PrismaClient();
-const oldDb = new Database('./abc_old.db');
+const oldDb = new sqlite3.Database('./abc_old.db');
 
 async function migrate() {
   console.log('Starting migration from old DB...');
 
-  // Migrate users
-  console.log('Migrating users...');
-  const oldUsers = oldDb.prepare('SELECT * FROM users').all();
+   // Migrate users
+   console.log('Migrating users...');
+   const oldUsers = await new Promise((resolve, reject) => {
+     oldDb.all('SELECT * FROM users', [], (err, rows) => {
+       if (err) reject(err);
+       else resolve(rows);
+     });
+   });
   const userMap = {};
   for (const user of oldUsers) {
     const newUser = await prisma.users.create({
@@ -26,10 +31,15 @@ async function migrate() {
   }
   console.log(`Migrated ${oldUsers.length} users`);
 
-  // Migrate auth_sessions (if exists)
-  try {
-    console.log('Migrating auth_sessions...');
-    const oldAuthSessions = oldDb.prepare('SELECT * FROM auth_sessions').all();
+   // Migrate auth_sessions (if exists)
+   try {
+     console.log('Migrating auth_sessions...');
+     const oldAuthSessions = await new Promise((resolve, reject) => {
+       oldDb.all('SELECT * FROM auth_sessions', [], (err, rows) => {
+         if (err) reject(err);
+         else resolve(rows);
+       });
+     });
     for (const session of oldAuthSessions) {
       const userId = userMap[session.username];
       if (userId) {
@@ -49,9 +59,14 @@ async function migrate() {
     console.log('auth_sessions table not found, skipping...');
   }
 
-  // Migrate feedback
-  console.log('Migrating feedback...');
-  const oldFeedback = oldDb.prepare('SELECT * FROM feedback').all();
+   // Migrate feedback
+   console.log('Migrating feedback...');
+   const oldFeedback = await new Promise((resolve, reject) => {
+     oldDb.all('SELECT * FROM feedback', [], (err, rows) => {
+       if (err) reject(err);
+       else resolve(rows);
+     });
+   });
   for (const fb of oldFeedback) {
     await prisma.feedback.create({
       data: {
@@ -64,9 +79,14 @@ async function migrate() {
   }
   console.log(`Migrated ${oldFeedback.length} feedback`);
 
-  // Migrate hochschuhl_abc
-  console.log('Migrating hochschuhl_abc...');
-  const oldArticles = oldDb.prepare('SELECT * FROM hochschuhl_abc').all();
+   // Migrate hochschuhl_abc
+   console.log('Migrating hochschuhl_abc...');
+   const oldArticles = await new Promise((resolve, reject) => {
+     oldDb.all('SELECT * FROM hochschuhl_abc', [], (err, rows) => {
+       if (err) reject(err);
+       else resolve(rows);
+     });
+   });
   const articleMap = {};
   for (const art of oldArticles) {
     const newArt = await prisma.hochschuhl_abc.create({
@@ -86,9 +106,14 @@ async function migrate() {
   }
   console.log(`Migrated ${oldArticles.length} hochschuhl_abc`);
 
-  // Migrate conversations
-  console.log('Migrating conversations...');
-  const oldConversations = oldDb.prepare('SELECT * FROM conversations').all();
+   // Migrate conversations
+   console.log('Migrating conversations...');
+   const oldConversations = await new Promise((resolve, reject) => {
+     oldDb.all('SELECT * FROM conversations', [], (err, rows) => {
+       if (err) reject(err);
+       else resolve(rows);
+     });
+   });
   for (const conv of oldConversations) {
     await prisma.conversations.create({
       data: {
@@ -103,9 +128,14 @@ async function migrate() {
   }
   console.log(`Migrated ${oldConversations.length} conversations`);
 
-  // Migrate messages
-  console.log('Migrating messages...');
-  const oldMessages = oldDb.prepare('SELECT * FROM messages').all();
+   // Migrate messages
+   console.log('Migrating messages...');
+   const oldMessages = await new Promise((resolve, reject) => {
+     oldDb.all('SELECT * FROM messages', [], (err, rows) => {
+       if (err) reject(err);
+       else resolve(rows);
+     });
+   });
   for (const msg of oldMessages) {
     await prisma.messages.create({
       data: {
@@ -119,9 +149,14 @@ async function migrate() {
   }
   console.log(`Migrated ${oldMessages.length} messages`);
 
-  // Migrate questions
-  console.log('Migrating questions...');
-  const oldQuestions = oldDb.prepare('SELECT * FROM questions').all();
+   // Migrate questions
+   console.log('Migrating questions...');
+   const oldQuestions = await new Promise((resolve, reject) => {
+     oldDb.all('SELECT * FROM questions', [], (err, rows) => {
+       if (err) reject(err);
+       else resolve(rows);
+     });
+   });
   for (const q of oldQuestions) {
     await prisma.questions.create({
       data: {
@@ -147,8 +182,13 @@ async function migrate() {
   // Migrate other tables similarly...
   // For brevity, I'll add the rest, but you can expand.
 
-  // images
-  const oldImages = oldDb.prepare('SELECT * FROM images').all();
+   // images
+   const oldImages = await new Promise((resolve, reject) => {
+     oldDb.all('SELECT * FROM images', [], (err, rows) => {
+       if (err) reject(err);
+       else resolve(rows);
+     });
+   });
   for (const img of oldImages) {
     await prisma.images.create({
       data: {
@@ -160,9 +200,14 @@ async function migrate() {
     });
   }
 
-  // pdfs (skip if not exists)
-  try {
-    const oldPdfs = oldDb.prepare('SELECT * FROM pdfs').all();
+   // pdfs (skip if not exists)
+   try {
+     const oldPdfs = await new Promise((resolve, reject) => {
+       oldDb.all('SELECT * FROM pdfs', [], (err, rows) => {
+         if (err) reject(err);
+         else resolve(rows);
+       });
+     });
     for (const pdf of oldPdfs) {
       await prisma.pdfs.create({
         data: {
@@ -178,8 +223,13 @@ async function migrate() {
     console.log('pdfs table not found, skipping...');
   }
 
-  // article_views
-  const oldViews = oldDb.prepare('SELECT * FROM article_views').all();
+   // article_views
+   const oldViews = await new Promise((resolve, reject) => {
+     oldDb.all('SELECT * FROM article_views', [], (err, rows) => {
+       if (err) reject(err);
+       else resolve(rows);
+     });
+   });
   for (const view of oldViews) {
     await prisma.article_views.create({
       data: {

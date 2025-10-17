@@ -1,28 +1,30 @@
-const { sequelize, UserSessions, ChatInteractions, ArticleViews, HochschuhlABC, Questions, Feedback } = require('./controllers/db.cjs');
+const { PrismaClient } = require('./server/lib/generated/prisma');
+
+const prisma = new PrismaClient();
 
 async function testDashboard() {
     try {
         console.log('Testing Dashboard API endpoints...\n');
 
         // Test database connection
-        await sequelize.authenticate();
+        await prisma.$connect();
         console.log('✓ Database connection established');
 
         // Test basic queries
-        const totalSessions = await UserSessions.count();
+        const totalSessions = await prisma.user_sessions.count();
         console.log(`✓ Total sessions: ${totalSessions}`);
 
-        const totalInteractions = await ChatInteractions.count();
+        const totalInteractions = await prisma.chat_interactions.count();
         console.log(`✓ Total interactions: ${totalInteractions}`);
 
-        const totalArticleViews = await ArticleViews.count();
+        const totalArticleViews = await prisma.article_views.count();
         console.log(`✓ Total article views: ${totalArticleViews}`);
 
-        const activeArticles = await HochschuhlABC.count({ where: { active: true } });
+        const activeArticles = await prisma.hochschuhl_abc.count({ where: { active: true } });
         console.log(`✓ Active articles: ${activeArticles}`);
 
-        const openQuestions = await Questions.count({
-            where: { 
+        const openQuestions = await prisma.questions.count({
+            where: {
                 answered: false,
                 spam: false,
                 deleted: false
@@ -30,7 +32,7 @@ async function testDashboard() {
         });
         console.log(`✓ Open questions: ${openQuestions}`);
 
-        const totalFeedback = await Feedback.count();
+        const totalFeedback = await prisma.feedback.count();
         console.log(`✓ Total feedback: ${totalFeedback}`);
 
         // Test complex queries
@@ -40,36 +42,31 @@ async function testDashboard() {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const sessions = await sequelize.query(`
-            SELECT 
+        const sessions = await prisma.$queryRaw`
+            SELECT
                 DATE(started_at) as date,
                 COUNT(*) as count
-            FROM user_sessions 
-            WHERE started_at >= ?
+            FROM user_sessions
+            WHERE started_at >= ${sevenDaysAgo.toISOString()}
             GROUP BY DATE(started_at)
             ORDER BY date ASC
-        `, {
-            replacements: [sevenDaysAgo.toISOString()],
-            type: sequelize.QueryTypes.SELECT
-        });
+        `;
 
         console.log(`✓ Sessions over time query: ${sessions.length} days of data`);
 
         // Test most viewed articles
-        const articles = await sequelize.query(`
-            SELECT 
-                h.headline,
+        const articles = await prisma.$queryRaw`
+            SELECT
+                h.article,
                 COUNT(av.id) as views
-            FROM hochschuhl_abc h
+            FROM hochschul_abc h
             LEFT JOIN article_views av ON h.id = av.article_id
             WHERE h.active = 1
-            GROUP BY h.id, h.headline
+            GROUP BY h.id, h.article
             HAVING views > 0
             ORDER BY views DESC
             LIMIT 5
-        `, {
-            type: sequelize.QueryTypes.SELECT
-        });
+        `;
 
         console.log(`✓ Most viewed articles query: ${articles.length} articles with views`);
 
@@ -79,7 +76,7 @@ async function testDashboard() {
         console.error('❌ Dashboard test failed:', error);
         throw error;
     } finally {
-        await sequelize.close();
+        await prisma.$disconnect();
     }
 }
 
