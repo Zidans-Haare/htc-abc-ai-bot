@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description" content="HTW Dresden AI Chat Assistant - Dein intelligenter Helfer für alle Fragen rund um die HTW Dresden">
+    <title>HTW Dresden AI Chat Assistant</title>
+
+    <!-- iOS Web App-Optimierung -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HTW Chat">
+    <link rel="apple-touch-icon" href="/image/smoky_klein.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/image/smoky_klein_192x192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/image/smoky_klein_512x512.png">
+
+    <!-- Android Web App-Optimierung -->
+    <link rel="manifest" href="/manifest.json">
+
+    <link rel="icon" href="/image/favicon_32.png" type="image/x-icon" sizes="32x32" />
+    <link rel="stylesheet" href="/css/roboto.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="stylesheet" href="mobile.css">
+    <script src="/js/marked.min.js"></script>
+    <script src="/js/purify.min.js"></script>
+    <script type="module"  src="bot.js"></script>
+    <script src="/js/api_guide.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="/image/HTW.svg" alt="HTWD Logo" class="logo">
+            </div>
+            <button id="new-chat" class="new-chat-btn">
+                <i class="fas fa-plus"></i> Neuer Chat
+            </button>
+            <div class="chat-history">
+                <p class="history-title">Verlauf</p>
+                <div id="history-items-container"></div>
+            </div>
+            <div class="sidebar-actions">
+                <button id="settings-btn" title="Einstellungen"><i class="fas fa-cog"></i></button>
+                <button id="feedback-btn" title="Feedback geben"><i class="fas fa-comment-alt"></i></button>
+            </div>
+        </aside>
+
+        <div id="mobile-menu" class="mobile-menu-container">
+            <div class="mobile-menu-header">
+                <img src="/image/HTW.svg" alt="HTWD Logo" class="logo">
+                <button id="close-mobile-menu" class="close-btn">&times;</button>
+            </div>
+            <div class="mobile-menu-content">
+                <button id="mobile-new-chat" class="new-chat-btn">
+                    <i class="fas fa-plus"></i> Neuer Chat
+                </button>
+                <div class="chat-history">
+                    <p class="history-title">Verlauf</p>
+                    <div id="mobile-history-items-container"></div>
+                </div>
+                <div class="mobile-menu-actions">
+                    <button id="mobile-settings-btn"><i class="fas fa-cog"></i> Einstellungen</button>
+                    <button id="mobile-feedback-btn"><i class="fas fa-comment-alt"></i> Feedback</button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu-overlay"></div>
+
+        <main class="chat-container">
+            <header class="app-header">
+                <div class="header-left">
+                    <button id="hamburger-menu" class="hamburger-btn"><i class="fas fa-bars"></i></button>
+                    <img src="/image/HTW.svg" alt="HTWD Logo" class="header-logo">
+                </div>
+                <div class="header-right">
+                    <span id="current-time"></span>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <section id="chat" class="chat-panel">
+                    <div id="messages">
+                    </div>
+                    <div id="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                </section>
+
+                <div id="prompt-suggestions">
+                    <!-- Suggestions will be loaded dynamically here -->
+                </div>
+
+                <div id="input-container">
+                    <div id="input" class="input-area">
+                        <div class="wrapper">
+                            <textarea id="chat-input" placeholder="Stelle irgendeine Frage" rows="1"></textarea>
+                            <button class="send" id="send-btn"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" data-i18n="settings_title">Einstellungen</h3>
+                <button id="close-settings" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- General Settings -->
+                <div class="settings-section">
+                     <div class="form-group">
+                        <label for="setting-ui-language" data-i18n="settings_ui_language">Sprache der Einstellungen</label>
+                        <select id="setting-ui-language">
+                            <option value="de">Deutsch</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Funktionalität & Verhalten -->
+                <div class="settings-section">
+                    <h4 class="section-title" data-i18n="section_behavior_title">Funktionalität & Verhalten</h4>
+                    <div class="form-group switch-group">
+                        <label for="setting-send-with-enter" data-i18n="setting_send_with_enter">Nachricht mit Enter senden</label>
+                        <label class="switch">
+                            <input type="checkbox" id="setting-send-with-enter" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Design & Darstellung -->
+                <div class="settings-section">
+                    <h4 class="section-title" data-i18n="section_design_title">Design & Darstellung</h4>
+                    <div class="form-group">
+                        <label for="setting-theme" data-i18n="setting_theme">Design-Modus</label>
+                        <select id="setting-theme">
+                            <option value="system" data-i18n="theme_system">System</option>
+                            <option value="light" data-i18n="theme_light">Hell</option>
+                            <option value="dark" data-i18n="theme_dark">Dunkel</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="accent-color" data-i18n="setting_accent_color">Akzentfarbe</label>
+                        <input type="color" id="accent-color">
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-font-size" data-i18n="setting_font_size">Schriftgröße</label>
+                        <select id="setting-font-size">
+                            <option value="small" data-i18n="font_size_small">Klein</option>
+                            <option value="medium" selected data-i18n="font_size_medium">Mittel</option>
+                            <option value="large" data-i18n="font_size_large">Groß</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-layout-density" data-i18n="setting_layout_density">Layoutdichte</label>
+                        <select id="setting-layout-density">
+                            <option value="compact" data-i18n="layout_density_compact">Kompakt</option>
+                            <option value="standard" selected data-i18n="layout_density_standard">Standard</option>
+                            <option value="spacious" data-i18n="layout_density_spacious">Großzügig</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-animation-speed" data-i18n="setting_animation_speed">Animationsdauer</label>
+                        <select id="setting-animation-speed">
+                            <option value="normal" data-i18n="animation_speed_normal">Normal</option>
+                            <option value="reduced" data-i18n="animation_speed_reduced">Reduziert</option>
+                            <option value="none" data-i18n="animation_speed_none">Keine</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-timestamp-format" data-i18n="setting_timestamp_format">Zeitstempel-Format</label>
+                        <select id="setting-timestamp-format">
+                            <option value="24h" data-i18n="timestamp_format_24h">24 Stunden</option>
+                            <option value="12h" data-i18n="timestamp_format_12h">12 Stunden (AM/PM)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-max-chat-width" data-i18n="setting_max_chat_width">Maximale Chat-Breite</label>
+                        <select id="setting-max-chat-width">
+                            <option value="default" data-i18n="max_chat_width_default">Standard (1350px)</option>
+                            <option value="medium" data-i18n="max_chat_width_medium">Mittel (1000px)</option>
+                            <option value="small" data-i18n="max_chat_width_small">Klein (800px)</option>
+                            <option value="full" data-i18n="max_chat_width_full">Unbegrenzt</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="setting_home_screen_icon">Home-Bildschirm-Icon</label>
+                        <div class="image-picker" id="setting-home-screen-icon">
+                            <label>
+                                <input type="radio" name="home-icon" value="image/smoky_klein.png" checked>
+                                <img src="image/smoky_klein.png" alt="Smoky">
+                            </label>
+                            <label>
+                                <input type="radio" name="home-icon" value="image/stu_klein.png">
+                                <img src="image/stu_klein.png" alt="Stu">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barrierefreiheit -->
+                <div class="settings-section">
+                    <h4 class="section-title" data-i18n="section_accessibility_title">Barrierefreiheit</h4>
+                    <div class="form-group switch-group">
+                        <label for="setting-tts" data-i18n="setting_tts">Vorlesefunktion aktivieren</label>
+                        <label class="switch">
+                            <input type="checkbox" id="setting-tts">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="form-group switch-group">
+                        <label for="setting-contrast-mode" data-i18n="setting_contrast_mode">Kontrastmodus aktivieren</label>
+                        <label class="switch">
+                            <input type="checkbox" id="setting-contrast-mode">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="form-group switch-group">
+                        <label for="setting-keyboard-nav" data-i18n="setting_keyboard_nav">Tastaturnavigation verbessern</label>
+                        <label class="switch">
+                            <input type="checkbox" id="setting-keyboard-nav">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                 <!-- Datenschutz & Daten -->
+                <div class="settings-section">
+                    <h4 class="section-title" data-i18n="section_privacy_title">Datenschutz & Daten</h4>
+                    <div class="form-group switch-group">
+                        <label for="setting-save-history" data-i18n="setting_save_history">Verlauf speichern</label>
+                        <label class="switch">
+                            <input type="checkbox" id="setting-save-history" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-auto-delete" data-i18n="setting_auto_delete">Automatisches Löschen nach</label>
+                        <select id="setting-auto-delete">
+                            <option value="0" data-i18n="auto_delete_never">Nie</option>
+                            <option value="1" data-i18n="auto_delete_1_day">1 Tag</option>
+                            <option value="7" data-i18n="auto_delete_7_days">7 Tagen</option>
+                            <option value="30" data-i18n="auto_delete_30_days">30 Tagen</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="export_history_label">Verlauf exportieren</label>
+                        <button id="export-history-btn" class="btn" data-i18n="export_history_button">Gesamten Verlauf herunterladen</button>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="import_history_label">Verlauf importieren</label>
+                        <button id="import-history-btn" class="btn" data-i18n="import_history_button">Verlauf aus Datei hochladen</button>
+                        <input type="file" id="import-history-input" accept=".json" style="display: none;">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="delete_all_chats_label">Alle Chats löschen</label>
+                        <button id="delete-all-chats-btn" class="btn-danger" data-i18n="delete_all_chats_button">Jetzt löschen</button>
+                    </div>
+                </div>
+
+                <!-- API Key Section -->
+                <div class="settings-section">
+                    <h4 class="section-title" data-i18n="section_api_title">API-Nutzung</h4>
+                    <div class="form-group">
+                        <label data-i18n="api_key_label">Persönlicher API-Schlüssel</label>
+                        <p class="api-key-status" id="api-key-status" data-i18n="api_key_status_not_set">Nicht konfiguriert</p>
+                        <button id="configure-api-key-btn" class="btn" data-i18n="api_key_configure_button">Konfigurieren & Limits aufheben</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="reset-settings-btn" data-i18n="reset_settings_button">Auf Standard zurücksetzen</button>
+                <button id="save-settings-btn" class="btn-primary" data-i18n="save_settings_button">Speichern & Anwenden</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="api-key-modal" class="modal-hidden">
+        <div class="modal-content">
+             <div class="modal-header">
+                 <h3 class="modal-title" data-lang-key="modal_title">Persönlichen API-Schlüssel einrichten</h3>
+                 <button id="close-api-key-modal" class="close-btn">&times;</button>
+             </div>
+            <div class="modal-body">
+                <div class="api-guide-container">
+                     <!-- Step 1: Introduction -->
+                     <div class="api-guide-step active" id="api-step-1">
+                         <div class="form-group language-selection">
+                             <label for="api-language-select">Sprache / Language</label>
+                             <select id="api-language-select">
+                                 <option value="de">Deutsch</option>
+                                 <option value="en">English</option>
+                             </select>
+                         </div>
+                         <h4 class="step-title" data-lang-key="step1_title">Schritt 1: Höhere Limits freischalten!</h4>
+                         <p data-lang-key="step1_description1">Um die Kosten für alle niedrig zu halten, haben wir ein allgemeines Limit für Anfragen. Du kannst dieses Limit umgehen, indem du deinen eigenen, kostenlosen Google AI API-Schlüssel verwendest.</p>
+                         <p data-lang-key="step1_description2">Wir führen dich in wenigen Schritten durch den Prozess.</p>
+                     </div>
+                     <!-- Step 2: Visit Google AI Studio -->
+                     <div class="api-guide-step" id="api-step-2">
+                         <h4 class="step-title" data-lang-key="step2_title">Schritt 2: Deinen Schlüssel holen</h4>
+                         <p data-lang-key="step2_description">Klicke auf den folgenden Link, um das Google AI Studio in einem neuen Tab zu öffnen. Melde dich mit deinem Google-Konto an, falls nötig.</p>
+                         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn-link" data-lang-key="step2_link">Google AI Studio öffnen</a>
+                     </div>
+                     <!-- Step 3: Create API Key -->
+                     <div class="api-guide-step" id="api-step-3">
+                         <h4 class="step-title" data-lang-key="step3_title">Schritt 3: API-Schlüssel erstellen</h4>
+                         <p data-lang-key="step3_description1">Klicke im Google AI Studio auf die Schaltfläche: <strong data-lang-key="step3_button">+ Create API key in new project</strong></p>
+                         <p data-lang-key="step3_description2">Es wird eine lange Zeichenkette generiert. Das ist dein persönlicher Schlüssel.</p>
+                     </div>
+                     <!-- Step 4: Insert Key -->
+                     <div class="api-guide-step" id="api-step-4">
+                         <h4 class="step-title" data-lang-key="step4_title">Schritt 4: Fast geschafft!</h4>
+                         <p data-lang-key="step4_description">Kopiere den generierten API-Schlüssel und füge ihn in das Feld unten ein.</p>
+                         <input type="text" id="api-key-input" data-lang-placeholder="step4_placeholder" placeholder="API-Schlüssel hier einfügen" class="api-key-input-field">
+                         <p id="api-key-error" class="error-message"></p>
+                     </div>
+                </div>
+            </div>
+             <div class="modal-footer api-guide-footer">
+                 <button id="api-guide-prev" class="btn" disabled data-lang-key="btn_back">Zurück</button>
+                 <button id="api-guide-next" class="btn-primary" data-lang-key="btn_next">Weiter</button>
+                 <button id="api-guide-save" class="btn-primary modal-hidden" data-lang-key="btn_save">Speichern & Aktivieren</button>
+             </div>
+        </div>
+    </div>
+
+    <div id="feedback-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" data-lang-key="feedback_title">Feedback geben</h3>
+                <button id="close-feedback" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="feedback-language-select" data-lang-key="feedback_language">Sprache des Formulars</label>
+                    <select id="feedback-language-select">
+                        <option value="de">Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <p class="modal-description" data-lang-key="feedback_description">Ist Ihnen ein Fehler aufgefallen oder haben Sie einen Verbesserungsvorschlag? Wir freuen uns über Ihre Rückmeldung!</p>
+                <div class="feedback-form">
+                    <div class="form-group">
+                        <label for="feedback-input" data-lang-key="feedback_message">Ihre Nachricht</label>
+                        <textarea id="feedback-input" data-lang-placeholder="feedback_message_placeholder" placeholder="Beschreiben Sie hier Ihr Anliegen..." rows="5"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="feedback-email" data-lang-key="feedback_email">E-Mail (optional)</label>
+                        <input type="email" id="feedback-email" placeholder="max.mustermann@beispiel.de">
+                    </div>
+                    <div class="form-group">
+                        <label for="feedback-chat-history" data-lang-key="feedback_attach_history">Chat-Verlauf anhängen (optional)</label>
+                        <select id="feedback-chat-history">
+                            <option value="" data-lang-key="feedback_attach_none">Keinen Verlauf anhängen</option>
+                        </select>
+                    </div>
+                    <div class="form-group captcha-group">
+                        <label for="captcha-input" data-lang-key="feedback_captcha">Sicherheitsfrage</label>
+                        <div class="captcha-wrapper">
+                            <span id="captcha-question"></span>
+                            <input type="text" id="captcha-input" data-lang-placeholder="feedback_captcha_placeholder" placeholder="Antwort">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="send-feedback" class="btn-primary" data-lang-key="feedback_send">Senden</button>
+            </div>
+        </div>
+    </div>
+
+    <template id="toast-template">
+        <div class="toast">
+            <span class="toast-message"></span>
+            <button class="toast-close">&times;</button>
+        </div>
+    </template>
+
+</body>
+</html>
