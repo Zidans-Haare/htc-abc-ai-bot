@@ -1,4 +1,6 @@
 import { fetchAndParse } from './utils.js';
+import Editor from '@toast-ui/editor';
+import '@toast-ui/editor/dist/toastui-editor.css';
 
 let currentId = null;
 let allArticles = [];
@@ -283,7 +285,7 @@ function createMagicWandButton() {
     return button;
 }
 
-const editor = new toastui.Editor({
+const editor = new Editor({
   el: document.getElementById('editor'),
   height: '400px', // initial height
   initialEditType: 'wysiwyg',

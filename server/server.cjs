@@ -404,7 +404,7 @@ app.get('/admin', (req, res) => {
 
 // --- Insufficient Permissions Route ---
 app.get('/insufficient-permissions', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'insufficient-permissions.html'));
+  res.redirect('/login');
 });
 
 // --- Health Check Route ---
@@ -433,10 +433,7 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
-// --- Root Route ---
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-});
+
 
 // --- Protected Static Files ---
 app.use('/admin', async (req, res, next) => {
@@ -491,19 +488,6 @@ const serverCallback = async () => {
         },
       });
       console.log('✓ Default admin user created (username: admin, password: admin)');
-    }
-
-
-      // Backend CSS
-      const backendSrcStat = fs.statSync(backendCssSrc);
-      const backendOutStat = fs.existsSync(backendCssOut) ? fs.statSync(backendCssOut) : { mtime: 0 };
-      if (!fs.existsSync(backendCssOut) || backendSrcStat.mtime > backendOutStat.mtime) {
-        console.log('Backend CSS source changed, rebuilding...');
-        execSync('npm run build:backend-css', { stdio: 'inherit' });
-        console.log('✓ Backend CSS rebuilt');
-      }
-    } catch (error) {
-      console.log('Warning: Could not check/rebuild CSS:', error.message);
     }
   } catch (error) {
     console.error('Warning: Could not connect to database:', error.message);

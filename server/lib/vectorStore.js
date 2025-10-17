@@ -57,8 +57,17 @@ class HuggingFaceEmbeddings {
 
   async init() {
     if (!this.pipe) {
-      const { pipeline } = require('@huggingface/transformers');
-      this.pipe = await pipeline('feature-extraction', this.modelName, { token: process.env.HF_TOKEN });
+      try {
+        const { pipeline } = require('@huggingface/transformers');
+        this.pipe = await pipeline('feature-extraction', this.modelName, { token: process.env.HF_TOKEN });
+      } catch (error) {
+        console.log('Installing @huggingface/transformers...');
+        const { execSync } = require('child_process');
+        execSync('npm install @huggingface/transformers', { stdio: 'inherit' });
+        // Retry after install
+        const { pipeline } = require('@huggingface/transformers');
+        this.pipe = await pipeline('feature-extraction', this.modelName, { token: process.env.HF_TOKEN });
+      }
     }
   }
 
