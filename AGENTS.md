@@ -19,14 +19,11 @@
 - Embedding uses free Xenova models; tests added for vector store functionality.
 - Context7 MCP tool is available; it exposes local context7 knowledge services and should be used whenever tasks can benefit from that capability.
 - Investigated 'serialize' npm modules: serialize-error and dom-serializer were unused dependencies, removed from package.json. No serialization logic needed porting to Prisma.
-- Tailwind CSS is built using PostCSS with @tailwindcss/postcss v4. Content paths specified via @source directives in src/main.css and src/backend.css with source(none) for separate purging. Configs: tailwind.postcss.config.main.js and tailwind.postcss.config.backend.js. Run npm run build:main-css or npm run build:backend-css. The server auto-rebuilds CSS on start if sources changed.
+- Tailwind CSS is integrated with Vite using PostCSS v4. Content paths specified via @source directives in src/styles/tailwind-main.css and src/styles/tailwind-backend.css for separate purging. Configs: tailwind.postcss.config.main.js and tailwind.postcss.config.backend.js. Vite handles building, bundling, and hot-reload automatically.
 
+- Tailwind purging: Ensure @source paths are relative to src/styles/ and use source(none) for separate scans. Check tailwind.postcss.config.*.js.
 
-
-- Tailwind CSS builds: If purging fails (identical bloated CSS), ensure @source paths are relative to src/ and use source(none) for separate scans. Check tailwind.postcss.config.*.js.
-
-
-- General: Check AGENTS.md for project quirks; run npm run build:* to verify.
+- General: Check AGENTS.md for project quirks; run npm run build to verify.
 - Server Testing: Use `timeout 10s node server.cjs` instead of `node server.cjs` for testing to prevent hanging and allow prompt return.
 - Admin Interface: Mobile-optimized with toggleable list/detail views for conversations, articles, and feedback. Uses hidden class for switching. Requires /js/purify.min.js, /js/marked.min.js, /js/markup.js in admin/index.html for message rendering. ToastUI editor height dynamically calculated to fill available space, with minimum 300px.
 

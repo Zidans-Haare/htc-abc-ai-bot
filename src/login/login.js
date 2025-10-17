@@ -1,3 +1,5 @@
+import '../styles/tailwind-backend.css';
+
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Login page loaded, initializing...');
   const loginForm = document.getElementById('login-form');

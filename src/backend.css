@@ -1,9 +1,0 @@
-@import "tailwindcss" source(none);
-
-@source "../public/admin/**/*.{html,js}";
-@source "../public/dash/**/*.{html,js}";
-@source "../public/login/**/*.{html,js}";
-
-@source "public/admin/**/*.{html,js}";
-@source "public/dash/**/*.{html,js}";
-@source "public/login/**/*.{html,js}";

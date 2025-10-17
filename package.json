@@ -2,17 +2,17 @@
   "name": "htw-abc-ai-bot",
   "version": "1.0.0",
   "description": "A Node.js assistant app using an OpenAI-compatible API",
-  "main": "server.cjs",
+  "main": "server/server.cjs",
   "type": "commonjs",
   "scripts": {
-    "start": "node server.cjs",
+    "start": "node server/server.cjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "jest",
     "test:coverage": "nyc --reporter=lcov --reporter=text npm test",
     "test:env": "dotenv -e .env.test -- npm test",
-    "build:main-css": "npx postcss -c tailwind.postcss.config.main.js src/main.css -o public/css/tailwind.css",
-    "watch:main-css": "npx postcss src/main.css -o public/css/tailwind.css --watch",
-    "build:backend-css": "npx postcss -c tailwind.postcss.config.backend.js src/backend.css -o public/css/backend-tailwind.css",
-    "watch:backend-css": "npx postcss src/backend.css -o public/css/backend-tailwind.css --watch",
+
     "postinstall": "npx prisma generate"
   },
   "overrides": {
@@ -83,6 +83,7 @@
     "prisma": "^6.17.1",
     "sinon": "^17.0.0",
     "supertest": "^7.0.0",
-    "tailwindcss": "^4.1.14"
+    "tailwindcss": "^4.1.14",
+    "vite": "^7.1.10"
   }
 }

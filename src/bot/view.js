@@ -1,4 +1,5 @@
-import { renderMarkup } from '../js/markup.js';
+import '../styles/tailwind-main.css';
+import { renderMarkup } from '../components/markup.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('articles-container');

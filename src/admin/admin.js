@@ -1,3 +1,4 @@
+import '../styles/tailwind-backend.css';
 import { fetchAndParse, overrideFetch } from './utils.js';
 import { initArticles, allArticles, loadArticles, selectArticle, getCurrentId, loadEntry, saveEntry } from './articles.js';
 import { initQuestions } from './questions.js';

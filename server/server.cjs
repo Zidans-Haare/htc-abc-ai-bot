@@ -94,7 +94,6 @@ const port = process.env.PORT || 3000;
 const useHttps = process.argv.includes('-https');
 const isTest = process.argv.includes('--test');
 const isDev = process.argv.includes('-dev');
-const pid = process.pid;
 
 // CLI options
 program
@@ -238,7 +237,12 @@ app.use((req, res, next) => {
   if (req.url.startsWith('/admin') || req.url.startsWith('/dash')) {
     return next();
   }
-  express.static(path.join(__dirname, 'public'))(req, res, next);
+  express.static(path.join(__dirname, '..', 'dist'))(req, res, next);
+});
+
+// Serve main bot page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'bot', 'index.html'));
 });
 
 // --- Protection Middleware ---
@@ -385,22 +389,22 @@ app.use('/api/dashboard', dashboardController);
 app.get("/api/view/articles", viewController.getPublishedArticles);
 
 // --- Dashboard Routes ---
-app.use('/dash', express.static(path.join(__dirname, 'public', 'dash')));
+app.use('/dash', express.static(path.join(__dirname, '..', 'dist', 'src', 'dash')));
 app.get('/dash', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dash', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'dash', 'index.html'));
 });
 
 // --- Admin Routes ---
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login', 'login.html'));
+  res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'login', 'login.html'));
 });
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'admin', 'index.html'));
 });
 
 // --- Insufficient Permissions Route ---
 app.get('/insufficient-permissions', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'insufficient-permissions.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'insufficient-permissions.html'));
 });
 
 // --- Health Check Route ---
@@ -431,7 +435,7 @@ app.get('/metrics', async (req, res) => {
 
 // --- Root Route ---
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 // --- Protected Static Files ---
@@ -442,7 +446,10 @@ app.use('/admin', async (req, res, next) => {
     return next();
   }
   res.redirect('/login/login.html');
-}, express.static(path.join(__dirname, 'public', 'admin')));
+}, express.static(path.join(__dirname, '..', 'dist', 'src', 'admin')));
+
+// --- Uploads Static ---
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // --- Favicon & 404 ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());
@@ -486,20 +493,7 @@ const serverCallback = async () => {
       console.log('✓ Default admin user created (username: admin, password: admin)');
     }
 
-    // Build CSS if source files changed
-    const mainCssSrc = path.join(__dirname, 'src', 'main.css');
-    const mainCssOut = path.join(__dirname, 'public', 'css', 'tailwind.css');
-    const backendCssSrc = path.join(__dirname, 'src', 'backend.css');
-    const backendCssOut = path.join(__dirname, 'public', 'css', 'backend-tailwind.css');
-    try {
-      // Main CSS
-      const mainSrcStat = fs.statSync(mainCssSrc);
-      const mainOutStat = fs.existsSync(mainCssOut) ? fs.statSync(mainCssOut) : { mtime: 0 };
-      if (!fs.existsSync(mainCssOut) || mainSrcStat.mtime > mainOutStat.mtime) {
-        console.log('Main CSS source changed, rebuilding...');
-        execSync('npm run build:main-css', { stdio: 'inherit' });
-        console.log('✓ Main CSS rebuilt');
-      }
+
       // Backend CSS
       const backendSrcStat = fs.statSync(backendCssSrc);
       const backendOutStat = fs.existsSync(backendCssOut) ? fs.statSync(backendCssOut) : { mtime: 0 };
@@ -544,9 +538,6 @@ const serverCallback = async () => {
   }, 60 * 60 * 1000); // 1 hour
 
   console.log(`Server is running with ${useHttps ? 'HTTPS' : 'HTTP'} on port ${port}`);
-  fs.writeFile('server.pid', pid.toString(), err => {
-    if (err) console.error('Error writing PID to server.pid:', err);
-  });
 };
 
 if (!cliMode && !isTest && process.env.NODE_ENV !== 'test') {

@@ -1,3 +1,5 @@
+import '../styles/tailwind-backend.css';
+
 class DashboardManager {
     constructor() {
         this.charts = {};
