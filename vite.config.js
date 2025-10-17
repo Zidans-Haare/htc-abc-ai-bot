@@ -14,11 +14,12 @@ export default defineConfig({
   css: {
     postcss: './tailwind.postcss.config.main.js'
   },
-  server: {
-    proxy: {
-      '/api': 'http://localhost:3000',
-      '/admin': 'http://localhost:3000',
-      '/dash': 'http://localhost:3000'
-    }
-  }
+   server: {
+     allowedHosts: ['dev.olomek.com', 'localhost'],
+     proxy: {
+       '/api': 'http://localhost:3000',
+       '/admin': 'http://localhost:3000',
+       '/dash': 'http://localhost:3000'
+     }
+   }
 });
