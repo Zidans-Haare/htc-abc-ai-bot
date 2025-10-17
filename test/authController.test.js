@@ -1,9 +1,9 @@
-const { getSession, createSession, verifyUser, createUser, listUsers, updateUserPassword, deleteUser, cleanupExpiredSessions } = require('../controllers/authController.cjs');
-const { User, AuthSession } = require('../controllers/db.cjs');
+const { getSession, createSession, verifyUser, createUser, listUsers, updateUserPassword, deleteUser, cleanupExpiredSessions } = require('../server/controllers/authController.cjs');
+const { User, AuthSession } = require('../server/controllers/db.cjs');
 const bcrypt = require('bcryptjs');
 
 // Mock the db module
-jest.mock('../controllers/db.cjs', () => ({
+jest.mock('../server/controllers/db.cjs', () => ({
   User: {
     findFirst: jest.fn(),
     create: jest.fn(),

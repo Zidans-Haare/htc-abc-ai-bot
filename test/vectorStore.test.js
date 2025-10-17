@@ -10,13 +10,13 @@ jest.mock('uuid', () => ({
   v4: jest.fn(() => 'mock-uuid')
 }));
 
-jest.mock('../controllers/db.cjs', () => ({
+jest.mock('../server/controllers/db.cjs', () => ({
   HochschuhlABC: {
     findMany: jest.fn(() => Promise.resolve([]))
   }
 }));
 
-const vsm = require('../lib/vectorStore');
+const vsm = require('../server/lib/vectorStore');
 
 describe('VectorStoreManager', () => {
   test('should initialize with embeddings', () => {

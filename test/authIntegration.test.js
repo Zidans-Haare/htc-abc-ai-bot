@@ -1,11 +1,11 @@
 const request = require('supertest');
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const { User, AuthSession } = require('../controllers/db.cjs');
+const { User, AuthSession } = require('../server/controllers/db.cjs');
 const bcrypt = require('bcryptjs');
 
 // Mock the db module
-jest.mock('../controllers/db.cjs', () => ({
+jest.mock('../server/controllers/db.cjs', () => ({
   User: {
     findFirst: jest.fn(),
     create: jest.fn(),
@@ -27,7 +27,7 @@ jest.mock('bcryptjs', () => ({
   hash: jest.fn(),
 }));
 
-const { router } = require('../controllers/authController.cjs');
+const { router } = require('../server/controllers/authController.cjs');
 
 const app = express();
 app.use(express.json());
