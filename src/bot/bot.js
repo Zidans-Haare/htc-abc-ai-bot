@@ -1,7 +1,10 @@
-import { setupUI, addMessage, showToast, scrollToBottom, updateTime, renderChatHistory, openMobileMenu, closeMobileMenu, startWelcomeAnimation, stopWelcomeAnimation, openModal, closeModal, generateCaptcha, setFeedbackLanguage, populateChatHistoryDropdown, showCreditsAnimation } from './js/ui.js';
-import { loadSettings, saveSettings, resetSettings, handleSettingChange, getSettings, openSettings, closeSettings } from './js/settings.js';
-import { deleteAllChats, autoDeleteOldChats, loadChat, saveMessageToHistory, getChatHistory } from './js/history.js';
-import { sendMsg, sendFeedback } from './js/api.js';
+alert('bot.js loaded');
+// import { marked } from 'marked';
+// import DOMPurify from 'dompurify';
+import { setupUI, addMessage, showToast, scrollToBottom, updateTime, renderChatHistory, openMobileMenu, closeMobileMenu, startWelcomeAnimation, stopWelcomeAnimation, openModal, closeModal, generateCaptcha, setFeedbackLanguage, populateChatHistoryDropdown, showCreditsAnimation } from '../components/ui.js';
+import { loadSettings, saveSettings, resetSettings, handleSettingChange, getSettings, openSettings, closeSettings } from '../components/settings.js';
+import { deleteAllChats, autoDeleteOldChats, loadChat, saveMessageToHistory, getChatHistory } from '../components/history.js';
+import { sendMsg, sendFeedback } from '../components/api.js';
 
 // Function to get or create an anonymous user ID
 function getAnonymousUserId() {
@@ -13,10 +16,13 @@ function getAnonymousUserId() {
     return userId;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const app = {
+// document.addEventListener('DOMContentLoaded', () => {
+//     alert('DOMContentLoaded fired');
+//     const app = {
+
+alert('after event listener');
         conversationId: null,
-        anonymousUserId: getAnonymousUserId(), // Get the user ID on init
+        // anonymousUserId: getAnonymousUserId(), // Get the user ID on init
         expectedCaptcha: null,
         useFirstAvatar: true,
         settings: getSettings(),
@@ -30,11 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
             updateTime();
             setInterval(updateTime, 1000 * 60);
 
-            this.startNewChat();
-            setupUI(this);
-            this.setupSuggestionListeners();
-            this.loadSuggestions();
-        },
+            // this.startNewChat();
+            // setupUI(this);
+            // this.setupSuggestionListeners();
+            // this.loadSuggestions();
+        // },
 
         async loadSuggestions() {
             const suggestionsContainer = document.getElementById('prompt-suggestions');

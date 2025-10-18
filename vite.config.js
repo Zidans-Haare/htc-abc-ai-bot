@@ -87,6 +87,15 @@ export default defineConfig({
       },
     },
   ],
+  server: {
+    host: '127.0.0.1',
+    port: 5173,
+    strictPort: true,
+    allowedHosts: ['dev.olomek.com'],
+    hmr: {
+      path: '/vite-hmr'
+    }
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'), // Keep for easy imports
@@ -113,7 +122,12 @@ export default defineConfig({
     },
   },
   server: {
-    host: '127.0.0.1', // Ensure dev server listens on IPv4 for Nginx proxy
+    host: '127.0.0.1',
+    port: 5173,
+    strictPort: true,
     allowedHosts: ['dev.olomek.com'],
+    hmr: {
+      path: '/vite-hmr'
+    }
   },
 });

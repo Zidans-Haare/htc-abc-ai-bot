@@ -24,3 +24,6 @@ package-lock.json
 .vectordb_last_sync
 dist/
 server/lib/generated/prisma
+vite.log
+build.log
+public_bak

@@ -1,5 +1,5 @@
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+// import { marked } from 'marked';
+// import DOMPurify from 'dompurify';
 
 function renderMarkup(text) {
     if (typeof text !== 'string') {
@@ -13,11 +13,13 @@ function renderMarkup(text) {
         // Parse the markdown
         const dirty = marked.parse(text, options);
         // Sanitize the HTML
-        return DOMPurify.sanitize(dirty);
+        // return DOMPurify.sanitize(dirty);
+        return dirty;
     } catch (error) {
         console.warn('Failed to parse markdown, falling back to plain text:', error);
         // Fall back to plain text if markdown parsing fails
-        return DOMPurify.sanitize(text.replace(/\n/g, '<br>'));
+        // return DOMPurify.sanitize(text.replace(/\n/g, '<br>'));
+        return text.replace(/\n/g, '<br>');
     }
 }
 

@@ -36,3 +36,4 @@
 - Dev proxy behavior: current Nginx routes `/admin`, `/dash`, and `/api` to the Express app on port 3000, so those paths bypass Vite dev HMR. Expect to hit the built assets from `dist` unless the proxy is adjusted for dev.
 - `mpa-rewrites` skips rewriting any request already targeting `/src/...` so fonts and images under `src/assets` are served directly; Cloudflare can cache previous 404s, so add a cache-busting query if a stale error persists during validation.
 - Express static middleware sets `Cache-Control` for `dist` assets: HTML gets `no-cache, must-revalidate`, fingerprinted assets get `public, max-age=1209600, immutable`. Fonts are covered by the immutable rule; uploads remain unaffected.
+- Vite HMR path: Default `/vite/client` is blocked by Cloudflare due to `@` symbol. Use custom path like `/vite-hmr` in `vite.config.js` server.hmr.path to avoid issues with JS loading in dev.

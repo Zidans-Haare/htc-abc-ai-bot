@@ -1,5 +1,5 @@
 import { defaultSettings, SETTINGS_KEY } from './config.js';
-import { applyUI, updateSettingsUI, showToast } from './ui.js';
+// import { applyUI, updateSettingsUI, showToast } from './ui.js';
 
 let settings = { ...defaultSettings };
 let tempSettings = { ...defaultSettings };
@@ -9,11 +9,18 @@ export function getSettings() {
 }
 
 export function loadSettings() {
-    try {
-        const storedSettings = localStorage.getItem(SETTINGS_KEY);
-        if (storedSettings) {
-            settings = { ...defaultSettings, ...JSON.parse(storedSettings) };
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            settings = { ...defaultSettings, ...parsed };
+            // applyUI(settings);
+        } catch (error) {
+            console.warn('Failed to load settings:', error);
+            settings = { ...defaultSettings };
         }
+    }
+}
         tempSettings = { ...settings };
     } catch (e) {
         console.error("Failed to load settings:", e);
@@ -23,18 +30,18 @@ export function loadSettings() {
 }
 
 export function saveSettings() {
-    settings = { ...tempSettings };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    applyUI(settings);
-    showToast("Einstellungen gespeichert und angewendet!");
+    // applyUI(settings);
+    // showToast('Einstellungen gespeichert');
 }
 
 export function resetSettings() {
-    if (confirm("Möchten Sie wirklich alle Einstellungen auf die Standardwerte zurücksetzen?")) {
-        tempSettings = { ...defaultSettings };
-        saveSettings();
-        updateSettingsUI(tempSettings);
-    }
+    settings = { ...defaultSettings };
+    tempSettings = { ...defaultSettings };
+    localStorage.removeItem(SETTINGS_KEY);
+    // applyUI(settings);
+    // showToast('Einstellungen zurückgesetzt');
+}
 }
 
 export function handleSettingChange(e) {
