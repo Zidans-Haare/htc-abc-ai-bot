@@ -30,12 +30,23 @@ export default defineConfig({
           { prefix: '/admin/', src: '/src/admin/' },
           { prefix: '/dash/', src: '/src/dash/' },
           { prefix: '/login/', src: '/src/login/' },
+          { prefix: '/view/', src: '/src/view/' },
           { prefix: '/', src: '/src/bot/' },
         ];
 
         server.middlewares.use((req, _res, next) => {
           const url = new URL(req.url, 'http://localhost');
           const { pathname } = url;
+
+          // Allow Vite's own internal endpoints to pass through untouched
+          if (
+            pathname.startsWith('/@vite/') ||
+            pathname === '/@vite/client' ||
+            pathname.startsWith('/@id/') ||
+            pathname.startsWith('/__vite_')
+          ) {
+            return next();
+          }
 
           if (pathname === '/' || pathname === '/index.html') {
             req.url = '/src/bot/index.html';
@@ -52,8 +63,13 @@ export default defineConfig({
             return next();
           }
 
+          if (pathname === '/view' || pathname === '/view/') {
+            req.url = '/src/view/index.html';
+            return next();
+          }
+
           if (pathname === '/login' || pathname === '/login/') {
-            req.url = '/src/login/login.html';
+            req.url = '/src/login/index.html';
             return next();
           }
 
@@ -91,12 +107,12 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-    // allowedHosts: ['dev.olomek.com',  'localhost', '127.0.0.1']
-    allowedHosts: 'auto',
+    allowedHosts: ['dev.olomek.com',  'localhost', '127.0.0.1']
+    // allowedHosts: 'auto',
   },
   resolve: {
     alias: {
-      '~': resolve(__dirname, 'src'), // Keep for easy imports
+      '@': resolve(__dirname, 'src'), // Keep for easy imports
     },
   },
   css: {
