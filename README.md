@@ -13,7 +13,7 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 ## 💻 Technologie-Stack
 
 - **Backend:** Node.js, Express.js
-- **Datenbank:** SQLite mit Sequelize ORM
+- **Datenbank:** SQLite (Standard) über Prisma ORM; optional PostgreSQL/MySQL via `DATABASE_URL`
 - **Frontend:** Statisches HTML, CSS und JavaScript
 - **KI:** OpenAI-kompatible API (z. B. KISSKI Chat AI)
 
@@ -92,29 +92,26 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 
 ## ▶️ Anwendung starten
 
-Führen Sie den folgenden Befehl im Projektverzeichnis aus, um den Server zu starten:
+### Entwicklung (Watcher-Bundle)
 
 ```bash
+npm run dev:watch
+```
+
+- Baut das Frontend kontinuierlich (`vite build --watch`) und startet den Express-Server mit `nodemon`.
+- Änderungen in `src/` erzeugen sofort ein neues Bundle; Änderungen unter `server/` lösen einen automatischen Neustart aus.
+- Die Anwendung läuft anschließend unter `http://127.0.0.1:3000/`. Hot Module Reloading ist nicht notwendig, weil die neu gebauten Assets direkt von Express ausgeliefert werden.
+
+### Produktion / Staging
+
+```bash
+npm run build
 npm start
 ```
 
-Oder direkt:
-
-```bash
-node server.cjs
-```
-
-Der Server schreibt seine Prozess-ID in die Datei `server.pid`, sodass Sie ihn bei Bedarf gezielt beenden können:
-
-```bash
-# Für Linux/macOS
-kill -9 $(cat server.pid)
-```
-
-### Start-Optionen
-
--   `-https`: Startet den Server im HTTPS-Modus. Erfordert, dass `key.pem` und `cert.pem` in Ihrem `.ssh`-Verzeichnis im Home-Ordner vorhanden sind.
--   `-admin`: Startet den Server in einem Debug-Modus, der die Authentifizierung für die Admin- und Dashboard-Bereiche umgeht. **Nur für Entwicklungszwecke verwenden.**
+- `npm run build` erstellt einmalig das Bundle unter `dist/`.
+- `npm start` startet den Express-Server in der Standardkonfiguration. Nutzen Sie einen Prozess-Manager (z. B. systemd, pm2) für den Dauerbetrieb.
+- Optional `npm start -- -dev`, um serverseitiges Caching zu deaktivieren (z. B. für Tests in einer Staging-Umgebung).
 
 ## 🔐 Authentifizierung
 
