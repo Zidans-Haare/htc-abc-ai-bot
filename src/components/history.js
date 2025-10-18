@@ -1,5 +1,4 @@
 import { CHAT_HISTORY_KEY } from './config.js';
-import { renderChatHistory as renderHistoryUI, showToast } from './ui.js';
 
 export function getChatHistory() {
     const history = localStorage.getItem(CHAT_HISTORY_KEY);
@@ -18,10 +17,10 @@ export function getChatById(id) {
 export function deleteAllChats(app) {
     if (confirm("Möchten Sie wirklich alle Chatverläufe unwiderruflich löschen?")) {
         localStorage.removeItem(CHAT_HISTORY_KEY);
-        renderHistoryUI([], null, () => app.loadChat(), () => app.closeMobileMenu());
         app.startNewChat();
-        showToast("Alle Verläufe wurden gelöscht.");
+        return true;
     }
+    return false;
 }
 
 export function autoDeleteOldChats(settings) {
@@ -116,69 +115,65 @@ export function exportHistory() {
 }
 
 export function importHistory(file, app) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const newHistory = JSON.parse(e.target.result);
-            if (!Array.isArray(newHistory)) throw new Error("Ungültiges Dateiformat.");
+    if (!file) return Promise.resolve({ success: false, message: "No file provided" });
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const newHistory = JSON.parse(e.target.result);
+                if (!Array.isArray(newHistory)) throw new Error("Ungültiges Dateiformat.");
 
-            // Fix and validate imported chats
-            const processedHistory = [];
-            
-            newHistory.forEach(chat => {
-                if (!chat.title || !Array.isArray(chat.messages)) {
-                    console.log("Skipping invalid chat:", chat);
+                // Fix and validate imported chats
+                const processedHistory = [];
+
+                newHistory.forEach(chat => {
+                    if (!chat.title || !Array.isArray(chat.messages)) {
+                        console.log("Skipping invalid chat:", chat);
+                        return;
+                    }
+
+                    // Fix null IDs
+                    if (!chat.id) {
+                        chat.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                    }
+
+                    // Validate message structure - support both old and new formats
+                    const hasValidMessages = chat.messages.every(msg => {
+                        const hasOldFormat = msg.text !== undefined && msg.isUser !== undefined;
+                        const hasNewFormat = msg.role !== undefined && msg.parts !== undefined;
+                        return hasOldFormat || hasNewFormat;
+                    });
+
+                    if (hasValidMessages) {
+                        processedHistory.push(chat);
+                    }
+                });
+
+                const currentHistory = getChatHistory();
+                const mergedHistory = [...currentHistory];
+                let importedCount = 0;
+
+                processedHistory.forEach(newChat => {
+                    if (!currentHistory.some(existingChat => existingChat.id === newChat.id)) {
+                        mergedHistory.push(newChat);
+                        importedCount++;
+                    }
+                });
+
+                if (importedCount === 0) {
+                    resolve({ success: false, message: "Keine neuen Chats zum Importieren gefunden." });
                     return;
                 }
-                
-                // Fix null IDs
-                if (!chat.id) {
-                    chat.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-                }
-                
-                // Validate message structure - support both old and new formats
-                const hasValidMessages = chat.messages.every(msg => {
-                    const hasOldFormat = msg.text !== undefined && msg.isUser !== undefined;
-                    const hasNewFormat = msg.role !== undefined && msg.parts !== undefined;
-                    return hasOldFormat || hasNewFormat;
-                });
-                
-                if (hasValidMessages) {
-                    processedHistory.push(chat);
-                }
-            });
 
-            const currentHistory = getChatHistory();
-            const mergedHistory = [...currentHistory];
-            let importedCount = 0;
-            
-            processedHistory.forEach(newChat => {
-                if (!currentHistory.some(existingChat => existingChat.id === newChat.id)) {
-                    mergedHistory.push(newChat);
-                    importedCount++;
-                }
-            });
-
-            if (importedCount === 0) {
-                showToast("Keine neuen Chats zum Importieren gefunden.");
-                return;
+                saveChatHistory(mergedHistory);
+                resolve({ success: true, mergedHistory, importedCount, message: `${importedCount} Chat(s) erfolgreich importiert!` });
+            } catch (error) {
+                console.error("Failed to import history:", error);
+                resolve({ success: false, message: `Fehler beim Importieren: ${error.message}` });
             }
-
-            saveChatHistory(mergedHistory);
-            showToast(`${importedCount} Chat(s) erfolgreich importiert!`);
-            // Directly update the history UI instead of calling app method
-            const currentId = app && app.conversation ? app.conversation.id : null;
-            renderHistoryUI(mergedHistory, currentId, 
-                (id) => app && app.loadChat ? app.loadChat(id) : null, 
-                () => app && app.closeMobileMenu ? app.closeMobileMenu() : null
-            );
-        } catch (error) {
-            console.error("Failed to import history:", error);
-            showToast(`Fehler beim Importieren: ${error.message}`);
-        }
-    };
-    reader.readAsText(file);
+        };
+        reader.readAsText(file);
+    });
 }
 
 // Missing functions that bot.js needs

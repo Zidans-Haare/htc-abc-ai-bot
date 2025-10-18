@@ -10,6 +10,7 @@
 - Library/framework problems: Use Context7 to resolve library IDs and fetch docs (e.g., for Tailwind v4 migration).
 - You must not use any git actions that change the history.
 - If creating commits or branches, you must ask the user first (best with a: do you want this committed as: ...).
+- Do not modify Vite config's HMR path or allowedHosts unless explicitly requested by the user.
 
 # Project Information
 

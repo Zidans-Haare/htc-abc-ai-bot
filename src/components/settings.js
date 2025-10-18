@@ -21,13 +21,6 @@ export function loadSettings() {
         }
     }
 }
-        tempSettings = { ...settings };
-    } catch (e) {
-        console.error("Failed to load settings:", e);
-    }
-    applyUI(settings);
-    updateSettingsUI(settings);
-}
 
 export function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -41,7 +34,6 @@ export function resetSettings() {
     localStorage.removeItem(SETTINGS_KEY);
     // applyUI(settings);
     // showToast('Einstellungen zurückgesetzt');
-}
 }
 
 export function handleSettingChange(e) {

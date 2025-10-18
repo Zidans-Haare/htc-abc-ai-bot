@@ -197,9 +197,13 @@ export function setupUI(app) {
 
     if (importBtn && importInput) {
         importBtn.addEventListener('click', () => importInput.click());
-        importInput.addEventListener('change', (e) => {
+        importInput.addEventListener('change', async (e) => {
             if (e.target.files.length > 0) {
-                importHistory(e.target.files[0], app);
+                const result = await importHistory(e.target.files[0], app);
+                showToast(result.message);
+                if (result.success) {
+                    renderChatHistory(result.mergedHistory, app.conversationId, (id) => app.loadChat(id), () => app.closeMobileMenu());
+                }
             }
             e.target.value = null; // Reset file input
         });
