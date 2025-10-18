@@ -91,14 +91,12 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-    allowedHosts: ['dev.olomek.com'],
-    hmr: {
-      path: '/vite-hmr'
-    }
+    // allowedHosts: ['dev.olomek.com',  'localhost', '127.0.0.1']
+    allowedHosts: 'auto',
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'), // Keep for easy imports
+      '~': resolve(__dirname, 'src'), // Keep for easy imports
     },
   },
   css: {
@@ -111,7 +109,7 @@ export default defineConfig({
         bot: resolve(__dirname, 'src/bot/index.html'),    // Will be root (/) with server tweak below
         admin: resolve(__dirname, 'src/admin/index.html'), // Served at /admin/
         dash: resolve(__dirname, 'src/dash/index.html'),   // Served at /dash/
-        login: resolve(__dirname, 'src/login/login.html'), // Served at /login.html (rename to index.html for /login/ folder)
+        login: resolve(__dirname, 'src/login/index.html'), // Served at /login.html (rename to index.html for /login/ folder)
       },
       output: {
         // Optional: Nest outputs to match input folders for easier Express serving
