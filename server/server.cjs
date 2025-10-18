@@ -95,6 +95,22 @@ const useHttps = process.argv.includes('-https');
 const isTest = process.argv.includes('--test');
 const isDev = process.argv.includes('-dev');
 
+const STATIC_ASSET_MAX_AGE_SECONDS = 60 * 60 * 24 * 14; // 14 days
+const staticCacheControl = (res, filePath) => {
+  if (res.req.method !== 'GET') return;
+  if (filePath.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    return;
+  }
+  if (/\.(?:css|js|mjs|json|ico|png|jpg|jpeg|gif|svg|webp|avif|woff2?|ttf|eot|map)$/i.test(filePath)) {
+    res.setHeader('Cache-Control', `public, max-age=${STATIC_ASSET_MAX_AGE_SECONDS}, immutable`);
+  }
+};
+const staticAssetOptions = { setHeaders: staticCacheControl };
+const setHtmlNoCache = (res) => {
+  res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+};
+
 // CLI options
 program
   .option('--init-vectordb', 'Initialize/populate vector DB from current articles')
@@ -237,11 +253,12 @@ app.use((req, res, next) => {
   if (req.url.startsWith('/admin') || req.url.startsWith('/dash')) {
     return next();
   }
-  express.static(path.join(__dirname, '..', 'dist'))(req, res, next);
+  express.static(path.join(__dirname, '..', 'dist'), staticAssetOptions)(req, res, next);
 });
 
 // Serve main bot page
 app.get('/', (req, res) => {
+  setHtmlNoCache(res);
   res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'bot', 'index.html'));
 });
 
@@ -389,16 +406,19 @@ app.use('/api/dashboard', dashboardController);
 app.get("/api/view/articles", viewController.getPublishedArticles);
 
 // --- Dashboard Routes ---
-app.use('/dash', express.static(path.join(__dirname, '..', 'dist', 'src', 'dash')));
+app.use('/dash', express.static(path.join(__dirname, '..', 'dist', 'src', 'dash'), staticAssetOptions));
 app.get('/dash', (req, res) => {
+  setHtmlNoCache(res);
   res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'dash', 'index.html'));
 });
 
 // --- Admin Routes ---
 app.get('/login', (req, res) => {
+  setHtmlNoCache(res);
   res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'login', 'login.html'));
 });
 app.get('/admin', (req, res) => {
+  setHtmlNoCache(res);
   res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'admin', 'index.html'));
 });
 
@@ -442,8 +462,9 @@ app.use('/admin', async (req, res, next) => {
   if (session) {
     return next();
   }
-  res.redirect('/login/login.html');
-}, express.static(path.join(__dirname, '..', 'dist', 'src', 'admin')));
+  // Redirect to the login route so Express can serve the page (dist/src/login/login.html)
+  res.redirect('/login');
+}, express.static(path.join(__dirname, '..', 'dist', 'src', 'admin'), staticAssetOptions));
 
 // --- Uploads Static ---
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));

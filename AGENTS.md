@@ -24,7 +24,15 @@
 - Tailwind purging: Ensure @source paths are relative to src/styles/ and use source(none) for separate scans. Check tailwind.postcss.config.*.js.
 
 - General: Check AGENTS.md for project quirks; run npm run build to verify.
+
+- Troubleshooting dev routes served through Vite/Nginx/Express should leverage the `curl` MCP tool for HTTP checks and Context7 for planning or research when blockers appear (domain: dev.olomek.com).
 - Server Testing: Use `timeout 10s node server.cjs` instead of `node server.cjs` for testing to prevent hanging and allow prompt return.
 - Vite Dev: Use `timeout 10s npm run dev` for testing to prevent blocking; otherwise runs indefinitely. If port 5173 in use, uses next available (e.g., 5174).
+- Vite MPA dev rewrites: When mapping routes like `/`, `/admin/`, `/login/` during dev, make sure requests resolve to the real files under `/src/...` (e.g. `/src/bot/index.html`). Rewrites without `/src` 404 in dev while build output lives at `dist/src/...`.
+- Vite dev server must bind to IPv4 (`server.host = '127.0.0.1'`) so Nginx proxying `localhost:5173` works; otherwise Vite may listen on IPv6 `::1` only and nginx returns 502/404.
+- Vite dev rewrites strip query params before matching (see `vite.config.js`) so `/login?redirect=...` resolves correctly to `/src/login/login.html`.
 - Admin Interface: Mobile-optimized with toggleable list/detail views for conversations, articles, and feedback. Uses hidden class for switching. Requires /js/purify.min.js, /js/marked.min.js, /js/markup.js in admin/index.html for message rendering. ToastUI editor height dynamically calculated to fill available space, with minimum 300px.
-
+- Vite MPA rewrites: handled by the `mpa-rewrites` plugin in `vite.config.js` which remaps `/`, `/admin/`, `/dash/`, `/login/` to the corresponding `/src/.../index.html` files so dev requests do not 404.
+- Dev proxy behavior: current Nginx routes `/admin`, `/dash`, and `/api` to the Express app on port 3000, so those paths bypass Vite dev HMR. Expect to hit the built assets from `dist` unless the proxy is adjusted for dev.
+- `mpa-rewrites` skips rewriting any request already targeting `/src/...` so fonts and images under `src/assets` are served directly; Cloudflare can cache previous 404s, so add a cache-busting query if a stale error persists during validation.
+- Express static middleware sets `Cache-Control` for `dist` assets: HTML gets `no-cache, must-revalidate`, fingerprinted assets get `public, max-age=1209600, immutable`. Fonts are covered by the immutable rule; uploads remain unaffected.
