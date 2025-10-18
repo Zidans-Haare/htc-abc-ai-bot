@@ -12,7 +12,8 @@
     "test": "jest",
     "test:coverage": "nyc --reporter=lcov --reporter=text npm test",
     "test:env": "dotenv -e .env.test -- npm test",
-    "postinstall": "npx prisma generate"
+    "postinstall": "npx prisma generate",
+    "dev:watch": "concurrently \"vite build --watch\" \"nodemon --watch dist --watch server --ext js,cjs,json server/server.cjs -- -dev\""
   },
   "overrides": {
     "@browserbasehq/stagehand": {
@@ -78,6 +79,7 @@
     "dotenv-cli": "^7.4.2",
     "esbuild": "^0.25.10",
     "jest": "^29.7.0",
+    "nodemon": "^3.1.7",
     "nyc": "^15.1.0",
     "postcss": "^8.5.6",
     "postcss-cli": "^11.0.1",
@@ -85,6 +87,7 @@
     "sinon": "^17.0.0",
     "supertest": "^7.0.0",
     "tailwindcss": "^4.1.14",
-    "vite": "^7.1.10"
+    "vite": "^7.1.10",
+    "concurrently": "^8.2.2"
   }
 }
