@@ -21,7 +21,7 @@
       "zod": "4.1.12"
     },
     "@toast-ui/editor": {
-      "dompurify": "^3.2.4"
+      "dompurify": "^3.3.0"
     },
     "validator": "^13.15.15"
   },

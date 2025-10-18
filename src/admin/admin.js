@@ -9,6 +9,7 @@ import { setupFeedback } from './feedback.js';
 
 import { initImages } from './images.js';
 import { initDocuments } from './documents.js';
+import { renderMarkup } from '../components/markup.js';
 import { initStats } from './stats.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -506,7 +507,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const json = JSON.parse(jsonString);
                     if (json.token) {
                         fullResponse += json.token;
-                        aiResponse.innerHTML = window.renderMarkup(fullResponse);
+                        aiResponse.innerHTML = renderMarkup(fullResponse);
                     }
                 } catch (e) {
                     console.error('Failed to parse stream chunk:', e, 'Chunk:', jsonString);

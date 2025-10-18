@@ -1,4 +1,5 @@
 // conversations.js - im alten Stil, ohne Module
+import { renderMarkup } from '../components/markup.js';
 
 let allConversations = [];
 let currentFilter = 'All';
@@ -178,12 +179,7 @@ function renderMessages(messages) {
             content.textContent = msg.content;
         } else {
             // For bot messages, parse markdown and sanitize
-            if (window.renderMarkup) {
-                content.innerHTML = window.renderMarkup(msg.content);
-            } else {
-                console.error('window.renderMarkup not defined');
-                content.textContent = msg.content;
-            }
+            content.innerHTML = renderMarkup(msg.content);
             content.querySelectorAll('img').forEach(img => {
                 img.classList.add('max-w-full', 'h-auto', 'rounded-lg', 'mt-2');
             });
