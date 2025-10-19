@@ -4,7 +4,7 @@ import { initArticles, allArticles, loadArticles, selectArticle, getCurrentId, l
 import { initQuestions } from './questions.js';
 import { initUsers, loadUsers } from './users.js';
 import { initArchive, loadArchive } from './archive.js';
-import { initExport } from './export.js';
+
 import { initBackup } from './backup.js';
 import { setupFeedback } from './feedback.js';
 
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initArticles();
   const questionsManager = initQuestions({ updateOpenCount, showEditor });
    initArchive();
-   initExport();
+
    initBackup();
    setupFeedback();
   initImages();
