@@ -8,7 +8,7 @@ export const defaultSettings = {
     fontSize: 'medium',
     layoutDensity: 'standard',
     animationSpeed: 'normal',
-    homeScreenIcon: '/image/smoky_klein.png',
+    homeScreenIcon: '/assets/images/smoky_klein.png',
     saveHistory: true,
     autoDelete: '0',
     tts: false,

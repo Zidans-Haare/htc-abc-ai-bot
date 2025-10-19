@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div id="welcome-message">
                     <div class="message ai">
                         <div class="avatar">
-                            <img src="/image/smoky_klein.png" alt="Bot Avatar">
+                            <img src="/assets/images/smoky_klein.png" alt="Bot Avatar">
                         </div>
                         <div class="bubble">
                             <span>Hallo! Ich bin dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?</span>

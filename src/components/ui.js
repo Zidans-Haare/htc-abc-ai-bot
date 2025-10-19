@@ -31,8 +31,8 @@ const mobileFeedbackBtn = document.getElementById('mobile-feedback-btn');
 const mobileHistoryContainer = document.getElementById('mobile-history-items-container');
 
 let useFirstAvatar = true;
-const botAvatarImage1 = '/image/smoky_klein.png';
-const botAvatarImage2 = '/image/stu_klein.png';
+const botAvatarImage1 = '/assets/images/smoky_klein.png';
+const botAvatarImage2 = '/assets/images/stu_klein.png';
 
 export function showToast(message) {
     const template = document.getElementById('toast-template');
@@ -473,14 +473,14 @@ export function showCreditsAnimation() {
     messagesContainer.innerHTML = ''; // Clear the chat
 
     const credits = [
-        { name: 'Dieses Projekt wurde in Zusammenarbeit von StuRa und Faranto entwickelt, danke an alle Untersützer:', avatar: '/image/HTW.svg' },
-        { name: 'Nick', avatar: '/image/stu_klein.png' },
-        { name: 'Jan', avatar: '/image/smoky_klein.png' },
-        { name: 'Hannes', avatar: '/image/smoky_klein.png' },
-        { name: 'Nina', avatar: '/image/smoky_klein.png' },
-        { name: 'Sally', avatar: '/image/smoky_klein.png' },
-        { name: 'Tommy', avatar: '/image/stu_klein.png' },
-        { name: 'Danke für die tolle Zusammenarbeit!', avatar: '/image/FarantoStura.png' }
+        { name: 'Dieses Projekt wurde in Zusammenarbeit von StuRa und Faranto entwickelt, danke an alle Untersützer:', avatar: '/assets/images/HTW.svg' },
+        { name: 'Nick', avatar: '/assets/images/stu_klein.png' },
+        { name: 'Jan', avatar: '/assets/images/smoky_klein.png' },
+        { name: 'Hannes', avatar: '/assets/images/smoky_klein.png' },
+        { name: 'Nina', avatar: '/assets/images/smoky_klein.png' },
+        { name: 'Sally', avatar: '/assets/images/smoky_klein.png' },
+        { name: 'Tommy', avatar: '/assets/images/stu_klein.png' },
+        { name: 'Danke für die tolle Zusammenarbeit!', avatar: '/assets/images/FarantoStura.png' }
     ];
 
     let delay = 500; // Start delay

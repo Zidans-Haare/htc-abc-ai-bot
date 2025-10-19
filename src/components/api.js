@@ -117,7 +117,7 @@ export async function sendMsg(app, promptText) {
                     m.className = 'message ai';
                     const avatar = document.createElement('div');
                     avatar.className = 'avatar';
-                    const avatarSrc = app.useFirstAvatar ? '/image/smoky_klein.png' : '/image/stu_klein.png';
+                    const avatarSrc = app.useFirstAvatar ? '/assets/images/smoky_klein.png' : '/assets/images/stu_klein.png';
                     avatar.innerHTML = `<img src="${avatarSrc}" alt="Bot Avatar" />`;
                     app.useFirstAvatar = !app.useFirstAvatar;
                     m.appendChild(avatar);
