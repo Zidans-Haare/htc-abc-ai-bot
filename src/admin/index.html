@@ -345,6 +345,21 @@
           </div>
           <button id="start-backup-btn" class="px-4 py-2 btn-primary rounded-md">Start Backup</button>
         </div>
+        <div id="backup-import" class="hidden space-y-4">
+          <h3 class="text-lg font-semibold">Select Data to Import</h3>
+          <div>
+            <label for="import-mode">Import Mode:</label>
+            <select id="import-mode" class="border p-2 rounded-md border-(--input-border)">
+              <option value="replace">Replace (delete existing data)</option>
+              <option value="append-override">Append Override (update existing)</option>
+              <option value="append-keep">Append Keep (skip existing)</option>
+            </select>
+          </div>
+          <div id="import-options" class="grid grid-cols-2 gap-4">
+            <!-- Checkboxes will be added here -->
+          </div>
+          <button id="start-import-btn" class="px-4 py-2 btn-primary rounded-md">Start Import</button>
+        </div>
         <div id="backup-list" class="space-y-2">
           <!-- Backups will be listed here -->
         </div>

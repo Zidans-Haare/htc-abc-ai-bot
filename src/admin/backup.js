@@ -72,6 +72,32 @@ function initBackup() {
     }
   });
 
+  const startImportBtn = document.getElementById('start-import-btn');
+  startImportBtn.addEventListener('click', async function() {
+    const filename = this.dataset.filename;
+    const mode = document.getElementById('import-mode').value;
+    const selected = {};
+    document.querySelectorAll('#import-options input[type="checkbox"]').forEach(cb => {
+      selected[cb.id.replace('import-', '')] = cb.checked;
+    });
+    startImportBtn.disabled = true;
+    startImportBtn.textContent = 'Importing...';
+    try {
+      await fetch(`/api/admin/backup/${filename}/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode, selected })
+      });
+      alert('Import completed');
+      document.getElementById('backup-import').classList.add('hidden');
+    } catch (err) {
+      console.error('Import failed', err);
+    } finally {
+      startImportBtn.disabled = false;
+      startImportBtn.textContent = 'Start Import';
+    }
+  });
+
   loadBackups();
 }
 
@@ -117,14 +143,37 @@ async function loadBackups() {
 
     document.querySelectorAll('.import-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const mode = prompt('Import mode: replace, append-override, append-keep');
-        if (mode) {
-          await fetch(`/api/admin/backup/${btn.dataset.filename}/import`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode })
+        const filename = btn.dataset.filename;
+        try {
+          const { files } = await fetchAndParse(`/api/admin/backup/${filename}/files`);
+          const importOptions = document.getElementById('import-options');
+          importOptions.innerHTML = '';
+          const fileMap = {
+            users: 'Users',
+            hochschuhl_abc: 'Artikels',
+            questions: 'Fragen',
+            conversations: 'Conversations',
+            documents: 'Dokumente',
+            images: 'Bilder',
+            feedback: 'Feedback'
+          };
+          const dashboardFiles = ['article_views', 'page_views', 'daily_question_stats', 'token_usage', 'user_sessions'];
+          const hasDashboard = dashboardFiles.some(f => files.includes(f));
+          if (hasDashboard) {
+            fileMap.dashboard = 'Dashboard';
+          }
+          Object.keys(fileMap).forEach(key => {
+            if (files.includes(key) || (key === 'dashboard' && hasDashboard)) {
+              const label = document.createElement('label');
+              label.innerHTML = `<input type="checkbox" id="import-${key}" checked> ${fileMap[key]}`;
+              importOptions.appendChild(label);
+            }
           });
-          alert('Import completed');
+          document.getElementById('backup-import').classList.remove('hidden');
+          // Set current button for later
+          document.getElementById('start-import-btn').dataset.filename = filename;
+        } catch (err) {
+          console.error('Failed to load backup files', err);
         }
       });
     });

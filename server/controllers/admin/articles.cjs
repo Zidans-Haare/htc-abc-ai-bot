@@ -63,7 +63,7 @@ module.exports = (adminAuth) => {
        const articles = await HochschuhlABC.findMany({
         select: { id: true, article: true, description: true },
         where,
-        orderBy: { last_updated: 'desc' },
+        orderBy: { updated_at: 'desc' },
         take: 100,
         skip: offset
       });

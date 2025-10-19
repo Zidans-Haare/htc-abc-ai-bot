@@ -90,15 +90,14 @@ model hochschuhl_abc {
   article       String
   description   String?
   editor        String?
-  last_updated  DateTime?
-   active        Boolean?                   @default(true)
-   archived      DateTime?
-   created_at    DateTime                   @default(now())
+  active        Boolean?                   @default(true)
+  archived      DateTime?
+  created_at    DateTime                   @default(now())
   updated_at    DateTime                   @updatedAt
   article_views article_views[]
   questions     questions[]
   documents     documents[]
-  @@map("hochschul_abc")
+  @@map("hochschuhl_abc")
 }
 model images {
   id          Int      @id @default(autoincrement())
@@ -136,7 +135,6 @@ model question_analysis_cache {
   topic               String?
   languages_detected  String?
   original_questions  String
-  last_updated        DateTime?
   is_processing       Boolean?                   @default(false)
   created_at          DateTime                   @default(now())
   updated_at          DateTime                   @updatedAt
@@ -158,7 +156,6 @@ model questions {
   answer            String?
   user              String?
   category_id       Int?
-  last_updated      DateTime?
   archived          Boolean?                   @default(false)
   linked_article_id Int?
   answered          Boolean?                   @default(false)

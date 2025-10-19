@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs').promises;
+const fs = require('fs');
+const fsPromises = require('fs').promises;
 const path = require('path');
 const archiver = require('archiver');
 const unzipper = require('unzipper');
@@ -15,7 +16,7 @@ let backupInProgress = false;
 
 module.exports = (adminAuth) => {
   // Ensure backup dir exists
-  fs.mkdir(BACKUP_PATH, { recursive: true }).catch(() => {});
+  fsPromises.mkdir(BACKUP_PATH, { recursive: true }).catch(() => {});
 
   router.post('/create', adminAuth, (req, res) => {
     if (backupInProgress) {
@@ -52,11 +53,11 @@ module.exports = (adminAuth) => {
         archive.append(JSON.stringify(data, null, 2), { name: 'questions.json' });
         // Add txt files
         try {
-          const unanswered = await fs.readFile('ai_fragen/offene_fragen.txt', 'utf8');
+          const unanswered = await fsPromises.readFile('ai_fragen/offene_fragen.txt', 'utf8');
           archive.append(unanswered, { name: 'offene_fragen.txt' });
         } catch {}
         try {
-          const faq = await fs.readFile('ai_input/faq.txt', 'utf8');
+          const faq = await fsPromises.readFile('ai_input/faq.txt', 'utf8');
           archive.append(faq, { name: 'faq.txt' });
         } catch {}
       }
@@ -101,8 +102,11 @@ module.exports = (adminAuth) => {
         archive.append(JSON.stringify(userSessions, null, 2), { name: 'user_sessions.json' });
       }
 
-      await archive.finalize();
-      console.log(`Backup ${filename} completed`);
+      await new Promise((resolve, reject) => {
+        output.on('close', resolve);
+        output.on('error', reject);
+        archive.finalize();
+      });
     } catch (err) {
       console.error('Backup creation failed', err);
     } finally {
@@ -112,11 +116,11 @@ module.exports = (adminAuth) => {
 
   router.get('/list', adminAuth, async (req, res) => {
     try {
-      const files = await fs.readdir(BACKUP_PATH);
+      const files = await fsPromises.readdir(BACKUP_PATH);
       const backups = [];
       for (const file of files) {
         if (file.endsWith('.zip')) {
-          const stat = await fs.stat(path.join(BACKUP_PATH, file));
+          const stat = await fsPromises.stat(path.join(BACKUP_PATH, file));
           backups.push({
             filename: file,
             date: stat.mtime,
@@ -135,7 +139,7 @@ module.exports = (adminAuth) => {
   router.delete('/:filename', adminAuth, async (req, res) => {
     const { filename } = req.params;
     try {
-      await fs.unlink(path.join(BACKUP_PATH, filename));
+      await fsPromises.unlink(path.join(BACKUP_PATH, filename));
       res.json({ success: true });
     } catch (err) {
       console.error('Delete backup failed', err);
@@ -147,7 +151,7 @@ module.exports = (adminAuth) => {
     const { filename } = req.params;
     const { newName } = req.body;
     try {
-      await fs.rename(path.join(BACKUP_PATH, filename), path.join(BACKUP_PATH, newName));
+      await fsPromises.rename(path.join(BACKUP_PATH, filename), path.join(BACKUP_PATH, newName));
       res.json({ success: true });
     } catch (err) {
       console.error('Rename backup failed', err);
@@ -155,17 +159,30 @@ module.exports = (adminAuth) => {
     }
   });
 
+  router.get('/:filename/files', adminAuth, async (req, res) => {
+    const { filename } = req.params;
+    const filepath = path.join(BACKUP_PATH, filename);
+    try {
+      const directory = await unzipper.Open.file(filepath);
+      const files = directory.files.filter(f => f.type === 'File' && f.path.endsWith('.json')).map(f => f.path.replace('.json', ''));
+      res.json({ files });
+    } catch (err) {
+      console.error('Read backup files failed', err);
+      res.status(500).json({ error: 'Failed to read backup files' });
+    }
+  });
+
   router.post('/upload', adminAuth, upload.single('file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const filename = req.file.originalname;
     const dest = path.join(BACKUP_PATH, filename);
-    await fs.rename(req.file.path, dest);
+    await fsPromises.rename(req.file.path, dest);
     res.json({ filename });
   });
 
   router.post('/:filename/import', adminAuth, async (req, res) => {
     const { filename } = req.params;
-    const { mode } = req.body; // 'replace', 'append-override', 'append-keep'
+    const { mode, selected } = req.body; // mode: 'replace', 'append-override', 'append-keep'; selected: { users: true, artikels: true, ... }
     const filepath = path.join(BACKUP_PATH, filename);
     try {
       const directory = await unzipper.Open.file(filepath);
@@ -175,12 +192,12 @@ module.exports = (adminAuth) => {
           const content = await file.buffer();
           if (file.path.endsWith('.json')) {
             files[file.path] = JSON.parse(content.toString());
-          } else {
-            // For files, save temporarily
-            const tempPath = path.join('temp', file.path);
-            await fs.mkdir(path.dirname(tempPath), { recursive: true });
-            await fs.writeFile(tempPath, content);
-          }
+        } else {
+          // For files, save temporarily
+          const tempPath = path.join('temp', file.path);
+          await fsPromises.mkdir(path.dirname(tempPath), { recursive: true });
+          await fsPromises.writeFile(tempPath, content);
+        }
         }
       }
 
@@ -197,10 +214,10 @@ module.exports = (adminAuth) => {
         }
       };
 
-      if (files['users.json']) await importTable('users', files['users.json'], mode === 'replace');
-      if (files['hochschuhl_abc.json']) await importTable('hochschuhl_abc', files['hochschuhl_abc.json'], mode === 'replace');
-      if (files['questions.json']) await importTable('questions', files['questions.json'], mode === 'replace');
-      if (files['conversations.json']) {
+      if (files['users.json'] && selected.users) await importTable('users', files['users.json'], mode === 'replace');
+      if (files['hochschuhl_abc.json'] && selected.artikels) await importTable('hochschuhl_abc', files['hochschuhl_abc.json'], mode === 'replace');
+      if (files['questions.json'] && selected.fragen) await importTable('questions', files['questions.json'], mode === 'replace');
+      if (files['conversations.json'] && selected.conversations) {
         for (const conv of files['conversations.json']) {
           const { messages, ...convData } = conv;
           const newConv = await prisma.conversations.upsert({
@@ -217,55 +234,57 @@ module.exports = (adminAuth) => {
           }
         }
       }
-      if (files['documents.json']) {
+      if (files['documents.json'] && selected.dokumente) {
         await importTable('documents', files['documents.json'], mode === 'replace');
         // Copy files
         for (const doc of files['documents.json']) {
           const src = path.join('temp', 'documents', doc.filepath);
           const dest = path.join('public', 'documents', doc.filepath);
           try {
-            await fs.mkdir(path.dirname(dest), { recursive: true });
-            await fs.copyFile(src, dest);
+            await fsPromises.mkdir(path.dirname(dest), { recursive: true });
+            await fsPromises.copyFile(src, dest);
           } catch {}
         }
       }
-      if (files['images.json']) {
+      if (files['images.json'] && selected.bilder) {
         await importTable('images', files['images.json'], mode === 'replace');
         // Copy files
         for (const img of files['images.json']) {
           const src = path.join('temp', 'images', img.filename);
           const dest = path.join('public', 'assets', 'images', img.filename);
           try {
-            await fs.mkdir(path.dirname(dest), { recursive: true });
-            await fs.copyFile(src, dest);
+            await fsPromises.mkdir(path.dirname(dest), { recursive: true });
+            await fsPromises.copyFile(src, dest);
           } catch {}
         }
       }
-      if (files['feedback.json']) await importTable('feedback', files['feedback.json'], mode === 'replace');
-      if (files['article_views.json']) await importTable('article_views', files['article_views.json'], mode === 'replace');
-      if (files['page_views.json']) await importTable('page_views', files['page_views.json'], mode === 'replace');
-      if (files['daily_question_stats.json']) await importTable('daily_question_stats', files['daily_question_stats.json'], mode === 'replace');
-      if (files['token_usage.json']) await importTable('token_usage', files['token_usage.json'], mode === 'replace');
-      if (files['user_sessions.json']) {
-        for (const sess of files['user_sessions.json']) {
-          const { chat_interactions, ...sessData } = sess;
-          const newSess = await prisma.user_sessions.upsert({
-            where: { session_id: sess.session_id },
-            update: sessData,
-            create: sessData
-          });
-          for (const inter of chat_interactions) {
-            await prisma.chat_interactions.upsert({
-              where: { id: inter.id },
-              update: { ...inter, session_id: newSess.session_id },
-              create: { ...inter, session_id: newSess.session_id }
+      if (files['feedback.json'] && selected.feedback) await importTable('feedback', files['feedback.json'], mode === 'replace');
+      if (selected.dashboard) {
+        if (files['article_views.json']) await importTable('article_views', files['article_views.json'], mode === 'replace');
+        if (files['page_views.json']) await importTable('page_views', files['page_views.json'], mode === 'replace');
+        if (files['daily_question_stats.json']) await importTable('daily_question_stats', files['daily_question_stats.json'], mode === 'replace');
+        if (files['token_usage.json']) await importTable('token_usage', files['token_usage.json'], mode === 'replace');
+        if (files['user_sessions.json']) {
+          for (const sess of files['user_sessions.json']) {
+            const { chat_interactions, ...sessData } = sess;
+            const newSess = await prisma.user_sessions.upsert({
+              where: { session_id: sess.session_id },
+              update: sessData,
+              create: sessData
             });
-          }
+      for (const inter of chat_interactions) {
+        await prisma.chat_interactions.upsert({
+          where: { id: inter.id },
+          update: { ...inter, session_id: newSess.session_id },
+          create: { ...inter, session_id: newSess.session_id }
+        });
+      }
+    }
         }
       }
 
       // Clean temp
-      await fs.rm('temp', { recursive: true, force: true });
+      await fsPromises.rm('temp', { recursive: true, force: true });
 
       res.json({ success: true });
     } catch (err) {
