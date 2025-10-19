@@ -4,7 +4,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { Documents } = require('../db.cjs');
 
-const uploadDir = path.resolve(__dirname, '..', '..', '..', 'public', 'documents');
+const uploadDir = path.resolve(__dirname, '..', '..', '..', 'uploads', 'documents');
 
 // Ensure the upload directory exists
 fs.mkdir(uploadDir, { recursive: true }).catch(err => console.error("Failed to create upload directory", err));
@@ -83,11 +83,9 @@ module.exports = (authMiddleware) => {
                     file_type: fileType,
                     description: description || null
                 };
-                console.log('Creating document in DB with data:', docData);
                 const newDocument = await Documents.create({
                     data: docData
                 });
-                console.log('Document created successfully:', newDocument);
                 res.status(201).json(newDocument);
             } catch (error) {
                 console.error('Fehler beim Speichern des Dokuments in der DB:', error);
@@ -136,7 +134,7 @@ module.exports = (authMiddleware) => {
             }
 
             // Delete the file from the filesystem
-            const filePath = path.join(__dirname, '..', '..', 'public', document.filepath);
+            const filePath = path.join(__dirname, '..', '..', '..', 'uploads', 'documents', document.filepath);
             try {
                 await fs.unlink(filePath);
             } catch (fileError) {

@@ -109,13 +109,13 @@ function renderDocuments(documents, append = false) {
                 <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
                     <i class="fas fa-file fa-3x text-blue-500"></i>
                 </div>
-                 <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <button class="view-document-btn text-white hover:text-green-400 transition-colors" data-url="/documents/${doc.filepath}" title="Anzeigen">
-                         <i class="fas fa-eye fa-lg"></i>
-                      </button>
-                      <button class="copy-url-btn text-white hover:text-(--accent-color) transition-colors ml-4" data-url="/documents/${doc.filepath}" title="URL kopieren">
-                         <i class="fas fa-copy fa-lg"></i>
-                      </button>
+                  <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                       <button class="view-document-btn text-white hover:text-green-400 transition-colors" data-url="/uploads/documents/${doc.filepath}" title="Anzeigen">
+                          <i class="fas fa-eye fa-lg"></i>
+                       </button>
+                       <button class="copy-url-btn text-white hover:text-(--accent-color) transition-colors ml-4" data-url="/uploads/documents/${doc.filepath}" title="URL kopieren">
+                          <i class="fas fa-copy fa-lg"></i>
+                       </button>
                       <button class="edit-document-btn text-white hover:text-yellow-400 transition-colors ml-4" data-id="${doc.id}" data-description="${doc.description || ''}" title="Beschreibung bearbeiten">
                          <i class="fas fa-pencil-alt fa-lg"></i>
                       </button>

@@ -69,21 +69,21 @@ module.exports = (adminAuth) => {
         const docs = await prisma.documents.findMany();
         console.log(`Backing up ${docs.length} documents`);
         archive.append(JSON.stringify(docs, null, 2), { name: 'documents.json' });
-        // Add files
-        for (const doc of docs) {
-          const filePath = `public/documents/${doc.filepath}`;
-          console.log(`Adding document file: ${filePath}`);
-          if (fs.existsSync(filePath)) {
-            try {
-              archive.file(filePath, { name: `documents/${doc.filepath}` });
-              console.log(`Added document file: ${doc.filepath}`);
-            } catch (err) {
-              console.log(`Failed to add document file: ${doc.filepath}, error: ${err.message}`);
-            }
-          } else {
-            console.log(`Document file not found: ${filePath}`);
-          }
-        }
+         // Add files
+         for (const doc of docs) {
+           const filePath = `uploads/documents/${doc.filepath}`;
+           console.log(`Adding document file: ${filePath}`);
+           if (fs.existsSync(filePath)) {
+             try {
+               archive.file(filePath, { name: `documents/${doc.filepath}` });
+               console.log(`Added document file: ${doc.filepath}`);
+             } catch (err) {
+               console.log(`Failed to add document file: ${doc.filepath}, error: ${err.message}`);
+             }
+           } else {
+             console.log(`Document file not found: ${filePath}`);
+           }
+         }
       }
       if (options.bilder) {
         const imgs = await prisma.images.findMany();
@@ -277,18 +277,18 @@ module.exports = (adminAuth) => {
         }
         console.log(`conversations: ${convInserted} inserted, ${convUpdated} updated; messages: ${msgInserted} inserted, ${msgUpdated} updated`);
       }
-      if (files['documents.json'] && selected.dokumente) {
-        await importTable('documents', files['documents.json'], mode === 'replace');
-        // Copy files
-        for (const doc of files['documents.json']) {
-          const src = path.join('temp', 'documents', doc.filepath);
-          const dest = path.join('public', 'documents', doc.filepath);
-          try {
-            await fsPromises.mkdir(path.dirname(dest), { recursive: true });
-            await fsPromises.copyFile(src, dest);
-          } catch {}
-        }
-      }
+       if (files['documents.json'] && selected.dokumente) {
+         await importTable('documents', files['documents.json'], mode === 'replace');
+         // Copy files
+         for (const doc of files['documents.json']) {
+           const src = path.join('temp', 'documents', doc.filepath);
+           const dest = path.join('uploads', 'documents', doc.filepath);
+           try {
+             await fsPromises.mkdir(path.dirname(dest), { recursive: true });
+             await fsPromises.copyFile(src, dest);
+           } catch {}
+         }
+       }
       if (files['images.json'] && selected.bilder) {
         await importTable('images', files['images.json'], mode === 'replace');
         // Copy files

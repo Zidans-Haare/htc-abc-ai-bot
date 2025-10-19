@@ -347,7 +347,7 @@ class VectorStoreManager {
       // Delete old
       await this.store.delete({ filter: { $and: [{ source: 'document' }, { documentId: doc.id }] } });
       // Add new if supported type
-      const fullPath = path.join(__dirname, '..', 'public', 'documents', doc.filepath);
+      const fullPath = path.join(__dirname, '..', '..', 'uploads', 'documents', doc.filepath);
       let loader;
       if (doc.file_type === 'pdf') {
         const loadedDocs = await this.loadPDF(fullPath);
