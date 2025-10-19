@@ -150,12 +150,18 @@ async function loadBackups() {
           importOptions.innerHTML = '';
           const fileMap = {
             users: 'Users',
-            hochschuhl_abc: 'Artikels',
-            questions: 'Fragen',
+            artikels: 'Artikels',
+            fragen: 'Fragen',
             conversations: 'Conversations',
-            documents: 'Dokumente',
-            images: 'Bilder',
+            dokumente: 'Dokumente',
+            bilder: 'Bilder',
             feedback: 'Feedback'
+          };
+          const fileKeyMap = {
+            artikels: 'hochschuhl_abc',
+            fragen: 'questions',
+            dokumente: 'documents',
+            bilder: 'images'
           };
           const dashboardFiles = ['article_views', 'page_views', 'daily_question_stats', 'token_usage', 'user_sessions'];
           const hasDashboard = dashboardFiles.some(f => files.includes(f));
@@ -163,7 +169,8 @@ async function loadBackups() {
             fileMap.dashboard = 'Dashboard';
           }
           Object.keys(fileMap).forEach(key => {
-            if (files.includes(key) || (key === 'dashboard' && hasDashboard)) {
+            const fileKey = fileKeyMap[key] || key;
+            if (files.includes(fileKey) || (key === 'dashboard' && hasDashboard)) {
               const label = document.createElement('label');
               label.innerHTML = `<input type="checkbox" id="import-${key}" checked> ${fileMap[key]}`;
               importOptions.appendChild(label);

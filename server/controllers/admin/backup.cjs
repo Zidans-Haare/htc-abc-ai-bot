@@ -67,22 +67,42 @@ module.exports = (adminAuth) => {
       }
       if (options.dokumente) {
         const docs = await prisma.documents.findMany();
+        console.log(`Backing up ${docs.length} documents`);
         archive.append(JSON.stringify(docs, null, 2), { name: 'documents.json' });
         // Add files
         for (const doc of docs) {
-          try {
-            archive.file(`public/documents/${doc.filepath}`, { name: `documents/${doc.filepath}` });
-          } catch {}
+          const filePath = `public/documents/${doc.filepath}`;
+          console.log(`Adding document file: ${filePath}`);
+          if (fs.existsSync(filePath)) {
+            try {
+              archive.file(filePath, { name: `documents/${doc.filepath}` });
+              console.log(`Added document file: ${doc.filepath}`);
+            } catch (err) {
+              console.log(`Failed to add document file: ${doc.filepath}, error: ${err.message}`);
+            }
+          } else {
+            console.log(`Document file not found: ${filePath}`);
+          }
         }
       }
       if (options.bilder) {
         const imgs = await prisma.images.findMany();
+        console.log(`Backing up ${imgs.length} images`);
         archive.append(JSON.stringify(imgs, null, 2), { name: 'images.json' });
         // Add files
         for (const img of imgs) {
-          try {
-            archive.file(`public/assets/images/${img.filename}`, { name: `images/${img.filename}` });
-          } catch {}
+          const filePath = `public/uploads/${img.filename}`;
+          console.log(`Adding image file: ${filePath}`);
+          if (fs.existsSync(filePath)) {
+            try {
+              archive.file(filePath, { name: `images/${img.filename}` });
+              console.log(`Added image file: ${img.filename}`);
+            } catch (err) {
+              console.log(`Failed to add image file: ${img.filename}, error: ${err.message}`);
+            }
+          } else {
+            console.log(`Image file not found: ${filePath}`);
+          }
         }
       }
       if (options.feedback) {
@@ -102,11 +122,15 @@ module.exports = (adminAuth) => {
         archive.append(JSON.stringify(userSessions, null, 2), { name: 'user_sessions.json' });
       }
 
-      await new Promise((resolve, reject) => {
-        output.on('close', resolve);
-        output.on('error', reject);
-        archive.finalize();
-      });
+       console.log('Finalizing backup archive');
+       await new Promise((resolve, reject) => {
+         output.on('close', () => {
+           console.log(`Backup created: ${filename}`);
+           resolve();
+         });
+         output.on('error', reject);
+         archive.finalize();
+       });
     } catch (err) {
       console.error('Backup creation failed', err);
     } finally {
@@ -183,6 +207,7 @@ module.exports = (adminAuth) => {
   router.post('/:filename/import', adminAuth, async (req, res) => {
     const { filename } = req.params;
     const { mode, selected } = req.body; // mode: 'replace', 'append-override', 'append-keep'; selected: { users: true, artikels: true, ... }
+    console.log(`Import received for ${filename}, mode: ${mode}, selected:`, selected);
     const filepath = path.join(BACKUP_PATH, filename);
     try {
       const directory = await unzipper.Open.file(filepath);
@@ -203,36 +228,54 @@ module.exports = (adminAuth) => {
 
       // Import logic
       const importTable = async (table, data, replace) => {
-        if (replace) await prisma[table].deleteMany();
+        console.log(`Starting import for ${table}, mode: ${mode}, replace: ${replace}, data length: ${data.length}`);
+        if (replace) {
+          console.log(`Dropping all records in ${table}`);
+          await prisma[table].deleteMany();
+        }
+        let inserted = 0, updated = 0;
         for (const item of data) {
-          if (mode === 'append-keep' && await prisma[table].findUnique({ where: { id: item.id } })) continue;
+          if (mode === 'append-keep' && await prisma[table].findUnique({ where: { id: item.id } })) {
+            console.log(`Skipping existing item in ${table}, id: ${item.id}`);
+            continue;
+          }
+          const existing = await prisma[table].findUnique({ where: { id: item.id } });
           await prisma[table].upsert({
             where: { id: item.id },
             update: item,
             create: item
           });
+          if (existing) updated++; else inserted++;
         }
+        console.log(`${table}: ${inserted} inserted, ${updated} updated`);
       };
 
       if (files['users.json'] && selected.users) await importTable('users', files['users.json'], mode === 'replace');
       if (files['hochschuhl_abc.json'] && selected.artikels) await importTable('hochschuhl_abc', files['hochschuhl_abc.json'], mode === 'replace');
       if (files['questions.json'] && selected.fragen) await importTable('questions', files['questions.json'], mode === 'replace');
       if (files['conversations.json'] && selected.conversations) {
+        console.log(`Starting import for conversations, data length: ${files['conversations.json'].length}`);
+        let convInserted = 0, convUpdated = 0, msgInserted = 0, msgUpdated = 0;
         for (const conv of files['conversations.json']) {
           const { messages, ...convData } = conv;
+          const existingConv = await prisma.conversations.findUnique({ where: { id: conv.id } });
           const newConv = await prisma.conversations.upsert({
             where: { id: conv.id },
             update: convData,
             create: convData
           });
+          if (existingConv) convUpdated++; else convInserted++;
           for (const msg of messages) {
+            const existingMsg = await prisma.messages.findUnique({ where: { id: msg.id } });
             await prisma.messages.upsert({
               where: { id: msg.id },
               update: { ...msg, conversation_id: newConv.id },
               create: { ...msg, conversation_id: newConv.id }
             });
+            if (existingMsg) msgUpdated++; else msgInserted++;
           }
         }
+        console.log(`conversations: ${convInserted} inserted, ${convUpdated} updated; messages: ${msgInserted} inserted, ${msgUpdated} updated`);
       }
       if (files['documents.json'] && selected.dokumente) {
         await importTable('documents', files['documents.json'], mode === 'replace');
@@ -251,7 +294,7 @@ module.exports = (adminAuth) => {
         // Copy files
         for (const img of files['images.json']) {
           const src = path.join('temp', 'images', img.filename);
-          const dest = path.join('public', 'assets', 'images', img.filename);
+          const dest = path.join('public', 'uploads', img.filename);
           try {
             await fsPromises.mkdir(path.dirname(dest), { recursive: true });
             await fsPromises.copyFile(src, dest);
@@ -265,21 +308,28 @@ module.exports = (adminAuth) => {
         if (files['daily_question_stats.json']) await importTable('daily_question_stats', files['daily_question_stats.json'], mode === 'replace');
         if (files['token_usage.json']) await importTable('token_usage', files['token_usage.json'], mode === 'replace');
         if (files['user_sessions.json']) {
+          console.log(`Starting import for user_sessions, data length: ${files['user_sessions.json'].length}`);
+          let sessInserted = 0, sessUpdated = 0, interInserted = 0, interUpdated = 0;
           for (const sess of files['user_sessions.json']) {
             const { chat_interactions, ...sessData } = sess;
+            const existingSess = await prisma.user_sessions.findUnique({ where: { session_id: sess.session_id } });
             const newSess = await prisma.user_sessions.upsert({
               where: { session_id: sess.session_id },
               update: sessData,
               create: sessData
             });
-      for (const inter of chat_interactions) {
-        await prisma.chat_interactions.upsert({
-          where: { id: inter.id },
-          update: { ...inter, session_id: newSess.session_id },
-          create: { ...inter, session_id: newSess.session_id }
-        });
-      }
-    }
+            if (existingSess) sessUpdated++; else sessInserted++;
+            for (const inter of chat_interactions) {
+              const existingInter = await prisma.chat_interactions.findUnique({ where: { id: inter.id } });
+              await prisma.chat_interactions.upsert({
+                where: { id: inter.id },
+                update: { ...inter, session_id: newSess.session_id },
+                create: { ...inter, session_id: newSess.session_id }
+              });
+              if (existingInter) interUpdated++; else interInserted++;
+            }
+          }
+          console.log(`user_sessions: ${sessInserted} inserted, ${sessUpdated} updated; chat_interactions: ${interInserted} inserted, ${interUpdated} updated`);
         }
       }
 

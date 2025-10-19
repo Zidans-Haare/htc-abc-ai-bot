@@ -17,18 +17,24 @@ async function migrate() {
      });
    });
   const userMap = {};
-  for (const user of oldUsers) {
-    const newUser = await prisma.users.create({
-      data: {
-        username: user.username,
-        password: user.password, // assuming already hashed
-        role: user.role || 'editor',
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
-    userMap[user.username] = newUser.id;
-  }
+   for (const user of oldUsers) {
+     const newUser = await prisma.users.upsert({
+       where: { username: user.username },
+       update: {
+         password: user.password, // assuming already hashed
+         role: user.role || 'editor',
+         updated_at: new Date(),
+       },
+       create: {
+         username: user.username,
+         password: user.password, // assuming already hashed
+         role: user.role || 'editor',
+         created_at: new Date(),
+         updated_at: new Date(),
+       },
+     });
+     userMap[user.username] = newUser.id;
+   }
   console.log(`Migrated ${oldUsers.length} users`);
 
    // Migrate auth_sessions (if exists)
@@ -94,7 +100,7 @@ async function migrate() {
         article: art.headline,
         description: art.text,
         editor: art.editor,
-        last_updated: art.lastUpdated ? new Date(art.lastUpdated) : null,
+
         active: art.active ? true : false,
         archived: art.archived ? new Date(art.archived) : null,
         pdf_path: art.pdfPath,
@@ -114,18 +120,25 @@ async function migrate() {
        else resolve(rows);
      });
    });
-  for (const conv of oldConversations) {
-    await prisma.conversations.create({
-      data: {
-        id: conv.id,
-        anonymous_user_id: conv.anonymous_user_id,
-        category: conv.category,
-        ai_confidence: conv.ai_confidence,
-        created_at: new Date(conv.created_at),
-        updated_at: new Date(),
-      },
-    });
-  }
+   for (const conv of oldConversations) {
+     await prisma.conversations.upsert({
+       where: { id: conv.id },
+       update: {
+         anonymous_user_id: conv.anonymous_user_id,
+         category: conv.category,
+         ai_confidence: conv.ai_confidence,
+         updated_at: new Date(),
+       },
+       create: {
+         id: conv.id,
+         anonymous_user_id: conv.anonymous_user_id,
+         category: conv.category,
+         ai_confidence: conv.ai_confidence,
+         created_at: new Date(conv.created_at),
+         updated_at: new Date(),
+       },
+     });
+   }
   console.log(`Migrated ${oldConversations.length} conversations`);
 
    // Migrate messages
@@ -163,7 +176,7 @@ async function migrate() {
         question: q.question,
         answer: q.answer,
         user: q.user,
-        last_updated: q.lastUpdated ? new Date(q.lastUpdated) : null,
+
         archived: q.archived ? true : false,
         linked_article_id: q.linked_article_id ? articleMap[q.linked_article_id] : null,
         answered: q.answered ? true : false,
@@ -189,16 +202,21 @@ async function migrate() {
        else resolve(rows);
      });
    });
-  for (const img of oldImages) {
-    await prisma.images.create({
-      data: {
-        filename: img.filename,
-        description: img.description,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
-  }
+   for (const img of oldImages) {
+     await prisma.images.upsert({
+       where: { filename: img.filename },
+       update: {
+         description: img.description,
+         updated_at: new Date(),
+       },
+       create: {
+         filename: img.filename,
+         description: img.description,
+         created_at: new Date(),
+         updated_at: new Date(),
+       },
+     });
+   }
 
    // pdfs (skip if not exists)
    try {
@@ -208,17 +226,23 @@ async function migrate() {
          else resolve(rows);
        });
      });
-    for (const pdf of oldPdfs) {
-      await prisma.pdfs.create({
-        data: {
-          filename: pdf.filename,
-          filepath: pdf.filepath,
-          description: pdf.description,
-          created_at: pdf.createdAt ? new Date(pdf.createdAt) : new Date(),
-          updated_at: pdf.updatedAt ? new Date(pdf.updatedAt) : new Date(),
-        },
-      });
-    }
+     for (const pdf of oldPdfs) {
+       await prisma.pdfs.upsert({
+         where: { filename: pdf.filename },
+         update: {
+           filepath: pdf.filepath,
+           description: pdf.description,
+           updated_at: pdf.updatedAt ? new Date(pdf.updatedAt) : new Date(),
+         },
+         create: {
+           filename: pdf.filename,
+           filepath: pdf.filepath,
+           description: pdf.description,
+           created_at: pdf.createdAt ? new Date(pdf.createdAt) : new Date(),
+           updated_at: pdf.updatedAt ? new Date(pdf.updatedAt) : new Date(),
+         },
+       });
+     }
   } catch (e) {
     console.log('pdfs table not found, skipping...');
   }

@@ -25,14 +25,14 @@ async function getPublishedArticles(req, res) {
             articles = allArticles.slice(offset, offset + limit).map(a => ({ article: a.article, content: a.description }));
 
         } else {
-            // Default sort by last_updated, most recent first
+            // Default sort by updated_at, most recent first
             articles = await HochschuhlABC.findMany({
                 select: { article: true, description: true },
                 where: {
                     active: true,
                     archived: null
                 },
-                orderBy: { last_updated: 'desc' },
+                orderBy: { updated_at: 'desc' },
                 take: limit,
                 skip: offset
             });

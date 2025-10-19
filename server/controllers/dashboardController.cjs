@@ -134,13 +134,13 @@ router.get('/sessions', async (req, res) => {
         if (sessions.length === 0) {
             sessions = await prisma.$queryRaw(`
                 SELECT
-                    DATE(datetime(last_updated, ?)) as date,
+                    DATE(datetime(updated_at, ?)) as date,
                     COUNT(*) as count
                 FROM questions
-                WHERE datetime(last_updated, ?) >= datetime(?, ?)
+                WHERE datetime(updated_at, ?) >= datetime(?, ?)
                     AND spam = 0
                     AND deleted = 0
-                GROUP BY DATE(datetime(last_updated, ?))
+                GROUP BY DATE(datetime(updated_at, ?))
                 ORDER BY date ASC
             `, timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset);
         }
@@ -211,13 +211,13 @@ router.get('/sessions/hourly', async (req, res) => {
         if (hourlyData.length === 0) {
             hourlyData = await prisma.$queryRaw(`
                 SELECT
-                    CAST(strftime('%H', datetime(last_updated, ?)) AS INTEGER) as hour,
+                    CAST(strftime('%H', datetime(updated_at, ?)) AS INTEGER) as hour,
                     COUNT(*) as count
                 FROM questions
-                WHERE DATE(datetime(last_updated, ?)) = ?
+                WHERE DATE(datetime(updated_at, ?)) = ?
                     AND spam = 0
                     AND deleted = 0
-                GROUP BY strftime('%H', datetime(last_updated, ?))
+                GROUP BY strftime('%H', datetime(updated_at, ?))
                 ORDER BY hour ASC
             `, timezoneOffset, timezoneOffset, date, timezoneOffset);
         }
@@ -644,7 +644,7 @@ router.get('/frequent-questions', async (req, res) => {
                     isProcessing: false,
                     progress: 100,
                     message: `Vorberechnete Analyse von ${today}`,
-                    last_updated: today,
+                    updated_at: today,
                     source: 'daily_cache'
                 });
             }
@@ -775,7 +775,7 @@ router.get('/unanswered-questions', async (req, res) => {
                     isProcessing: false,
                     progress: 100,
                     message: `Vorberechnete Analyse von ${today}`,
-                    last_updated: today,
+                    updated_at: today,
                     source: 'daily_cache'
                 });
             }
@@ -1042,7 +1042,7 @@ router.get('/analysis-status', async (req, res) => {
             SELECT
                 analysis_date,
                 COUNT(*) as question_groups,
-                MAX(created_at) as last_updated
+                MAX(created_at) as updated_at
             FROM daily_question_stats
             GROUP BY analysis_date
             ORDER BY analysis_date DESC
@@ -1060,7 +1060,7 @@ router.get('/analysis-status', async (req, res) => {
             res.json({
                 hasData: true,
                 lastAnalysis: latest.analysis_date,
-                last_updated: latest.last_updated,
+                updated_at: latest.updated_at,
                 questionGroups: latest.question_groups,
                 daysSinceAnalysis: daysDiff,
                 isToday: daysDiff === 0,
@@ -1071,7 +1071,7 @@ router.get('/analysis-status', async (req, res) => {
             res.json({
                 hasData: false,
                 lastAnalysis: null,
-                last_updated: null,
+                updated_at: null,
                 questionGroups: 0,
                 daysSinceAnalysis: null,
                 isToday: false,

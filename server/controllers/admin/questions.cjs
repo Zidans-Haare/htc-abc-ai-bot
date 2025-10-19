@@ -13,7 +13,7 @@ module.exports = (adminAuth) => {
           deleted: false,
           spam: false
         },
-        orderBy: { last_updated: 'desc' },
+        orderBy: { updated_at: 'desc' },
          take: 100,
         skip: offset
       });
@@ -76,7 +76,7 @@ module.exports = (adminAuth) => {
           archived: false,
           deleted: false
         },
-        orderBy: { last_updated: 'desc' },
+        orderBy: { updated_at: 'desc' },
          take: 100,
         skip: offset
       });
