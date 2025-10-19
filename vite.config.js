@@ -84,7 +84,6 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      onwarn() {},
       input: {
         // Maps your subfolder HTMLs to output paths (e.g., dist/bot/index.html served at /bot/)
         bot: resolve(__dirname, 'src/bot/index.html'),    // Will be root (/) with server tweak below

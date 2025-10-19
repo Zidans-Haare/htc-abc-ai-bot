@@ -1,5 +1,5 @@
 import { defaultSettings, SETTINGS_KEY } from './config.js';
-// import { applyUI, updateSettingsUI, showToast } from './ui.js';
+import { applyUI, updateSettingsUI, showToast } from './ui.js';
 
 let settings = { ...defaultSettings };
 let tempSettings = { ...defaultSettings };
@@ -14,26 +14,29 @@ export function loadSettings() {
         try {
             const parsed = JSON.parse(stored);
             settings = { ...defaultSettings, ...parsed };
-            // applyUI(settings);
         } catch (error) {
             console.warn('Failed to load settings:', error);
             settings = { ...defaultSettings };
         }
     }
+    tempSettings = { ...settings };
+    applyUI(settings);
+    updateSettingsUI(settings);
 }
 
 export function saveSettings() {
+    settings = { ...tempSettings };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    // applyUI(settings);
-    // showToast('Einstellungen gespeichert');
+    applyUI(settings);
+    showToast('Einstellungen gespeichert und angewendet!');
 }
 
 export function resetSettings() {
-    settings = { ...defaultSettings };
-    tempSettings = { ...defaultSettings };
-    localStorage.removeItem(SETTINGS_KEY);
-    // applyUI(settings);
-    // showToast('Einstellungen zurückgesetzt');
+    if (confirm("Möchten Sie wirklich alle Einstellungen auf die Standardwerte zurücksetzen?")) {
+        tempSettings = { ...defaultSettings };
+        saveSettings();
+        updateSettingsUI(tempSettings);
+    }
 }
 
 export function handleSettingChange(e) {
@@ -65,7 +68,7 @@ export function handleSettingChange(e) {
     const settingKey = keyMap[key.toLowerCase()];
     if (settingKey) {
         tempSettings[settingKey] = finalValue;
-        if (settingKey === 'uiLanguage') {
+        if (settingKey === 'uiLanguage' || settingKey === 'accentColor') {
             applyUI(tempSettings);
         }
     }
