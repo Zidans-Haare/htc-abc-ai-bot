@@ -31,6 +31,13 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     npm install
     ```
 
+    **Optionale Abhängigkeiten:** Die folgenden Pakete werden nur installiert, wenn die entsprechenden Features verwendet werden (z. B. über Umgebungsvariablen):
+    - `@huggingface/transformers`: Für Hugging Face Embeddings (wenn `EMBEDDING_LIBRARY=huggingface`).
+    - `chromadb`: Für ChromaDB als Vektor-Datenbank (wenn `VECTOR_DB_TYPE=chroma`).
+    - `mysql2`: Für MySQL-Datenbank (wenn `MAIN_DB_TYPE=mysql`).
+    - `pg`: Für PostgreSQL-Datenbank (wenn `MAIN_DB_TYPE=postgresql`).
+    - `weaviate-client`: Für Weaviate als Vektor-Datenbank (wenn `VECTOR_DB_TYPE=weaviate`).
+
 2.  **Konfiguration:**
     Erstellen Sie eine `.env`-Datei im Projektstammverzeichnis. Hinterlegen Sie dort Ihren Bearer-Token (oder API-Key) sowie optional Basis-URL, Modell und Port.
 
@@ -113,6 +120,43 @@ npm start
 - `npm start` startet den Express-Server in der Standardkonfiguration. Nutzen Sie einen Prozess-Manager (z. B. systemd, pm2) für den Dauerbetrieb.
 - Optional `npm start -- -dev`, um serverseitiges Caching zu deaktivieren (z. B. für Tests in einer Staging-Umgebung).
 
+### Nginx-Konfiguration (Beispiel für dev.olomek.com)
+
+Für die Produktionsumgebung kann Nginx als Reverse-Proxy verwendet werden. Hier ein Beispiel für die Konfiguration in `/etc/nginx/sites-available/dev`:
+
+```nginx
+server {
+    listen 80;
+    server_name dev.olomek.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name dev.olomek.com;
+
+    ssl_certificate     /etc/nginx/ssl/origin.crt;
+    ssl_certificate_key /etc/nginx/ssl/origin.key;
+    include snippets/ssl-params.conf;
+
+    # Disable separate route to uploads, because marginal gains vs complexity
+    # location /uploads/ {
+    #    alias /home/htw/htc-abc-ai-bot/uploads/;
+    #    add_header Cache-Control "no-cache";
+    # }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Diese Konfiguration leitet HTTP-Anfragen auf HTTPS um und proxied alle Anfragen an den lokalen Express-Server auf Port 3000.
+
 ## 🔐 Authentifizierung
 
 Der Zugriff auf das Admin-Panel (`/admin/`) und das Dashboard (`/dash/`) erfordert eine Anmeldung. Die Anwendung verwendet ein In-Memory-Session-Management.
@@ -157,3 +201,39 @@ Die Anwendung stellt verschiedene API-Endpunkte bereit:
 ## 🪵 Logging
 
 Benutzeraktionen im Admin-Panel (wie Anmeldungen, Inhaltserstellung und -löschung) werden in der Datei `logs/audit.log` protokolliert, um die Nachverfolgbarkeit zu gewährleisten.
+
+## 🧪 Tests
+
+Die Anwendung enthält Unit- und Integrationstests mit Jest.
+
+- **Tests ausführen (interaktiv wählen .env oder .env.test, defaults to .env in 10s):**
+  ```bash
+  npm test
+  ```
+
+- **Tests direkt mit Jest (ohne Prompt, verwendet .env):**
+  ```bash
+  npm run test:direct
+  ```
+
+- **Tests mit Test-Umgebungsvariablen (.env.test):**
+  ```bash
+  npm run test:env
+  ```
+
+- **Testabdeckung generieren:**
+  ```bash
+  npm run test:coverage
+  ```
+
+Stellen Sie sicher, dass `.env` oder `.env.test` vorhanden ist. Die Tests prüfen nur konfigurierte optionale Abhängigkeiten (z. B. nur ChromaDB, wenn `VECTOR_DB_TYPE=chroma` gesetzt ist).
+
+## 🔧 Troubleshooting
+
+- **Server startet nicht:** Überprüfen Sie die `.env`-Datei auf korrekte Konfiguration (z. B. `CHAT_AI_TOKEN`, `DATABASE_URL`).
+- **Datenbankfehler:** Führen Sie `npx prisma migrate dev` aus, um Migrationen anzuwenden.
+- **Vite-Dev-Server:** Verwenden Sie `timeout 10s npm run dev` für Tests, um Blockierungen zu vermeiden.
+- **Nginx-Proxy:** Stellen Sie sicher, dass Nginx auf IPv4 bindet (`127.0.0.1:3000`), um 502-Fehler zu vermeiden.
+- **Vector DB Sync:** Bei Problemen mit der Vektor-Datenbank führen Sie `node scripts/migrate_to_prisma.js` aus, um alte Daten zu migrieren.
+
+Für detaillierte Logs prüfen Sie `logs/audit.log` und Konsolen-Ausgaben.

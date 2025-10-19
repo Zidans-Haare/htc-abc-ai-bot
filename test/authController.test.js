@@ -49,8 +49,11 @@ describe('authController', () => {
 
     it('should throw error on create failure', async () => {
       AuthSession.create.mockRejectedValue(new Error('DB error'));
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       await expect(createSession('userId')).rejects.toThrow('DB error');
+
+      consoleSpy.mockRestore();
     });
   });
 

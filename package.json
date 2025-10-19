@@ -9,9 +9,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "jest",
-    "test:coverage": "nyc --reporter=lcov --reporter=text npm test",
-    "test:env": "dotenv -e .env.test -- npm test",
+    "test": "node scripts/test-chooser.js",
+    "test:direct": "jest",
+    "test:coverage": "nyc --reporter=lcov --reporter=text npm run test:direct",
+    "test:env": "dotenv -e .env.test -- npm run test:direct",
     "postinstall": "npx prisma generate",
     "dev:watch": "concurrently \"vite build --watch\" \"nodemon --watch dist --watch server --ext js,cjs,json server/server.cjs -- -dev\""
   },

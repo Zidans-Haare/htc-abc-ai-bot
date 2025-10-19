@@ -2,6 +2,23 @@ const { describe, it, expect, beforeEach, afterEach, beforeAll } = require('@jes
 const auth = require('../server/controllers/authController.cjs');
 const bcrypt = require('bcryptjs');
 const sinon = require('sinon');
+
+// Mock db
+const mockUsers = {};
+jest.mock('../server/controllers/db.cjs', () => ({
+  User: {
+    deleteMany: jest.fn().mockResolvedValue({}),
+    create: jest.fn().mockImplementation((data) => {
+      const user = { id: Object.keys(mockUsers).length + 1, username: data.data.username, password: data.data.password, role: data.data.role };
+      mockUsers[data.data.username] = user;
+      return Promise.resolve(user);
+    }),
+    findFirst: jest.fn().mockImplementation((query) => {
+      const username = query.where?.username;
+      return Promise.resolve(mockUsers[username] || null);
+    })
+  }
+}));
 const { User } = require('../server/controllers/db.cjs');
 
 describe('Auth Utils', () => {
@@ -23,13 +40,12 @@ describe('Auth Utils', () => {
     const user = await auth.createUser('testuser', 'weakpass123', 'user');
     expect(user.username).toBe('testuser');
     expect(user.role).toBe('user');
-    // Test verifyUser
-    const verified = await auth.verifyUser('testuser', 'weakpass123');
-    expect(verified.username).toBe('testuser');
   });
 
   it('verifies valid user', async () => {
-    const verified = await auth.verifyUser('testuser', 'weakpass123');
+    // First create the user
+    await auth.createUser('testuser2', 'weakpass123', 'user');
+    const verified = await auth.verifyUser('testuser2', 'weakpass123');
     expect(verified.role).toBe('user');
   });
 
