@@ -91,7 +91,7 @@ module.exports = (adminAuth) => {
         archive.append(JSON.stringify(imgs, null, 2), { name: 'images.json' });
         // Add files
         for (const img of imgs) {
-          const filePath = `public/uploads/${img.filename}`;
+          const filePath = `uploads/${img.filename}`;
           console.log(`Adding image file: ${filePath}`);
           if (fs.existsSync(filePath)) {
             try {
@@ -294,7 +294,7 @@ module.exports = (adminAuth) => {
         // Copy files
         for (const img of files['images.json']) {
           const src = path.join('temp', 'images', img.filename);
-          const dest = path.join('public', 'uploads', img.filename);
+          const dest = path.join('uploads', img.filename);
           try {
             await fsPromises.mkdir(path.dirname(dest), { recursive: true });
             await fsPromises.copyFile(src, dest);

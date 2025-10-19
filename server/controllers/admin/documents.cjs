@@ -4,7 +4,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { Documents } = require('../db.cjs');
 
-const uploadDir = path.join(__dirname, '..', '..', 'public', 'documents');
+const uploadDir = path.resolve(__dirname, '..', '..', '..', 'public', 'documents');
 
 // Ensure the upload directory exists
 fs.mkdir(uploadDir, { recursive: true }).catch(err => console.error("Failed to create upload directory", err));
