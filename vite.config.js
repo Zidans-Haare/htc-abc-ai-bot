@@ -4,16 +4,19 @@ import postcss from 'postcss'; // Not needed as plugin, but ensure postcss.confi
 import { createLogger } from 'vite'
 
 const logger = createLogger()
-const originalWarn = logger.warn
-const originalInfo = logger.info
-const originalError = logger.error
+const originalWarnOnce = logger.warnOnce
 
-logger.warn = () => {}
-logger.info = () => {}
-logger.error = () => {}
+logger.warnOnce = (msg) => {
+  if (msg.includes('.woff') && msg.includes('it will remain unchanged to be resolved at runtime')) return;
+  originalWarnOnce(msg);
+}
+
+// logger.warn = () => {}  // commented out
+// logger.info = () => {}  // commented out
+// logger.error = () => {}  // commented out
 
 export default defineConfig({
-  logLevel: 'silent',
+  // logLevel: 'silent',
   customLogger: logger,
 
   plugins: [
