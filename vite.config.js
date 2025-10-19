@@ -1,8 +1,21 @@
 import { defineConfig } from 'vite';
 import { resolve, extname } from 'path';
 import postcss from 'postcss'; // Not needed as plugin, but ensure postcss.config.js is in root
+import { createLogger } from 'vite'
+
+const logger = createLogger()
+const originalWarn = logger.warn
+const originalInfo = logger.info
+const originalError = logger.error
+
+logger.warn = () => {}
+logger.info = () => {}
+logger.error = () => {}
 
 export default defineConfig({
+  logLevel: 'silent',
+  customLogger: logger,
+
   plugins: [
     {
       name: 'mpa-rewrites',
@@ -68,6 +81,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      onwarn() {},
       input: {
         // Maps your subfolder HTMLs to output paths (e.g., dist/bot/index.html served at /bot/)
         bot: resolve(__dirname, 'src/bot/index.html'),    // Will be root (/) with server tweak below
