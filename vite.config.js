@@ -89,7 +89,7 @@ export default defineConfig({
         bot: resolve(__dirname, 'src/bot/index.html'),    // Will be root (/) with server tweak below
         admin: resolve(__dirname, 'src/admin/index.html'), // Served at /admin/
         dash: resolve(__dirname, 'src/dash/index.html'),   // Served at /dash/
-        login: resolve(__dirname, 'src/login/index.html'), // Served at /login.html (rename to index.html for /login/ folder)
+        login: resolve(__dirname, 'src/login/index.html'), // Served at /login/
       },
       output: {
         // Optional: Nest outputs to match input folders for easier Express serving

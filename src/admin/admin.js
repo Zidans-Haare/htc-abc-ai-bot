@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      try {
        await fetchAndParse('/api/logout', { method: 'POST' });
        sessionStorage.removeItem('userRole');
-       window.location.href = '/login/login.html';
+        window.location.href = '/login/';
      } catch (err) {
        console.error('Logout error:', err);
      }
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      try {
        await fetchAndParse('/api/logout', { method: 'POST' });
        sessionStorage.removeItem('userRole');
-       window.location.href = '/login/login.html';
+        window.location.href = '/login/';
      } catch (err) {
        console.error('Logout error:', err);
      }

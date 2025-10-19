@@ -282,7 +282,7 @@ const requireAuth = (loginPath) => async (req, res, next) => {
     if (req.url.startsWith('/api/')) {
       return res.status(401).json({ error: 'Session error. Please log in.' });
     }
-    return res.redirect('/login');
+    return res.redirect('/login/');
   }
 };
 
@@ -294,7 +294,7 @@ const requireRole = (role, insufficientPath) => async (req, res, next) => {
       if (req.url.startsWith('/api/')) {
         return res.status(401).json({ error: 'Session expired. Please log in.' });
       }
-      return res.redirect('/login');
+      return res.redirect('/login/');
     }
     const session = await auth.getSession(token);
     if (session) {
@@ -313,14 +313,14 @@ const requireRole = (role, insufficientPath) => async (req, res, next) => {
       if (req.url.startsWith('/api/')) {
         return res.status(401).json({ error: 'Session expired. Please log in.' });
       }
-      return res.redirect('/login');
+      return res.redirect('/login/');
     }
   } catch (err) {
     console.error('Auth error:', err);
     if (req.url.startsWith('/api/')) {
       return res.status(401).json({ error: 'Session error. Please log in.' });
     }
-    return res.redirect('/login');
+    return res.redirect('/login/');
   }
 };
 
@@ -334,7 +334,7 @@ const protect = (req, res, next) => {
   if (req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
     const token = req.cookies.session_token;
     if (!token) {
-      return res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
+      return res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
     }
     auth.getSession(token).then(session => {
       if (session && session.role === 'admin') {
@@ -345,7 +345,7 @@ const protect = (req, res, next) => {
       }
     }).catch(err => {
       console.error('Auth error:', err);
-      res.redirect('/login');
+      res.redirect('/login/');
     });
     return;
   }
@@ -354,18 +354,18 @@ const protect = (req, res, next) => {
   if (req.url.startsWith('/admin')) {
     const token = req.cookies.session_token;
     if (!token) {
-      return res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
+      return res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
     }
     auth.getSession(token).then(session => {
       if (session) {
         req.session = session;
         next();
       } else {
-        res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
+        res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
       }
     }).catch(err => {
       console.error('Auth error:', err);
-      res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
+      res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
     });
     return;
   }
@@ -408,7 +408,7 @@ app.get('/dash', (req, res) => {
 // --- Admin Routes ---
 app.get('/login', (req, res) => {
   setHtmlNoCache(res);
-  res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'login', 'login.html'));
+  res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'login', 'index.html'));
 });
 app.get('/admin', (req, res) => {
   setHtmlNoCache(res);
@@ -417,7 +417,7 @@ app.get('/admin', (req, res) => {
 
 // --- Insufficient Permissions Route ---
 app.get('/insufficient-permissions', (req, res) => {
-  res.redirect('/login');
+  res.redirect('/login/');
 });
 
 // --- Health Check Route ---
@@ -455,8 +455,8 @@ app.use('/admin', async (req, res, next) => {
   if (session) {
     return next();
   }
-  // Redirect to the login route so Express can serve the page (dist/src/login/login.html)
-  res.redirect('/login');
+  // Redirect to the login route so Express can serve the page (dist/src/login/index.html)
+  res.redirect('/login/');
 }, express.static(path.join(__dirname, '..', 'dist', 'src', 'admin'), staticAssetOptions));
 
 // --- Uploads Static ---

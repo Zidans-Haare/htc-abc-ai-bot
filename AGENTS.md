@@ -34,7 +34,7 @@
 - Vite Dev: Use `timeout 10s npm run dev` for testing to prevent blocking; otherwise runs indefinitely. If port 5173 in use, uses next available (e.g., 5174).
 - Vite MPA dev rewrites: When mapping routes like `/`, `/admin/`, `/login/` during dev, make sure requests resolve to the real files under `/src/...` (e.g. `/src/bot/index.html`). Rewrites without `/src` 404 in dev while build output lives at `dist/src/...`.
 - Vite dev server must bind to IPv4 (`server.host = '127.0.0.1'`) so Nginx proxying `localhost:5173` works; otherwise Vite may listen on IPv6 `::1` only and nginx returns 502/404.
-- Vite dev rewrites strip query params before matching (see `vite.config.js`) so `/login?redirect=...` resolves correctly to `/src/login/login.html`.
+- Vite dev rewrites strip query params before matching (see `vite.config.js`) so `/login?redirect=...` resolves correctly to `/src/login/index.html`.
 - Admin Interface: Mobile-optimized with toggleable list/detail views for conversations, articles, and feedback. Uses hidden class for switching. Requires ../components/purify.min.js, ../components/marked.min.js, ../components/markup.js in admin/index.html for message rendering. ToastUI editor height dynamically calculated to fill available space, with minimum 300px.
 - Vite MPA rewrites: handled by the `mpa-rewrites` plugin in `vite.config.js` which remaps `/`, `/admin/`, `/dash/`, `/login/` to the corresponding `/src/.../index.html` files so dev requests do not 404. Static asset rewrites (/css/, /js/, /image/) removed as paths migrated to relative.
 - Vite rewrite middleware explicitly skips Vite internal endpoints (e.g. `/@vite/client`, `/@id/`, `/__vite_`) to keep HMR working after custom route rewrites.
