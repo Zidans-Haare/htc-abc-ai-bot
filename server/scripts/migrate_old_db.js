@@ -1,5 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
-const { PrismaClient } = require('../lib/generated/prisma');
+const { PrismaClient } = require('@prisma/client');
 const { v4: uuidv4 } = require('uuid'); // for cuid, but cuid is better, but uuid is fine
 
 const prisma = new PrismaClient();

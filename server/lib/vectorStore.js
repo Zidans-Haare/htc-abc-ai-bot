@@ -102,7 +102,7 @@ const { DocxLoader } = require("@langchain/community/document_loaders/fs/docx");
 const { UnstructuredLoader } = require("@langchain/community/document_loaders/fs/unstructured");
 // const { PDFLoader } = require("@langchain/community/document_loaders/fs/pdf"); // Replaced with unpdf for Node.js compatibility
 
-const { PrismaClient } = require('./generated/prisma');
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const HochschuhlABC = prisma.hochschuhl_abc;
 const { readFile } = require('fs/promises');

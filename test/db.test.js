@@ -1,5 +1,5 @@
 const { describe, it, expect, beforeAll, afterAll } = require('@jest/globals');
-const { PrismaClient } = require('../server/lib/generated/prisma');
+const { PrismaClient } = require('@prisma/client');
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');

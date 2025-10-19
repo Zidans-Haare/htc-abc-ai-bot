@@ -5,7 +5,7 @@ const path = require('path');
 const archiver = require('archiver');
 const unzipper = require('unzipper');
 const multer = require('multer');
-const { PrismaClient } = require('../lib/generated/prisma');
+const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 const upload = multer({ dest: 'temp/' });
