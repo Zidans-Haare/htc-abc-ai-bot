@@ -54,11 +54,15 @@
             <i class="fa-solid fa-comments w-5 text-center"></i>
             <span class="sidebar-text">Conversations</span>
         </a>
-         <a href="#" id="btn-export" class="nav-link hover:bg-(--content-bg) flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
-             <i class="fa-solid fa-file-export w-5 text-center"></i>
-             <span class="sidebar-text">Export</span>
-         </a>
-         <a href="#" id="btn-stats" class="nav-link hover:bg-(--content-bg) flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+          <a href="#" id="btn-export" class="nav-link hover:bg-(--content-bg) flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+              <i class="fa-solid fa-file-export w-5 text-center"></i>
+              <span class="sidebar-text">Export</span>
+          </a>
+          <a href="#" id="btn-backup" class="nav-link hover:bg-(--content-bg) flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors hidden">
+              <i class="fa-solid fa-save w-5 text-center"></i>
+              <span class="sidebar-text">Backup</span>
+          </a>
+          <a href="#" id="btn-stats" class="nav-link hover:bg-(--content-bg) flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
              <i class="fa-solid fa-chart-bar w-5 text-center"></i>
              <span class="sidebar-text">Statistiken</span>
          </a>
@@ -126,11 +130,15 @@
                 <i class="fa-solid fa-comments w-5 text-center"></i>
                 <span>Conversations</span>
             </a>
-             <a href="#" id="mobile-btn-export" class="nav-link hover:bg-(--content-bg) flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
-                 <i class="fa-solid fa-file-export w-5 text-center"></i>
-                 <span>Export</span>
-             </a>
-             <a href="#" id="mobile-btn-stats" class="nav-link hover:bg-(--content-bg) flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+              <a href="#" id="mobile-btn-export" class="nav-link hover:bg-(--content-bg) flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
+                  <i class="fa-solid fa-file-export w-5 text-center"></i>
+                  <span>Export</span>
+              </a>
+              <a href="#" id="mobile-btn-backup" class="nav-link hover:bg-(--content-bg) flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors hidden">
+                  <i class="fa-solid fa-save w-5 text-center"></i>
+                  <span>Backup</span>
+              </a>
+              <a href="#" id="mobile-btn-stats" class="nav-link hover:bg-(--content-bg) flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors">
                  <i class="fa-solid fa-chart-bar w-5 text-center"></i>
                  <span>Statistiken</span>
              </a>
@@ -312,11 +320,36 @@
          </div>
        </div>
      </div>
-     <!-- Stats View -->
-     <div id="stats-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
-       <div id="stats-content"></div>
-     </div>
-     <!-- User Management View -->
+      <!-- Stats View -->
+      <div id="stats-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
+        <div id="stats-content"></div>
+      </div>
+      <!-- Backup View -->
+      <div id="backup-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
+        <div class="flex space-x-4 mb-4">
+          <button id="create-backup-btn" class="px-4 py-2 btn-primary rounded-md">Create New Backup</button>
+          <input type="file" id="upload-backup-input" accept=".zip" class="hidden">
+          <button id="upload-backup-btn" class="px-4 py-2 btn-secondary rounded-md">Upload Backup File</button>
+        </div>
+        <div id="backup-create" class="hidden space-y-4">
+          <h3 class="text-lg font-semibold">Select Data to Backup</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <label><input type="checkbox" id="backup-users"> Users</label>
+            <label><input type="checkbox" id="backup-artikels"> Artikels</label>
+            <label><input type="checkbox" id="backup-fragen"> Fragen</label>
+            <label><input type="checkbox" id="backup-conversations"> Conversations</label>
+            <label><input type="checkbox" id="backup-dokumente"> Dokumente</label>
+            <label><input type="checkbox" id="backup-bilder"> Bilder</label>
+            <label><input type="checkbox" id="backup-feedback"> Feedback</label>
+            <label><input type="checkbox" id="backup-dashboard"> Dashboard</label>
+          </div>
+          <button id="start-backup-btn" class="px-4 py-2 btn-primary rounded-md">Start Backup</button>
+        </div>
+        <div id="backup-list" class="space-y-2">
+          <!-- Backups will be listed here -->
+        </div>
+      </div>
+      <!-- User Management View -->
     <div id="user-view" class="flex flex-col flex-1 hidden p-6 space-y-4 overflow-y-auto">
       <div id="user-admin" class="p-6 space-y-4 border border-(--border-color) rounded-lg">
         <h2 class="font-semibold text-lg">Neuen Benutzer anlegen</h2>

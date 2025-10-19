@@ -25,3 +25,4 @@ vite.log
 build.log
 public_bak
 public/assets/docs/document-1760603075895-908491976.pdf
+prisma/test-temp.db

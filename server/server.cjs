@@ -47,7 +47,8 @@ const envSchema = Joi.object({
     MAIN_DB_USER: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
     MAIN_DB_PASSWORD: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
     MAIN_DB_NAME: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
-    MAIN_DB_SSL: Joi.string().valid('true', 'false').default('false')
+     MAIN_DB_SSL: Joi.string().valid('true', 'false').default('false'),
+     BACKUP_PATH: Joi.string().default('backups')
 }).unknown(true);
 
 const { error } = envSchema.validate(process.env);
@@ -461,6 +462,16 @@ app.use('/admin', async (req, res, next) => {
 
 // --- Uploads Static ---
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+// --- Backup Static ---
+app.use('/backup', async (req, res, next) => {
+  const token = req.cookies.session_token;
+  const session = token && await auth.getSession(token);
+  if (session && session.role === 'admin') {
+    return next();
+  }
+  res.status(403).json({ error: 'Forbidden' });
+}, express.static(path.join(__dirname, '..', process.env.BACKUP_PATH || 'backups')));
 
 // --- Favicon & 404 ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());
