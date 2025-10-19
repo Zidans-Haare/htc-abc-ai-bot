@@ -4,7 +4,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { Images } = require('../db.cjs');
 
-const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+const uploadDir = path.resolve(__dirname, '..', '..', '..', 'uploads', 'images');
 
 // Ensure the upload directory exists
 fs.mkdir(uploadDir, { recursive: true }).catch(err => console.error("Failed to create upload directory", err));
@@ -56,7 +56,6 @@ module.exports = (authMiddleware) => {
             const newImage = await Images.create({
                 data: {
                     filename: req.file.filename,
-                    filepath: `/uploads/${req.file.filename}`,
                     description: description || null // Save description, or null if it's empty
                 }
             });

@@ -462,6 +462,7 @@ app.use('/admin', async (req, res, next) => {
 
 // --- Uploads Static ---
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/uploads/images', express.static(path.join(__dirname, '..', 'uploads', 'images')));
 
 // --- Backup Static ---
 app.use('/backup', async (req, res, next) => {

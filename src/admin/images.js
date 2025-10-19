@@ -4,6 +4,17 @@ let imagesView;
 let imagesList;
 let imagesOffset = 0;
 
+function buildPreviewUrl(filename, width = 600) {
+    if (!filename) return '';
+    const dotIndex = filename.lastIndexOf('.');
+    if (dotIndex === -1) {
+        return `/uploads/images/${filename}_${width}px`;
+    }
+    const base = filename.slice(0, dotIndex);
+    const ext = filename.slice(dotIndex);
+    return `/uploads/images/${base}_${width}px${ext}`;
+}
+
 export function initImages() {
     imagesView = document.getElementById('images-view');
     if (!imagesView) {
@@ -103,12 +114,13 @@ function renderImages(images, append = false) {
         return;
     }
 
-    const html = images.map(image => `
+    const html = images.map(image => {
+        return `
         <div class="group border rounded-lg overflow-hidden shadow-sm flex flex-col">
             <div class="relative">
-                <img src="/uploads/${image.filename}" alt="${image.description || image.filename}" class="w-full h-48 object-cover">
+                <img src="${buildPreviewUrl(image.filename, 600)}" alt="${image.description || image.filename}" class="w-full h-48 object-cover">
                 <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="copy-url-btn text-white hover:text-(--accent-color) transition-colors" data-url="/uploads/${image.filename}" title="URL kopieren">
+                    <button class="copy-url-btn text-white hover:text-(--accent-color) transition-colors" data-url="/uploads/images/${image.filename}" title="URL kopieren">
                         <i class="fas fa-copy fa-lg"></i>
                     </button>
                     <button class="edit-image-btn text-white hover:text-yellow-400 transition-colors ml-4" data-filename="${image.filename}" data-description="${image.description || ''}" title="Beschreibung bearbeiten">
@@ -124,7 +136,8 @@ function renderImages(images, append = false) {
                 <p class="text-xs text-gray-500 truncate" title="${image.filename}">${image.filename}</p>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     if (append) {
         const loadMoreBtn = document.getElementById('load-more-images');
@@ -210,7 +223,7 @@ function handleEditImage(event) {
     const cancelButton = document.getElementById('edit-image-cancel');
     const saveButton = document.getElementById('edit-image-save');
 
-    preview.src = `/uploads/${filename}`;
+    preview.src = `/uploads/images/${filename}`;
     descriptionInput.value = currentDescription;
 
     modal.classList.remove('hidden');

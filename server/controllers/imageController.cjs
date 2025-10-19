@@ -3,20 +3,24 @@ const fs = require('fs');
 const path = require('path');
 
 // Create a cache directory if it doesn't exist
-const cacheDir = path.join(__dirname, '..', 'cache', 'uploads'); // Adjust path to root-level cache if needed
+const cacheDir = path.resolve(__dirname, '..', '..', 'cache', 'uploads'); // Store cached resizes under project root cache/uploads
+const imagesDir = path.resolve(__dirname, '..', '..', 'uploads', 'images');
 if (!fs.existsSync(cacheDir)) {
   fs.mkdirSync(cacheDir, { recursive: true });
+}
+if (!fs.existsSync(imagesDir)) {
+  fs.mkdirSync(imagesDir, { recursive: true });
 }
 
 const processingPromises = new Map();
 
 module.exports = (app) => {
-  app.get('/uploads/:filename', async (req, res) => {
+  app.get('/uploads/images/:filename', async (req, res) => {
     const { filename } = req.params;
     const match = filename.match(/^(.+)_(\d+)px(\.\w+)?$/);
     if (!match) {
       // Serve original if no size specified
-      return res.sendFile(path.join(__dirname, '..', 'public', 'uploads', filename), (err) => {
+      return res.sendFile(path.resolve(imagesDir, filename), (err) => {
         if (err && !res.headersSent) res.status(404).send('Image not found');
       });
     }
@@ -24,7 +28,7 @@ module.exports = (app) => {
     const [_, baseName, widthStr, ext] = match;
     const width = parseInt(widthStr, 10);
     const requestedExt = ext || '';
-    const originalPath = path.join(__dirname, '..', 'public', 'uploads', `${baseName}${requestedExt}`);
+    const originalPath = path.resolve(imagesDir, `${baseName}${requestedExt}`);
     const cachePath = path.join(cacheDir, filename);
 
     if (!fs.existsSync(originalPath)) {

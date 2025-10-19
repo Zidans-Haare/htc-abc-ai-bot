@@ -74,8 +74,11 @@ export default defineConfig({
     allowedHosts: ['dev.olomek.com',  'localhost', '127.0.0.1'],
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:3000',
+        target: 'http://localhost:3000',
         changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:3000',
       },
     },
     // allowedHosts: 'auto',
