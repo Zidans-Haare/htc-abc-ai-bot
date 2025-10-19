@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     statsView.classList.add('hidden');
+    backupView.classList.add('hidden');
     document.getElementById('backup-create')?.classList.add('hidden');
     updateButtonStyles(editorBtn);
   }
@@ -143,6 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     statsView.classList.add('hidden');
+    backupView.classList.add('hidden');
     document.getElementById('backup-create')?.classList.add('hidden');
     updateButtonStyles(questionsBtn);
   }
@@ -161,6 +163,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     imagesView.classList.add('hidden');
     documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
+    statsView.classList.add('hidden');
+    backupView.classList.add('hidden');
     document.getElementById('backup-create')?.classList.add('hidden');
     updateButtonStyles(archiveBtn);
     loadArchive();
@@ -175,6 +179,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     imagesView.classList.add('hidden');
     documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
+    statsView.classList.add('hidden');
+    backupView.classList.add('hidden');
     document.getElementById('backup-create')?.classList.add('hidden');
     updateButtonStyles(userBtn);
     loadUsers();
@@ -189,6 +195,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     imagesView.classList.add('hidden');
     documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
+    statsView.classList.add('hidden');
+    backupView.classList.add('hidden');
     document.getElementById('backup-create')?.classList.add('hidden');
     updateButtonStyles(feedbackBtn);
   }
@@ -202,6 +210,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     feedbackView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
     documentsView.classList.add('hidden');
+    statsView.classList.add('hidden');
+    backupView.classList.add('hidden');
     document.getElementById('backup-create')?.classList.add('hidden');
     updateButtonStyles(imagesBtn);
   }
@@ -215,6 +225,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
+    statsView.classList.add('hidden');
+    backupView.classList.add('hidden');
     document.getElementById('backup-create')?.classList.add('hidden');
     updateButtonStyles(documentsBtn);
   }
@@ -228,6 +240,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     feedbackView.classList.add('hidden');
     imagesView.classList.add('hidden');
     documentsView.classList.add('hidden');
+    statsView.classList.add('hidden');
+    backupView.classList.add('hidden');
     document.getElementById('backup-create')?.classList.add('hidden');
     updateButtonStyles(conversationsBtn);
   }
@@ -242,6 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     imagesView.classList.add('hidden');
     documentsView.classList.add('hidden');
     if (conversationsView) conversationsView.classList.add('hidden');
+    backupView.classList.add('hidden');
     document.getElementById('backup-create')?.classList.add('hidden');
     updateButtonStyles(statsBtn);
   }
