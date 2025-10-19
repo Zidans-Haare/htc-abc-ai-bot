@@ -10,29 +10,29 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="HTW Chat">
-    <link rel="apple-touch-icon" href="/image/smoky_klein.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="/image/smoky_klein_192x192.png">
-    <link rel="apple-touch-icon" sizes="512x512" href="/image/smoky_klein_512x512.png">
+    <link rel="apple-touch-icon" href="../assets/images/smoky_klein.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="../assets/images/smoky_klein_192x192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="../assets/images/smoky_klein_512x512.png">
 
     <!-- Android Web App-Optimierung -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="../dash/manifest.json">
 
-    <link rel="icon" href="/image/favicon_32.png" type="image/x-icon" sizes="32x32" />
-    <link rel="stylesheet" href="/css/roboto.css">
+    <link rel="icon" href="../assets/images/favicon_32.png" type="image/x-icon" sizes="32x32" />
+    <link rel="stylesheet" href="../styles/roboto.css">
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="/css/font-awesome.min.css">
-    <link rel="stylesheet" href="/css/tailwind-main.css?v=1">
+    <link rel="stylesheet" href="../styles/font-awesome.min.css">
+    <link rel="stylesheet" href="../styles/tailwind-main.css?v=1">
     <link rel="stylesheet" href="mobile.css">
 
     <script type="module"  src="bot.js?v=1"></script>
-    <script src="/js/api_guide.js"></script>
+    <script src="../components/api_guide.js"></script>
 </head>
 <body>
 
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <img src="/image/HTW.svg" alt="HTWD Logo" class="logo">
+                <img src="../assets/images/HTW.svg" alt="HTWD Logo" class="logo">
             </div>
             <button id="new-chat" class="new-chat-btn">
                 <i class="fas fa-plus"></i> Neuer Chat
@@ -49,7 +49,7 @@
 
         <div id="mobile-menu" class="mobile-menu-container">
             <div class="mobile-menu-header">
-                <img src="/image/HTW.svg" alt="HTWD Logo" class="logo">
+                <img src="../assets/images/HTW.svg" alt="HTWD Logo" class="logo">
                 <button id="close-mobile-menu" class="close-btn">&times;</button>
             </div>
             <div class="mobile-menu-content">
@@ -75,7 +75,7 @@
                     <img src="/image/HTW.svg" alt="HTWD Logo" class="header-logo">
                 </div>
                 <div class="header-right">
-                    <span id="current-time"></span>
+                    <img src="../assets/images/HTW.svg" alt="HTWD Logo" class="header-logo">
                 </div>
             </header>
 
@@ -191,12 +191,12 @@
                         <label data-i18n="setting_home_screen_icon">Home-Bildschirm-Icon</label>
                         <div class="image-picker" id="setting-home-screen-icon">
                             <label>
-                                <input type="radio" name="home-icon" value="image/smoky_klein.png" checked>
-                                <img src="image/smoky_klein.png" alt="Smoky">
+                                <input type="radio" name="home-icon" value="../assets/images/smoky_klein.png" checked>
+                                <img src="../assets/images/smoky_klein.png" alt="Smoky">
                             </label>
                             <label>
-                                <input type="radio" name="home-icon" value="image/stu_klein.png">
-                                <img src="image/stu_klein.png" alt="Stu">
+                                <input type="radio" name="home-icon" value="../assets/images/stu_klein.png">
+                                <img src="../assets/images/stu_klein.png" alt="Stu">
                             </label>
                         </div>
                     </div>

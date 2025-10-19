@@ -7,33 +7,6 @@ export default defineConfig({
     {
       name: 'mpa-rewrites',
       configureServer(server) {
-        const staticRoutes = [
-          {
-            test: (pathname) => pathname.startsWith('/css/'),
-            rewrite: (pathname) => `/src/styles/${pathname.slice(5)}?direct`,
-          },
-          {
-            test: (pathname) => pathname.startsWith('/js/'),
-            rewrite: (pathname) => `/src/components/${pathname.slice(4)}`,
-          },
-          {
-            test: (pathname) => pathname.startsWith('/image/'),
-            rewrite: (pathname) => `/src/assets/images/${pathname.slice(7)}`,
-          },
-          {
-            test: (pathname) => pathname.startsWith('/fonts/'),
-            rewrite: (pathname) => `/src/assets/fonts/${pathname.slice(7)}`,
-          },
-        ];
-
-        const pageBases = [
-          { prefix: '/admin/', src: '/src/admin/' },
-          { prefix: '/dash/', src: '/src/dash/' },
-          { prefix: '/login/', src: '/src/login/' },
-          { prefix: '/view/', src: '/src/view/' },
-          { prefix: '/', src: '/src/bot/' },
-        ];
-
         server.middlewares.use((req, _res, next) => {
           const url = new URL(req.url, 'http://localhost');
           const { pathname } = url;
@@ -71,31 +44,6 @@ export default defineConfig({
           if (pathname === '/login' || pathname === '/login/') {
             req.url = '/src/login/index.html';
             return next();
-          }
-
-          for (const route of staticRoutes) {
-            if (route.test(pathname)) {
-              req.url = route.rewrite(pathname);
-              return next();
-            }
-          }
-
-          const extension = extname(pathname);
-          for (const base of pageBases) {
-            if (pathname.startsWith(base.prefix) && pathname !== base.prefix) {
-              if (base.prefix === '/' && pathname.startsWith('/src/')) {
-                break;
-              }
-              const relativePath = pathname.slice(base.prefix.length);
-              if (relativePath.length === 0) {
-                break;
-              }
-
-              const needsDirect = extension === '.css';
-              const rewriteTarget = `${base.src}${relativePath}${needsDirect ? '?direct' : ''}`;
-              req.url = rewriteTarget;
-              return next();
-            }
           }
 
           next();

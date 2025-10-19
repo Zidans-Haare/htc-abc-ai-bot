@@ -46,7 +46,7 @@ function loadScript(src) {
 async function markDiffInMarkdown(originalDescription, improvedText) {
 
   try {
-    await loadScript('/js/diff_match_patch.js');
+    const { diff_match_patch } = await import('../components/diff_match_patch.js');
 
     // Highlight changes in the editor
     const dmp = new diff_match_patch();
