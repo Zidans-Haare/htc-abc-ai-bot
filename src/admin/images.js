@@ -119,7 +119,7 @@ function renderImages(images, append = false) {
         <div class="group border rounded-lg overflow-hidden shadow-sm flex flex-col">
             <div class="relative">
                 <img src="${buildPreviewUrl(image.filename, 600)}" alt="${image.description || image.filename}" class="w-full h-48 object-cover">
-                <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                 <div class="absolute inset-0 bg-transparent md:bg-black md:bg-opacity-50 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <button class="copy-url-btn text-white hover:text-(--accent-color) transition-colors" data-url="/uploads/images/${image.filename}" title="URL kopieren">
                         <i class="fas fa-copy fa-lg"></i>
                     </button>
