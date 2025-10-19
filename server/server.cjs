@@ -20,6 +20,8 @@ const { execSync } = require('child_process');
 // --- Initializations ---
 dotenv.config();
 
+const UPLOAD_LIMIT_MB = parseInt(process.env.UPLOAD_LIMIT_MB) || 10;
+
 // Env validation
 const envSchema = Joi.object({
   VECTOR_DB_TYPE: Joi.string().valid('none', 'chroma', 'weaviate').default('none'),
@@ -46,9 +48,10 @@ const envSchema = Joi.object({
     MAIN_DB_PORT: Joi.number().integer().min(1).max(65535).default(3306),
     MAIN_DB_USER: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
     MAIN_DB_PASSWORD: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
-    MAIN_DB_NAME: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
-     MAIN_DB_SSL: Joi.string().valid('true', 'false').default('false'),
-     BACKUP_PATH: Joi.string().default('backups')
+     MAIN_DB_NAME: Joi.string().when('MAIN_DB_TYPE', { not: 'sqlite', then: Joi.required() }),
+      MAIN_DB_SSL: Joi.string().valid('true', 'false').default('false'),
+      BACKUP_PATH: Joi.string().default('backups'),
+      UPLOAD_LIMIT_MB: Joi.number().integer().min(1).max(1000).default(10)
 }).unknown(true);
 
 const { error } = envSchema.validate(process.env);
@@ -92,6 +95,10 @@ const app = express();
 // Trust proxy layers for correct client IP detection (default 2: Cloudflare -> Nginx -> Node.js)
 app.set('trust proxy', process.env.TRUST_PROXY_COUNT || 2);
 const port = process.env.PORT || 3000;
+
+// Set body parser limits
+app.use(express.json({ limit: `${UPLOAD_LIMIT_MB}mb` }));
+app.use(express.urlencoded({ limit: `${UPLOAD_LIMIT_MB}mb` }));
 const useHttps = process.argv.includes('-https');
 const isTest = process.argv.includes('--test');
 const isDev = process.argv.includes('-dev');

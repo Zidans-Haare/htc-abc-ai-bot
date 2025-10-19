@@ -21,7 +21,11 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({ storage: storage });
+const uploadLimit = parseInt(process.env.UPLOAD_LIMIT_MB) || 10;
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: uploadLimit * 1024 * 1024 }
+});
 
 module.exports = (authMiddleware) => {
     const router = express.Router();
@@ -43,48 +47,60 @@ module.exports = (authMiddleware) => {
     });
 
     // POST a new document
-    router.post('/documents/upload', authMiddleware, upload.single('document'), async (req, res) => {
-        if (!req.file) {
-            return res.status(400).json({ message: 'Keine Datei hochgeladen.' });
-        }
-
-        try {
-            // Extract description from the request body
-            const { description } = req.body;
-
-            // Determine file type
-            const ext = path.extname(req.file.originalname).toLowerCase();
-            let fileType;
-            if (ext === '.pdf') fileType = 'pdf';
-            else if (ext === '.docx') fileType = 'docx';
-            else if (ext === '.md') fileType = 'md';
-            else if (['.odt', '.ods', '.odp'].includes(ext)) fileType = ext.slice(1);
-            else if (ext === '.xlsx') fileType = 'xlsx';
-            else {
-                // Delete file and return error
-                await fs.unlink(req.file.path);
-                return res.status(400).json({ message: 'Unsupported file type. Allowed: PDF, DOCX, MD, ODT, ODS, ODP, XLSX.' });
+    router.post('/documents/upload', authMiddleware, (req, res, next) => {
+        upload.single('document')(req, res, async (err) => {
+            if (err) {
+                if (err.code === 'LIMIT_FILE_SIZE') {
+                    return res.status(400).json({ message: `Datei zu groß. Maximale Größe: ${uploadLimit}MB.` });
+                }
+                return res.status(400).json({ message: 'Upload-Fehler: ' + err.message });
+            }
+            if (!req.file) {
+                return res.status(400).json({ message: 'Keine Datei hochgeladen.' });
             }
 
-            // Save document info to the database
-            const newDocument = await Documents.create({
-                data: {
+            try {
+                // Extract description from the request body
+                const { description } = req.body;
+
+                // Determine file type
+                const ext = path.extname(req.file.originalname).toLowerCase();
+                let fileType;
+                if (ext === '.pdf') fileType = 'pdf';
+                else if (ext === '.docx') fileType = 'docx';
+                else if (ext === '.md') fileType = 'md';
+                else if (['.odt', '.ods', '.odp'].includes(ext)) fileType = ext.slice(1);
+                else if (ext === '.xlsx') fileType = 'xlsx';
+                else {
+                    // Delete file and return error
+                    await fs.unlink(req.file.path);
+                    return res.status(400).json({ message: 'Unsupported file type. Allowed: PDF, DOCX, MD, ODT, ODS, ODP, XLSX.' });
+                }
+
+                // Save document info to the database
+                const docData = {
                     filepath: req.file.filename,
                     file_type: fileType,
                     description: description || null
+                };
+                console.log('Creating document in DB with data:', docData);
+                const newDocument = await Documents.create({
+                    data: docData
+                });
+                console.log('Document created successfully:', newDocument);
+                res.status(201).json(newDocument);
+            } catch (error) {
+                console.error('Fehler beim Speichern des Dokuments in der DB:', error);
+                console.error('Error details:', error.message, error.stack);
+                // If DB write fails, delete the uploaded file
+                try {
+                    await fs.unlink(req.file.path);
+                } catch (unlinkError) {
+                    console.error('Fehler beim Löschen der Datei nach DB-Fehler:', unlinkError);
                 }
-            });
-            res.status(201).json(newDocument);
-        } catch (error) {
-            console.error('Fehler beim Speichern des PDFs in der DB:', error);
-            // If DB write fails, delete the uploaded file
-            try {
-                await fs.unlink(req.file.path);
-            } catch (unlinkError) {
-                console.error('Fehler beim Löschen der Datei nach DB-Fehler:', unlinkError);
+                res.status(500).json({ message: 'Serverfehler beim Speichern der Dokument-Informationen.' });
             }
-            res.status(500).json({ message: 'Serverfehler beim Speichern der PDF-Informationen.' });
-        }
+        });
     });
 
     // PUT (update) a document description

@@ -182,15 +182,31 @@ async function handleImageUpload(inputElement, descriptionElement) {
     try {
         const response = await fetch('/api/admin/images/upload', {
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'include'
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Upload fehlgeschlagen');
+            let errorMessage = 'Upload fehlgeschlagen';
+            try {
+                const text = await response.text();
+                console.error('Error response text:', text);
+                try {
+                    const errorData = JSON.parse(text);
+                    console.error('Parsed error data:', errorData);
+                    errorMessage = errorData.message || errorMessage;
+                } catch (jsonError) {
+                    console.error('Failed to parse as JSON:', jsonError);
+                    errorMessage = 'Server error: ' + text.substring(0, 100);
+                }
+            } catch (e) {
+                console.error('Failed to read response:', e);
+                errorMessage = 'Failed to read server response';
+            }
+            throw new Error(errorMessage);
         }
 
-        await response.json();
+        const result = await response.json();
         inputElement.value = ''; // Clear the input
         descriptionElement.value = ''; // Clear the textarea
         document.getElementById('image-file-name').textContent = 'Kein Bild ausgewählt';

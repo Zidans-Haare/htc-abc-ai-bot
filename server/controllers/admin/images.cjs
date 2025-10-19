@@ -21,7 +21,11 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({ storage: storage });
+const uploadLimit = parseInt(process.env.UPLOAD_LIMIT_MB) || 10;
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: uploadLimit * 1024 * 1024 }
+});
 
 module.exports = (authMiddleware) => {
     const router = express.Router();
@@ -43,33 +47,41 @@ module.exports = (authMiddleware) => {
     });
 
     // POST a new image
-    router.post('/images/upload', authMiddleware, upload.single('image'), async (req, res) => {
-        if (!req.file) {
-            return res.status(400).json({ message: 'Keine Datei hochgeladen.' });
-        }
-
-        try {
-            // Extract description from the request body
-            const { description } = req.body;
-
-            // Save image info to the database
-            const newImage = await Images.create({
-                data: {
-                    filename: req.file.filename,
-                    description: description || null // Save description, or null if it's empty
+    router.post('/images/upload', authMiddleware, (req, res, next) => {
+        upload.single('image')(req, res, async (err) => {
+            if (err) {
+                if (err.code === 'LIMIT_FILE_SIZE') {
+                    return res.status(400).json({ message: `Datei zu groß. Maximale Größe: ${uploadLimit}MB.` });
                 }
-            });
-            res.status(201).json(newImage);
-        } catch (error) {
-            console.error('Fehler beim Speichern des Bildes in der DB:', error);
-            // If DB write fails, delete the uploaded file
-            try {
-                await fs.unlink(req.file.path);
-            } catch (unlinkError) {
-                console.error('Fehler beim Löschen der Datei nach DB-Fehler:', unlinkError);
+                return res.status(400).json({ message: 'Upload-Fehler: ' + err.message });
             }
-            res.status(500).json({ message: 'Serverfehler beim Speichern der Bildinformationen.' });
-        }
+            if (!req.file) {
+                return res.status(400).json({ message: 'Keine Datei hochgeladen.' });
+            }
+
+            try {
+                // Extract description from the request body
+                const { description } = req.body;
+
+                // Save image info to the database
+                const newImage = await Images.create({
+                    data: {
+                        filename: req.file.filename,
+                        description: description || null // Save description, or null if it's empty
+                    }
+                });
+                res.status(201).json(newImage);
+            } catch (error) {
+                console.error('Fehler beim Speichern des Bildes in der DB:', error);
+                // If DB write fails, delete the uploaded file
+                try {
+                    await fs.unlink(req.file.path);
+                } catch (unlinkError) {
+                    console.error('Fehler beim Löschen der Datei nach DB-Fehler:', unlinkError);
+                }
+                res.status(500).json({ message: 'Serverfehler beim Speichern der Bild-Informationen.' });
+            }
+        });
     });
 
     // PUT (update) an image description
