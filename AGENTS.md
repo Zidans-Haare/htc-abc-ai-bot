@@ -22,6 +22,7 @@
 - Investigated 'serialize' npm modules: serialize-error and dom-serializer were unused dependencies, removed from package.json. No serialization logic needed porting to Prisma.
 - Path Migration: Absolute paths in HTML files (/css/, /js/, /image/) converted to relative paths (../styles/, ../components/, ../assets/images/) to reduce dependency on Vite plugins. Assets remain in src/assets/.
 - ES Modules Adoption: diff_match_patch.js converted to ES module with exports. articles.js updated to use dynamic import for diff_match_patch instead of loadScript.
+- Font Modernization: Self-hosted fonts (Roboto, Inter, Font Awesome) replaced with npm packages (@fontsource/roboto, @fontsource/inter, @fortawesome/fontawesome-free) for better bundling and maintenance. Font files removed from public/assets/fonts/.
 - Tailwind CSS is integrated with Vite using PostCSS v4. Content paths specified via @source directives in src/styles/tailwind-main.css and src/styles/tailwind-backend.css for separate purging. Configs: tailwind.postcss.config.main.js and tailwind.postcss.config.backend.js. Vite handles building, bundling, and hot-reload automatically.
 
 - Tailwind purging: Ensure @source paths are relative to src/styles/ and use source(none) for separate scans. Check tailwind.postcss.config.*.js.

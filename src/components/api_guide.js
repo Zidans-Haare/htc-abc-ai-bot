@@ -252,3 +252,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateLanguage(currentLanguage);
     updateApiKeyStatus();
 });
+
+export {};
