@@ -84,7 +84,7 @@ router.get('/kpis', async (req, res) => {
 router.get('/recent-feedback', async (req, res) => {
     try {
         const recentFeedback = await Feedback.findMany({
-            orderBy: { timestamp: 'desc' },
+            orderBy: { submitted_at: 'desc' },
             take: 5,
             select: { text: true, submitted_at: true }
         });
@@ -107,42 +107,42 @@ router.get('/sessions', async (req, res) => {
         const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
         const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
         
-        let sessions = await prisma.$queryRaw(`
+        let sessions = await prisma.$queryRaw`
             SELECT
-                DATE(datetime(started_at, ?)) as date,
+                DATE(datetime(started_at, ${timezoneOffset})) as date,
                 COUNT(*) as count
             FROM user_sessions
-            WHERE datetime(started_at, ?) >= datetime(?, ?)
-            GROUP BY DATE(datetime(started_at, ?))
+            WHERE datetime(started_at, ${timezoneOffset}) >= datetime(${sevenDaysAgo.toISOString()}, ${timezoneOffset})
+            GROUP BY DATE(datetime(started_at, ${timezoneOffset}))
             ORDER BY date ASC
-        `, timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset);
+        `;
 
         // If no user_sessions data, use feedback as activity proxy
         if (sessions.length === 0) {
-            sessions = await prisma.$queryRaw(`
+            sessions = await prisma.$queryRaw`
                 SELECT
-                    DATE(datetime(timestamp, ?)) as date,
+                    DATE(datetime(submitted_at, ${timezoneOffset})) as date,
                     COUNT(DISTINCT conversation_id) as count
                 FROM feedback
-                WHERE datetime(timestamp, ?) >= datetime(?, ?)
-                GROUP BY DATE(datetime(timestamp, ?))
+                WHERE datetime(submitted_at, ${timezoneOffset}) >= datetime(${sevenDaysAgo.toISOString()}, ${timezoneOffset})
+                GROUP BY DATE(datetime(submitted_at, ${timezoneOffset}))
                 ORDER BY date ASC
-            `, timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset);
+            `;
         }
 
         // If still no data, use questions as activity proxy
         if (sessions.length === 0) {
-            sessions = await prisma.$queryRaw(`
+            sessions = await prisma.$queryRaw`
                 SELECT
-                    DATE(datetime(updated_at, ?)) as date,
+                    DATE(datetime(updated_at, ${timezoneOffset})) as date,
                     COUNT(*) as count
                 FROM questions
-                WHERE datetime(updated_at, ?) >= datetime(?, ?)
+                WHERE datetime(updated_at, ${timezoneOffset}) >= datetime(${sevenDaysAgo.toISOString()}, ${timezoneOffset})
                     AND spam = 0
                     AND deleted = 0
-                GROUP BY DATE(datetime(updated_at, ?))
+                GROUP BY DATE(datetime(updated_at, ${timezoneOffset}))
                 ORDER BY date ASC
-            `, timezoneOffset, timezoneOffset, sevenDaysAgo.toISOString(), timezoneOffset, timezoneOffset);
+            `;
         }
 
         // Fill missing days with 0
@@ -184,42 +184,42 @@ router.get('/sessions/hourly', async (req, res) => {
         const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
         const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
         
-        let hourlyData = await prisma.$queryRaw(`
+        let hourlyData = await prisma.$queryRaw`
             SELECT
-                CAST(strftime('%H', datetime(started_at, ?)) AS INTEGER) as hour,
+                CAST(strftime('%H', datetime(started_at, ${timezoneOffset})) AS INTEGER) as hour,
                 COUNT(*) as count
             FROM user_sessions
-            WHERE DATE(datetime(started_at, ?)) = ?
-            GROUP BY strftime('%H', datetime(started_at, ?))
+            WHERE DATE(datetime(started_at, ${timezoneOffset})) = ${date}
+            GROUP BY strftime('%H', datetime(started_at, ${timezoneOffset}))
             ORDER BY hour ASC
-        `, timezoneOffset, timezoneOffset, date, timezoneOffset);
+        `;
 
         // If no user_sessions data, use feedback as activity proxy
         if (hourlyData.length === 0) {
-            hourlyData = await prisma.$queryRaw(`
+            hourlyData = await prisma.$queryRaw`
                 SELECT
-                    CAST(strftime('%H', datetime(timestamp, ?)) AS INTEGER) as hour,
+                    CAST(strftime('%H', datetime(submitted_at, ${timezoneOffset})) AS INTEGER) as hour,
                     COUNT(DISTINCT conversation_id) as count
                 FROM feedback
-                WHERE DATE(datetime(timestamp, ?)) = ?
-                GROUP BY strftime('%H', datetime(timestamp, ?))
+                WHERE DATE(datetime(submitted_at, ${timezoneOffset})) = ${date}
+                GROUP BY strftime('%H', datetime(submitted_at, ${timezoneOffset}))
                 ORDER BY hour ASC
-            `, timezoneOffset, timezoneOffset, date, timezoneOffset);
+            `;
         }
 
         // If still no data, use questions as activity proxy
         if (hourlyData.length === 0) {
-            hourlyData = await prisma.$queryRaw(`
+            hourlyData = await prisma.$queryRaw`
                 SELECT
-                    CAST(strftime('%H', datetime(updated_at, ?)) AS INTEGER) as hour,
+                    CAST(strftime('%H', datetime(updated_at, ${timezoneOffset})) AS INTEGER) as hour,
                     COUNT(*) as count
                 FROM questions
-                WHERE DATE(datetime(updated_at, ?)) = ?
+                WHERE DATE(datetime(updated_at, ${timezoneOffset})) = ${date}
                     AND spam = 0
                     AND deleted = 0
-                GROUP BY strftime('%H', datetime(updated_at, ?))
+                GROUP BY strftime('%H', datetime(updated_at, ${timezoneOffset}))
                 ORDER BY hour ASC
-            `, timezoneOffset, timezoneOffset, date, timezoneOffset);
+            `;
         }
 
         // Fill missing hours with 0 (0-23)
@@ -241,7 +241,7 @@ router.get('/sessions/hourly', async (req, res) => {
 
 router.get('/most-viewed-articles', async (req, res) => {
     try {
-        const articles = await prisma.$queryRaw(`
+        const articles = await prisma.$queryRaw`
             SELECT
                 h.article,
                 COUNT(av.id) as views
@@ -252,7 +252,7 @@ router.get('/most-viewed-articles', async (req, res) => {
             HAVING views > 0
             ORDER BY views DESC
             LIMIT 5
-        `);
+        `;
 
         res.json(articles);
     } catch (error) {
@@ -297,11 +297,11 @@ router.get('/feedback-stats', async (req, res) => {
 
         const feedbackOverTime = await prisma.$queryRaw`
             SELECT
-                DATE(timestamp) as date,
+                DATE(submitted_at) as date,
                 COUNT(*) as count
             FROM feedback
-            WHERE timestamp >= ${sevenDaysAgo}
-            GROUP BY DATE(timestamp)
+            WHERE submitted_at >= ${sevenDaysAgo}
+            GROUP BY DATE(submitted_at)
             ORDER BY date ASC
         `;
 
@@ -339,7 +339,7 @@ router.get('/content-stats', async (req, res) => {
 router.get('/top-questions', async (req, res) => {
     try {
         // Top 5 häufigste Fragen (egal ob beantwortet oder nicht)
-        const questions = await prisma.$queryRaw(`
+        const questions = await prisma.$queryRaw`
             SELECT
                 MIN(q.question) as question,
                 COUNT(*) as count,
@@ -356,44 +356,27 @@ router.get('/top-questions', async (req, res) => {
                             REPLACE(
                                 REPLACE(
                                     REPLACE(
-                                        REPLACE(
-                                            REPLACE(
-                                                REPLACE(
-                                                    REPLACE(
-                                                        REPLACE(
-                                                            REPLACE(
-                                                                REPLACE(TRIM(q.question), '?', ''),
-                                                                '.', ''
-                                                            ),
-                                                            '!', ''
-                                                        ),
-                                                        'where is', 'wo ist'
-                                                    ),
-                                                    'how is', 'wie ist'
-                                                ),
-                                                'what is', 'was ist'
-                                            ),
-                                            'when is', 'wann ist'
-                                        ),
-                                        'canteen', 'mensa'
+                                        REPLACE(TRIM(q.question), '?', ''),
+                                        '.', ''
                                     ),
-                                    'cafeteria', 'mensa'
+                                    '!', ''
                                 ),
-                                'library', 'bibliothek'
+                                'where is', 'wo ist'
                             ),
-                            '  ', ' '
-                        )
+                            'what is', 'was ist'
+                        ),
+                        '  ', ' '
                     )
                 )
             ORDER BY count DESC
             LIMIT 5
-        `);
+        `;
 
         const formattedQuestions = questions.map(q => ({
             question: q.question,
-            count: q.count,
-            answered_count: q.answered_count || 0,
-            unanswered_count: q.unanswered_count || 0,
+            count: Number(q.count),
+            answered_count: Number(q.answered_count) || 0,
+            unanswered_count: Number(q.unanswered_count) || 0,
             is_answered: q.answered_count > 0,
             similar_questions: q.similar_questions ? q.similar_questions.split(',').filter(sq => sq.trim()) : [q.question]
         }));
@@ -488,9 +471,9 @@ router.get('/category-stats', async (req, res) => {
 
         const categoryStats = categories.map(cat => ({
             category: cat.category || 'Unkategorisiert',
-            count: cat.count,
-            today_count: cat.today_count,
-            percentage: totalConversations > 0 ? Math.round((cat.count / totalConversations) * 100) : 0
+            count: Number(cat.count),
+            today_count: Number(cat.today_count),
+            percentage: totalConversations > 0 ? Math.round((Number(cat.count) / totalConversations) * 100) : 0
         }));
 
         res.json(categoryStats);
@@ -586,13 +569,13 @@ router.get('/frequent-messages', async (req, res) => {
 
             if (!seenNormalized.has(normalized)) {
                 seenNormalized.add(normalized);
-                processedMessages.push({
-                    message: msg.content,
-                    count: msg.count,
-                    first_seen: msg.first_seen,
-                    last_seen: msg.last_seen,
-                    examples: [msg.content] // Single example for now
-                });
+                 processedMessages.push({
+                     message: msg.content,
+                     count: Number(msg.count),
+                     first_seen: msg.first_seen.toString(),
+                     last_seen: msg.last_seen.toString(),
+                     examples: [msg.content] // Single example for now
+                 });
             }
         }
 
@@ -628,7 +611,7 @@ router.get('/frequent-questions', async (req, res) => {
                 // Use pre-computed statistics (fast!)
                 const formattedQuestions = dailyStats.map(stat => ({
                     question: stat.normalized_question,
-                    count: stat.question_count,
+                    count: Number(stat.question_count),
                     topic: stat.topic,
                     languages: JSON.parse(stat.languages_detected || '[]'),
                     examples: JSON.parse(stat.original_questions || '[]').slice(0, 3).map(q => {
@@ -638,9 +621,9 @@ router.get('/frequent-questions', async (req, res) => {
                 }));
 
                 console.log(`[Dashboard] Using pre-computed daily statistics: ${formattedQuestions.length} questions`);
-                
+
                 return res.json({
-                    questions: formattedQuestions,
+                    questions: formattedQuestions.map(q => ({ ...q, count: Number(q.count) })),
                     isProcessing: false,
                     progress: 100,
                     message: `Vorberechnete Analyse von ${today}`,
@@ -709,7 +692,7 @@ router.get('/frequent-questions', async (req, res) => {
             .slice(0, limit) // Use dynamic limit
             .map(group => ({
                 question: group.normalized_question,
-                count: group.question_count,
+                count: Number(group.question_count),
                 topic: group.topic,
                 languages: group.languages_detected,
                 examples: group.original_questions.slice(0, 3).map(q => {
@@ -740,8 +723,22 @@ router.get('/unanswered-questions', async (req, res) => {
 
         // Try to get pre-computed unanswered statistics first (fast path)
         const today = new Date().toISOString().split('T')[0];
-        
+
         try {
+            // Create table if it doesn't exist
+            await prisma.$queryRaw`
+                CREATE TABLE IF NOT EXISTS daily_unanswered_stats (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    analysis_date TEXT NOT NULL,
+                    normalized_question TEXT NOT NULL,
+                    question_count INTEGER NOT NULL,
+                    topic TEXT,
+                    languages_detected TEXT,
+                    original_questions TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `;
+
             const dailyStats = await prisma.$queryRaw`
                 SELECT
                     normalized_question,
@@ -759,7 +756,7 @@ router.get('/unanswered-questions', async (req, res) => {
                 // Use pre-computed statistics (fast!)
                 const formattedQuestions = dailyStats.map(stat => ({
                     question: stat.normalized_question,
-                    count: stat.question_count,
+                    count: Number(stat.question_count),
                     topic: stat.topic,
                     languages: JSON.parse(stat.languages_detected || '[]'),
                     examples: JSON.parse(stat.original_questions || '[]').slice(0, 3).map(q => {
@@ -785,7 +782,7 @@ router.get('/unanswered-questions', async (req, res) => {
 
         // Fallback to real-time analysis
         // First get potentially unanswered messages using SQL
-        const potentialUnanswered = await prisma.$queryRaw(`
+        const potentialUnanswered = await prisma.$queryRaw`
             SELECT
                 m.content,
                 m.created_at,
@@ -811,7 +808,7 @@ router.get('/unanswered-questions', async (req, res) => {
             AND m.created_at >= datetime('now', '-7 days')
             ORDER BY m.created_at DESC
             LIMIT 200
-        `);
+        `;
 
         if (potentialUnanswered.length === 0) {
             return res.json({
@@ -900,7 +897,7 @@ router.get('/unanswered-questions', async (req, res) => {
             .slice(0, limit) // Use dynamic limit
             .map(group => ({
                 question: group.normalized_question,
-                count: group.question_count,
+                count: Number(group.question_count),
                 topic: group.topic,
                 languages: group.languages_detected,
                 examples: group.original_questions.slice(0, 3).map(q => {
@@ -980,7 +977,7 @@ router.post('/trigger-analysis', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
         
         // Create table if it doesn't exist
-        await prisma.$queryRaw(`
+        await prisma.$queryRaw`
             CREATE TABLE IF NOT EXISTS daily_question_stats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 analysis_date TEXT NOT NULL,
@@ -991,7 +988,7 @@ router.post('/trigger-analysis', async (req, res) => {
                 original_questions TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        `);
+        `;
 
         // Clear today's statistics
         await prisma.$queryRaw`DELETE FROM daily_question_stats WHERE analysis_date = ${today}`;
@@ -1038,7 +1035,7 @@ router.post('/trigger-analysis', async (req, res) => {
 router.get('/analysis-status', async (req, res) => {
     try {
         // Check when last analysis was performed
-        const latestAnalysis = await prisma.$queryRaw(`
+        const latestAnalysis = await prisma.$queryRaw`
             SELECT
                 analysis_date,
                 COUNT(*) as question_groups,
@@ -1047,7 +1044,7 @@ router.get('/analysis-status', async (req, res) => {
             GROUP BY analysis_date
             ORDER BY analysis_date DESC
             LIMIT 1
-        `);
+        `;
 
         const analysisAvailable = groupSimilarQuestions && extractQuestions;
 

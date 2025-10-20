@@ -152,7 +152,7 @@ async function getCachedResults(cacheKey) {
         const cached = await QuestionAnalysisCache.findMany({
             where: {
                 cache_key: cacheKey,
-                last_updated: {
+                updated_at: {
                     gte: new Date(Date.now() - CACHE_VALIDITY_HOURS * 60 * 60 * 1000)
                 },
                 is_processing: false
@@ -249,7 +249,7 @@ async function savePartialResults(cacheKey, groups, progress) {
             languages_detected: JSON.stringify(group.languages_detected),
             original_questions: JSON.stringify(group.original_questions),
             is_processing: progress < 100,
-            last_updated: new Date()
+            updated_at: new Date()
         }));
 
         await QuestionAnalysisCache.createMany({ data: cacheEntries });
