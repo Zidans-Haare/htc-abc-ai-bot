@@ -484,6 +484,23 @@ class VectorStoreManager {
     }
   }
 
+  async getImageChunks(query = '', k = 50) {
+    if (!this.store) return [];
+    try {
+      // If query is empty, use a broad search term for all images
+      const searchQuery = query || 'image';
+      const results = await this.similaritySearch(searchQuery, k);
+      // Filter for chunks that start with "Image:"
+      const imageChunks = results
+        .filter(result => result.pageContent.startsWith('Image:'))
+        .map(result => result.pageContent);
+      return imageChunks;
+    } catch (err) {
+      logger.error('Image chunks search failed:', err);
+      return [];
+    }
+  }
+
   async buildSimpleGraph(docs) {
     const { ChatOpenAI } = require("@langchain/openai");
     const llm = new ChatOpenAI({

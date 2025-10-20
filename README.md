@@ -52,15 +52,9 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     TRUST_PROXY_COUNT=2  # Number of proxy layers (e.g., Cloudflare + Nginx)
 
     # Main Database Configuration
-    MAIN_DB_TYPE=sqlite  # Main DB type: 'sqlite', 'postgresql', or 'mysql' (default: sqlite)
-    MAIN_DB_PATH=hochschuhl-abc.db  # SQLite file path (only if MAIN_DB_TYPE=sqlite)
-    # For PostgreSQL/MySQL (uncomment and set if MAIN_DB_TYPE is not 'sqlite')
-    # MAIN_DB_HOST=localhost  # DB host
-    # MAIN_DB_PORT=5432  # DB port (5432 for PostgreSQL, 3306 for MySQL)
-    # MAIN_DB_USER=myuser  # DB username
-    # MAIN_DB_PASSWORD=mypassword  # DB password
-    # MAIN_DB_NAME=mydb  # DB name
-    # MAIN_DB_SSL=false  # Enable SSL: 'true' or 'false' (default: false)
+    DATABASE_URL="file:/home/htw/htc-abc-ai-bot/hochschuhl-abc.db"  # SQLite (default)
+    # DATABASE_URL="postgresql://username:password@localhost:5432/dbname?schema=public"  # PostgreSQL example
+    # DATABASE_URL="mysql://username:password@localhost:3306/dbname"  # MySQL example
 
     # Session Authentication
     SESSION_INACTIVITY_TIMEOUT_MINUTES=1440  # Time in minutes after last activity before session expires (default: 1440 for 24 hours). Also sets client-side cookie expiration.
@@ -72,6 +66,7 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     CHROMA_COLLECTION=  # Required if VECTOR_DB_TYPE=chroma
     WEAVIATE_URL=  # Required if VECTOR_DB_TYPE=weaviate
     WEAVIATE_COLLECTION=  # Required if VECTOR_DB_TYPE=weaviate
+    USE_VECTOR_IMAGES=static  # Image list mode for AI: 'static' (default, from DB), 'simple' (from vector DB), 'dynamic' (per-query from vector DB)
 
     # Vector DB Processing Options
     CHUNK_SIZE=500  # Size of text chunks for vectorization (200-1000, default: 500)
@@ -87,6 +82,13 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     PDF_EXTRACT_TEXT_ONLY=false  # Extract only text from PDFs: 'true' or 'false' (default: false)
     SYNC_BATCH=100  # Batch size for vector DB sync (10-500, default: 100)
     DISPLAY_TOKEN_USED_FOR_QUERY=false  # Display token usage in responses: 'true' or 'false' (default: false)
+
+    # Image Handling Options
+    # The AI can reference images in responses. Configure how the image list is generated for the AI prompt.
+    # - 'static': Fetch from main DB (Prisma). Fast, no vector DB required. Includes all images with descriptions.
+    # - 'simple': Fetch from vector DB. Uses embeddings for retrieval, may improve relevance but adds latency.
+    # - 'dynamic': Query vector DB per user question. Most adaptive, but highest latency and token usage.
+    # Requires VECTOR_DB_TYPE != 'none' for 'simple'/'dynamic'. Fallbacks to 'static' if vector DB fails.
 
     # Embedding Models (known working models with dimensions)
     # For EMBEDDING_LIBRARY=xenova (default):

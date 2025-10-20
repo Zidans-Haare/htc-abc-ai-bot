@@ -1,4 +1,5 @@
 const { HochschuhlABC, Questions, Images, Conversation, Message } = require('./db.cjs');
+const { getImageList } = require('../utils/imageProvider.js');
 const { estimateTokens, isWithinTokenLimit } = require('../utils/tokenizer');
 const { summarizeConversation } = require('../utils/summarizer');
 const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require('../utils/analytics');
@@ -164,12 +165,10 @@ async function streamChat(req, res) {
       hochschulContent = entries.map(entry => `## ${entry.article}\n\n${entry.description}\n\n`).join('');
     }
 
-    const images = await Images.findMany({
-      select: { filename: true, description: true },
+    const imageList = await getImageList({
+      mode: process.env.USE_VECTOR_IMAGES || 'static',
+      query: prompt
     });
-    const imageList = images
-      .map(image => `image_name: ${image.filename} description: ${image.description ? image.description.replace(/\n/g, ' ') : ''}`)
-      .join('\n\n');
 
     const historyText = messages.map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`).join('\n');
     const fullTextForTokenCheck = `**Inhalt des Hochschul ABC (2025)**:\n${hochschulContent}\n\n**Gesprächsverlauf**:\n${historyText}\n\nBenutzerfrage: ${prompt}`;
@@ -228,8 +227,6 @@ async function streamChat(req, res) {
       If there are diverging Answers for long and short term students, and the user did not yet specify their status,
       ask for clarification and point out the difference.
 
-      IMPORTANT: You MUST answer in the same language as the user's prompt. If the user asks in English, you MUST reply in English. If the user asks in German, you MUST reply in German.
-
 
       **Knowledgebase of the HTW Desden**:
       ${hochschulContent}
@@ -249,6 +246,10 @@ async function streamChat(req, res) {
 
       --
     `;
+
+    // Log token count for system prompt
+    const systemTokens = estimateTokens(systemPrompt);
+    console.log(`System prompt tokens: ${systemTokens}, Image mode: ${process.env.USE_VECTOR_IMAGES || 'static'}`);
 
     const openAIHistory = messages.map(m => ({
       role: m.isUser ? 'user' : 'assistant',
