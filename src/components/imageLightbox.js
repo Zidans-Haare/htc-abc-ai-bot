@@ -19,7 +19,7 @@ export function processImagesInBubble(bubble) {
       pathname = originalSrc;
     }
     
-    if (!pathname.startsWith('/uploads/')) return; // Only handle our uploads
+    if (!pathname.startsWith('/uploads/images/')) return; // Only handle our uploads
 
     img.dataset.fullSrc = originalSrc; // Store original for lightbox
     img.style.cursor = 'pointer'; // Indicate clickable
@@ -34,7 +34,7 @@ export function processImagesInBubble(bubble) {
         const fileName = pathname.split('/').pop();
         const baseName = fileName.split('.').shift();
         const ext = fileName.split('.').pop();
-        img.src = `/uploads/${baseName}_${roundedWidth}px.${ext}`;
+        img.src = `/uploads/images/${baseName}_${roundedWidth}px.${ext}`;
       }
     };
 
