@@ -168,8 +168,8 @@ async function streamChat(req, res) {
       select: { filename: true, description: true },
     });
     const imageList = images
-      .map(image => image.filename)
-      .join('\n');
+      .map(image => `image_name: ${image.filename} description: ${image.description ? image.description.replace(/\n/g, ' ') : ''}`)
+      .join('\n\n');
 
     const historyText = messages.map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`).join('\n');
     const fullTextForTokenCheck = `**Inhalt des Hochschul ABC (2025)**:\n${hochschulContent}\n\n**Gesprächsverlauf**:\n${historyText}\n\nBenutzerfrage: ${prompt}`;
@@ -234,11 +234,11 @@ async function streamChat(req, res) {
       **Knowledgebase of the HTW Desden**:
       ${hochschulContent}
 
-      **Available Images**:
+      **Image List**:
       ${imageList}
 
-      If an image from the list helps answer the user question, add the image link to the answer.
-      Format: "\n\n ![](/uploads/images/<image_name>) \n\n"
+      If an image is in the Image List, that helps to answer the user question, add the image link to the answer.
+      format the url in markdown: "\n\n ![](/uploads/images/<image_name>) \n\n"
 
 
 
