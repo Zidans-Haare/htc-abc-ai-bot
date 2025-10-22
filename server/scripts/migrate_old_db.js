@@ -37,33 +37,7 @@ async function migrate() {
    }
   console.log(`Migrated ${oldUsers.length} users`);
 
-   // Migrate auth_sessions (if exists)
-   try {
-     console.log('Migrating auth_sessions...');
-     const oldAuthSessions = await new Promise((resolve, reject) => {
-       oldDb.all('SELECT * FROM auth_sessions', [], (err, rows) => {
-         if (err) reject(err);
-         else resolve(rows);
-       });
-     });
-    for (const session of oldAuthSessions) {
-      const userId = userMap[session.username];
-      if (userId) {
-        await prisma.auth_sessions.create({
-          data: {
-            user_id: userId,
-            token: session.session_token,
-            expires_at: new Date(session.expires_at),
-            created_at: session.created_at ? new Date(session.created_at) : new Date(),
-            updated_at: new Date(),
-          },
-        });
-      }
-    }
-    console.log(`Migrated ${oldAuthSessions.length} auth_sessions`);
-  } catch (e) {
-    console.log('auth_sessions table not found, skipping...');
-  }
+
 
    // Migrate feedback
    console.log('Migrating feedback...');
@@ -218,34 +192,36 @@ async function migrate() {
      });
    }
 
-   // pdfs (skip if not exists)
-   try {
-     const oldPdfs = await new Promise((resolve, reject) => {
-       oldDb.all('SELECT * FROM pdfs', [], (err, rows) => {
-         if (err) reject(err);
-         else resolve(rows);
-       });
-     });
-     for (const pdf of oldPdfs) {
-       await prisma.pdfs.upsert({
-         where: { filename: pdf.filename },
-         update: {
-           filepath: pdf.filepath,
-           description: pdf.description,
-           updated_at: pdf.updatedAt ? new Date(pdf.updatedAt) : new Date(),
-         },
-         create: {
-           filename: pdf.filename,
-           filepath: pdf.filepath,
-           description: pdf.description,
-           created_at: pdf.createdAt ? new Date(pdf.createdAt) : new Date(),
-           updated_at: pdf.updatedAt ? new Date(pdf.updatedAt) : new Date(),
-         },
-       });
-     }
-  } catch (e) {
-    console.log('pdfs table not found, skipping...');
-  }
+    // documents (from old pdfs)
+    try {
+      const oldPdfs = await new Promise((resolve, reject) => {
+        oldDb.all('SELECT * FROM pdfs', [], (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
+      });
+      for (const pdf of oldPdfs) {
+        await prisma.documents.upsert({
+          where: { filepath: pdf.filepath }, // assuming filepath is unique
+          update: {
+            file_type: 'pdf',
+            description: pdf.description,
+            uploaded_at: pdf.createdAt ? new Date(pdf.createdAt) : new Date(),
+            updated_at: pdf.updatedAt ? new Date(pdf.updatedAt) : new Date(),
+          },
+          create: {
+            filepath: pdf.filepath,
+            file_type: 'pdf',
+            description: pdf.description,
+            uploaded_at: pdf.createdAt ? new Date(pdf.createdAt) : new Date(),
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
+        });
+      }
+   } catch (e) {
+     console.log('pdfs table not found, skipping...');
+   }
 
    // article_views
    const oldViews = await new Promise((resolve, reject) => {

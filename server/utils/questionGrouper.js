@@ -13,14 +13,18 @@ const CACHE_VALIDITY_HOURS = 6;
  */
 async function getExistingCategories() {
     try {
-        const categories = await prisma.$queryRaw`
-            SELECT DISTINCT category
-            FROM conversations
-            WHERE category IS NOT NULL
-              AND category != 'Unkategorisiert'
-              AND category != ''
-            ORDER BY category
-        `;
+        const categories = await prisma.conversations.findMany({
+            select: { category: true },
+            where: {
+                category: {
+                    not: null,
+                    not: 'Unkategorisiert',
+                    not: ''
+                }
+            },
+            distinct: ['category'],
+            orderBy: { category: 'asc' }
+        });
 
         return categories.map(cat => cat.category);
     } catch (error) {

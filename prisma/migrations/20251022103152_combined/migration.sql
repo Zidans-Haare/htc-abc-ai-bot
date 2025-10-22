@@ -12,17 +12,6 @@ CREATE TABLE "article_views" (
 );
 
 -- CreateTable
-CREATE TABLE "auth_sessions" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "user_id" TEXT NOT NULL,
-    "token" TEXT NOT NULL,
-    "expires_at" DATETIME NOT NULL,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" DATETIME NOT NULL,
-    CONSTRAINT "auth_sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-);
-
--- CreateTable
 CREATE TABLE "chat_interactions" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "session_id" TEXT NOT NULL,
@@ -145,17 +134,6 @@ CREATE TABLE "question_analysis_cache" (
 );
 
 -- CreateTable
-CREATE TABLE "question_cache" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "question" TEXT NOT NULL,
-    "answer" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'pending',
-    "hit_count" INTEGER DEFAULT 0,
-    "created_at" DATETIME NOT NULL,
-    "updated_at" DATETIME NOT NULL
-);
-
--- CreateTable
 CREATE TABLE "questions" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "question" TEXT NOT NULL,
@@ -173,18 +151,6 @@ CREATE TABLE "questions" (
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL,
     CONSTRAINT "questions_linked_article_id_fkey" FOREIGN KEY ("linked_article_id") REFERENCES "hochschuhl_abc" ("id") ON DELETE SET NULL ON UPDATE CASCADE
-);
-
--- CreateTable
-CREATE TABLE "sessions" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "token_hash" TEXT NOT NULL,
-    "username" TEXT NOT NULL,
-    "role" TEXT NOT NULL,
-    "created_at" DATETIME,
-    "last_activity" DATETIME,
-    "expires_at" DATETIME NOT NULL,
-    "updated_at" DATETIME NOT NULL
 );
 
 -- CreateTable
@@ -235,16 +201,7 @@ CREATE TABLE "documents" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "auth_sessions_token_key" ON "auth_sessions"("token");
-
--- CreateIndex
 CREATE UNIQUE INDEX "images_filename_key" ON "images"("filename");
-
--- CreateIndex
-CREATE UNIQUE INDEX "question_cache_question_key" ON "question_cache"("question");
-
--- CreateIndex
-CREATE UNIQUE INDEX "sessions_token_hash_key" ON "sessions"("token_hash");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "user_sessions_session_id_key" ON "user_sessions"("session_id");
@@ -255,31 +212,37 @@ CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 -- CreateView
 CREATE VIEW top_questions_view AS
 SELECT
-    MIN(q.question) as question,
-    COUNT(*) as count,
-    GROUP_CONCAT(DISTINCT q.question) as similar_questions,
-    SUM(CASE WHEN q.answered = 1 THEN 1 ELSE 0 END) as answered_count,
-    SUM(CASE WHEN q.answered = 0 THEN 1 ELSE 0 END) as unanswered_count
-FROM questions q
-WHERE q.spam = 0
-    AND q.deleted = 0
-GROUP BY
-    LOWER(
-        REPLACE(
-            REPLACE(
-                REPLACE(
-                    REPLACE(
-                        REPLACE(
-                            REPLACE(TRIM(q.question), '?', ''),
-                            '.', ''
-                        ),
-                        '!', ''
-                    ),
-                    'where is', 'wo ist'
-                ),
-                'what is', 'was ist'
-            ),
-            '  ', ' '
-        )
-    )
+    normalized_question AS question,
+    SUM(question_count) AS count,
+    SUM(CASE WHEN answered = 1 THEN question_count ELSE 0 END) AS answered_count,
+    SUM(CASE WHEN answered = 0 THEN question_count ELSE 0 END) AS unanswered_count,
+    GROUP_CONCAT(DISTINCT original_questions) AS similar_questions
+FROM daily_question_stats
+GROUP BY normalized_question
 ORDER BY count DESC;
+
+-- CreateView
+CREATE VIEW unanswered_questions_view AS
+SELECT
+    m.content,
+    m.created_at,
+    c.category
+FROM messages m
+JOIN conversations c ON m.conversation_id = c.id
+LEFT JOIN messages m_response ON m_response.conversation_id = c.id
+    AND m_response.role = 'model'
+    AND m_response.created_at > m.created_at
+    AND ABS(strftime('%s', m_response.created_at) - strftime('%s', m.created_at)) < 30
+WHERE m.role = 'user'
+AND LENGTH(TRIM(m.content)) > 5
+AND m.content NOT LIKE '%<%'
+AND (
+    m_response.content IS NULL
+    OR m_response.content LIKE '%kann ich leider nicht%'
+    OR m_response.content LIKE '%keine Informationen%'
+    OR m_response.content LIKE '%tut mir leid%'
+    OR m_response.content LIKE '%sorry%'
+    OR m_response.content LIKE '%Unfortunately%'
+    OR LENGTH(m_response.content) < 50
+)
+AND m.created_at >= datetime('now', '-7 days');

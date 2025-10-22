@@ -1,7 +1,8 @@
 // To switch DBs: Change provider in datasource (e.g., "postgresql" or "mysql"), update DATABASE_URL env (e.g., postgres://user:pass@host/db?schema=public for Postgres; mysql://user:pass@host/db for MySQL), then run npx prisma db push && npx prisma generate.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
 }
 
 datasource db {
@@ -152,16 +153,6 @@ model question_analysis_cache {
   updated_at          DateTime                   @updatedAt
 }
 
-model question_cache {
-  id         Int      @id @default(autoincrement())
-  question   String   @unique
-  answer     String
-  status     String   @default("pending")
-  hit_count  Int?     @default(0)
-  created_at DateTime
-  updated_at DateTime @updatedAt
-}
-
 model questions {
   id                Int                        @id @default(autoincrement())
   question          String
@@ -180,17 +171,6 @@ model questions {
   updated_at        DateTime                   @updatedAt
   hochschuhl_abc    hochschuhl_abc?            @relation(fields: [linked_article_id], references: [id])
   @@map("questions")
-}
-
-model sessions {
-  id            Int       @id @default(autoincrement())
-  token_hash    String    @unique
-  username      String
-  role          String
-  created_at    DateTime?
-  last_activity DateTime?
-  expires_at    DateTime
-  updated_at    DateTime  @updatedAt
 }
 
 model token_usage {
@@ -239,4 +219,35 @@ model documents {
   updated_at  DateTime                   @updatedAt
   hochschuhl_abc hochschuhl_abc?         @relation(fields: [article_id], references: [id])
   @@map("documents")
+}
+
+view TopQuestionsView {
+  question          String
+  count             Int?
+  answered_count    Int?
+  unanswered_count  Int?
+  similar_questions String?
+}
+
+view UnansweredQuestionsView {
+  content    String
+  created_at DateTime
+  category   String?
+}
+
+model top_questions_view {
+  question          String @unique
+  count             Int?
+  answered_count    Int?
+  unanswered_count  Int?
+  similar_questions String?
+  @@map("top_questions_view")
+}
+
+model unanswered_questions_view {
+  content    String
+  created_at DateTime
+  category   String?
+  @@unique([content, created_at])
+  @@map("unanswered_questions_view")
 }

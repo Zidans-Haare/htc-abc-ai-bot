@@ -349,10 +349,10 @@ router.get('/content-stats', async (req, res) => {
 
 router.get('/top-questions', async (req, res) => {
     try {
-        // Query the view (created in migration)
-        const questions = await prisma.$queryRaw`
-            SELECT * FROM top_questions_view LIMIT 5
-        `;
+        // Query the view
+        const questions = await prisma.topQuestionsView.findMany({
+            take: 5
+        });
 
         const formattedQuestions = questions.map(q => ({
             question: q.question,
@@ -797,34 +797,11 @@ router.get('/unanswered-questions', async (req, res) => {
         }
 
         // Fallback to real-time analysis
-        // First get potentially unanswered messages using SQL
-        const potentialUnanswered = await prisma.$queryRaw`
-            SELECT
-                m.content,
-                m.created_at,
-                c.category
-            FROM messages m
-            JOIN conversations c ON m.conversation_id = c.id
-            LEFT JOIN messages m_response ON m_response.conversation_id = c.id
-                AND m_response.role = 'model'
-                AND m_response.created_at > m.created_at
-                AND ABS(strftime('%s', m_response.created_at) - strftime('%s', m.created_at)) < 30
-            WHERE m.role = 'user'
-            AND LENGTH(TRIM(m.content)) > 5
-            AND m.content NOT LIKE '%<%'
-            AND (
-                m_response.content IS NULL
-                OR m_response.content LIKE '%kann ich leider nicht%'
-                OR m_response.content LIKE '%keine Informationen%'
-                OR m_response.content LIKE '%tut mir leid%'
-                OR m_response.content LIKE '%sorry%'
-                OR m_response.content LIKE '%Unfortunately%'
-                OR LENGTH(m_response.content) < 50
-            )
-            AND m.created_at >= datetime('now', '-7 days')
-            ORDER BY m.created_at DESC
-            LIMIT 200
-        `;
+        // First get potentially unanswered messages using view
+        const potentialUnanswered = await prisma.unansweredQuestionsView.findMany({
+            orderBy: { created_at: 'desc' },
+            take: 200
+        });
 
         if (potentialUnanswered.length === 0) {
             return res.json({

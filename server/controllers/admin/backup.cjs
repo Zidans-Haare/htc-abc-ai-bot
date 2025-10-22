@@ -6,6 +6,7 @@ const path = require('path');
 const archiver = require('archiver');
 const unzipper = require('unzipper');
 const multer = require('multer');
+const crypto = require('crypto');
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
@@ -13,6 +14,23 @@ const upload = multer({ dest: 'temp/' });
 
 const BACKUP_PATH = process.env.BACKUP_PATH || 'backups';
 let backupInProgress = false;
+
+async function getSchemaHash() {
+  const schemaPath = path.join(__dirname, '..', '..', '..', 'prisma', 'schema.prisma');
+  const schemaContent = await fsPromises.readFile(schemaPath, 'utf8');
+  return crypto.createHash('sha256').update(schemaContent).digest('hex');
+}
+
+async function createTempPrisma() {
+  const tempDbPath = path.join(__dirname, '..', '..', 'temp_import.db');
+  const tempUrl = `file:${tempDbPath}`;
+  const tempPrisma = new PrismaClient({ datasourceUrl: tempUrl });
+  // Ensure temp DB is empty (delete if exists)
+  try {
+    await fsPromises.unlink(tempDbPath);
+  } catch {}
+  return { tempPrisma, tempDbPath };
+}
 
 module.exports = (adminAuth) => {
   // Ensure backup dir exists
@@ -40,6 +58,11 @@ module.exports = (adminAuth) => {
     archive.pipe(output);
 
     try {
+      // Add schema hash and schema file
+      const schemaHash = await getSchemaHash();
+      archive.append(schemaHash, { name: 'schema-hash.txt' });
+      const schemaPath = path.join(__dirname, '..', '..', '..', 'prisma', 'schema.prisma');
+      archive.file(schemaPath, { name: 'schema.prisma' });
       if (options.users) {
         const data = await prisma.users.findMany();
         archive.append(JSON.stringify(data, null, 2), { name: 'users.json' });
@@ -114,12 +137,16 @@ module.exports = (adminAuth) => {
         archive.append(JSON.stringify(articleViews, null, 2), { name: 'article_views.json' });
         const pageViews = await prisma.page_views.findMany();
         archive.append(JSON.stringify(pageViews, null, 2), { name: 'page_views.json' });
-        const dailyStats = await prisma.daily_question_stats.findMany();
-        archive.append(JSON.stringify(dailyStats, null, 2), { name: 'daily_question_stats.json' });
-        const tokenUsage = await prisma.token_usage.findMany();
-        archive.append(JSON.stringify(tokenUsage, null, 2), { name: 'token_usage.json' });
-        const userSessions = await prisma.user_sessions.findMany({ include: { chat_interactions: true } });
-        archive.append(JSON.stringify(userSessions, null, 2), { name: 'user_sessions.json' });
+         const dailyStats = await prisma.daily_question_stats.findMany();
+         archive.append(JSON.stringify(dailyStats, null, 2), { name: 'daily_question_stats.json' });
+         const dailyUnansweredStats = await prisma.daily_unanswered_stats.findMany();
+         archive.append(JSON.stringify(dailyUnansweredStats, null, 2), { name: 'daily_unanswered_stats.json' });
+         const questionAnalysisCache = await prisma.question_analysis_cache.findMany();
+         archive.append(JSON.stringify(questionAnalysisCache, null, 2), { name: 'question_analysis_cache.json' });
+         const tokenUsage = await prisma.token_usage.findMany();
+         archive.append(JSON.stringify(tokenUsage, null, 2), { name: 'token_usage.json' });
+         const userSessions = await prisma.user_sessions.findMany({ include: { chat_interactions: true } });
+         archive.append(JSON.stringify(userSessions, null, 2), { name: 'user_sessions.json' });
       }
 
        console.log('Finalizing backup archive');
@@ -212,35 +239,74 @@ module.exports = (adminAuth) => {
     try {
       const directory = await unzipper.Open.file(filepath);
       const files = {};
+      let backupSchemaHash = null;
+      let backupSchemaContent = null;
       for (const file of directory.files) {
         if (file.type === 'File') {
           const content = await file.buffer();
-          if (file.path.endsWith('.json')) {
+          if (file.path === 'schema-hash.txt') {
+            backupSchemaHash = content.toString().trim();
+          } else if (file.path === 'schema.prisma') {
+            backupSchemaContent = content.toString();
+          } else if (file.path.endsWith('.json')) {
             files[file.path] = JSON.parse(content.toString());
-        } else {
-          // For files, save temporarily
-          const tempPath = path.join('temp', file.path);
-          await fsPromises.mkdir(path.dirname(tempPath), { recursive: true });
-          await fsPromises.writeFile(tempPath, content);
-        }
+          } else {
+            // For files, save temporarily
+            const tempPath = path.join('temp', file.path);
+            await fsPromises.mkdir(path.dirname(tempPath), { recursive: true });
+            await fsPromises.writeFile(tempPath, content);
+          }
         }
       }
+
+      // Check schema compatibility
+      const currentSchemaHash = await getSchemaHash();
+      let useTempDb = false;
+      let tempPrisma = null;
+      let tempDbPath = null;
+      let upgradeSql = null;
+      if (backupSchemaHash && backupSchemaHash !== currentSchemaHash && backupSchemaContent) {
+        console.warn(`Schema mismatch: backup hash ${backupSchemaHash}, current hash ${currentSchemaHash}. Using temp DB with diff upgrade.`);
+        // Save backup schema to temp file
+        const backupSchemaPath = path.join(__dirname, '..', '..', 'temp_backup_schema.prisma');
+        await fsPromises.writeFile(backupSchemaPath, backupSchemaContent);
+        // Generate diff SQL
+        const { execSync } = require('child_process');
+        const currentSchemaPath = path.join(__dirname, '..', '..', '..', 'prisma', 'schema.prisma');
+        try {
+          upgradeSql = execSync(`npx prisma migrate diff --from-schema ${backupSchemaPath} --to-schema ${currentSchemaPath} --script`, { encoding: 'utf8' });
+          console.log('Generated upgrade SQL');
+        } catch (err) {
+          console.error('Failed to generate diff SQL:', err.message);
+          return res.status(500).json({ error: 'Failed to generate upgrade SQL' });
+        }
+        // Create temp DB with backup schema
+        ({ tempPrisma, tempDbPath } = await createTempPrisma());
+        const tempUrl = `file:${tempDbPath}`;
+        // Push backup schema to temp DB
+        execSync(`DATABASE_URL=${tempUrl} npx prisma db push --schema ${backupSchemaPath} --accept-data-loss`, { stdio: 'inherit' });
+        useTempDb = true;
+        // Clean up temp schema file
+        await fsPromises.unlink(backupSchemaPath);
+      }
+
+      const db = useTempDb ? tempPrisma : prisma;
 
       // Import logic
       const importTable = async (table, data, replace) => {
         console.log(`Starting import for ${table}, mode: ${mode}, replace: ${replace}, data length: ${data.length}`);
         if (replace) {
           console.log(`Dropping all records in ${table}`);
-          await prisma[table].deleteMany();
+          await db[table].deleteMany();
         }
         let inserted = 0, updated = 0;
         for (const item of data) {
-          if (mode === 'append-keep' && await prisma[table].findUnique({ where: { id: item.id } })) {
+          if (mode === 'append-keep' && await db[table].findUnique({ where: { id: item.id } })) {
             console.log(`Skipping existing item in ${table}, id: ${item.id}`);
             continue;
           }
-          const existing = await prisma[table].findUnique({ where: { id: item.id } });
-          await prisma[table].upsert({
+          const existing = await db[table].findUnique({ where: { id: item.id } });
+          await db[table].upsert({
             where: { id: item.id },
             update: item,
             create: item
@@ -258,16 +324,16 @@ module.exports = (adminAuth) => {
         let convInserted = 0, convUpdated = 0, msgInserted = 0, msgUpdated = 0;
         for (const conv of files['conversations.json']) {
           const { messages, ...convData } = conv;
-          const existingConv = await prisma.conversations.findUnique({ where: { id: conv.id } });
-          const newConv = await prisma.conversations.upsert({
+          const existingConv = await db.conversations.findUnique({ where: { id: conv.id } });
+          const newConv = await db.conversations.upsert({
             where: { id: conv.id },
             update: convData,
             create: convData
           });
           if (existingConv) convUpdated++; else convInserted++;
           for (const msg of messages) {
-            const existingMsg = await prisma.messages.findUnique({ where: { id: msg.id } });
-            await prisma.messages.upsert({
+            const existingMsg = await db.messages.findUnique({ where: { id: msg.id } });
+            await db.messages.upsert({
               where: { id: msg.id },
               update: { ...msg, conversation_id: newConv.id },
               create: { ...msg, conversation_id: newConv.id }
@@ -289,48 +355,64 @@ module.exports = (adminAuth) => {
            } catch {}
          }
        }
-      if (files['images.json'] && selected.bilder) {
-        await importTable('images', files['images.json'], mode === 'replace');
-        // Copy files
-        for (const img of files['images.json']) {
-          const src = path.join('temp', 'images', img.filename);
-          const dest = path.join('uploads', img.filename);
-          try {
-            await fsPromises.mkdir(path.dirname(dest), { recursive: true });
-            await fsPromises.copyFile(src, dest);
-          } catch {}
+       if (files['images.json'] && selected.bilder) {
+         await importTable('images', files['images.json'], mode === 'replace');
+         // Copy files
+         for (const img of files['images.json']) {
+           const src = path.join('temp', 'images', img.filename);
+           const dest = path.join('uploads', img.filename);
+           try {
+             await fsPromises.mkdir(path.dirname(dest), { recursive: true });
+             await fsPromises.copyFile(src, dest);
+           } catch {}
+         }
+       }
+       if (files['feedback.json'] && selected.feedback) await importTable('feedback', files['feedback.json'], mode === 'replace');
+       if (selected.dashboard) {
+         if (files['article_views.json']) await importTable('article_views', files['article_views.json'], mode === 'replace');
+         if (files['page_views.json']) await importTable('page_views', files['page_views.json'], mode === 'replace');
+         if (files['daily_question_stats.json']) await importTable('daily_question_stats', files['daily_question_stats.json'], mode === 'replace');
+         if (files['daily_unanswered_stats.json']) await importTable('daily_unanswered_stats', files['daily_unanswered_stats.json'], mode === 'replace');
+         if (files['question_analysis_cache.json']) await importTable('question_analysis_cache', files['question_analysis_cache.json'], mode === 'replace');
+         if (files['token_usage.json']) await importTable('token_usage', files['token_usage.json'], mode === 'replace');
+         if (files['user_sessions.json']) {
+           console.log(`Starting import for user_sessions, data length: ${files['user_sessions.json'].length}`);
+           let sessInserted = 0, sessUpdated = 0, interInserted = 0, interUpdated = 0;
+           for (const sess of files['user_sessions.json']) {
+             const { chat_interactions, ...sessData } = sess;
+             const existingSess = await db.user_sessions.findUnique({ where: { session_id: sess.session_id } });
+             const newSess = await db.user_sessions.upsert({
+               where: { session_id: sess.session_id },
+               update: sessData,
+               create: sessData
+             });
+             if (existingSess) sessUpdated++; else sessInserted++;
+             for (const inter of chat_interactions) {
+               const existingInter = await db.chat_interactions.findUnique({ where: { id: inter.id } });
+               await db.chat_interactions.upsert({
+                 where: { id: inter.id },
+                 update: { ...inter, session_id: newSess.session_id },
+                 create: { ...inter, session_id: newSess.session_id }
+               });
+               if (existingInter) interUpdated++; else interInserted++;
+             }
+           }
+           console.log(`user_sessions: ${sessInserted} inserted, ${sessUpdated} updated; chat_interactions: ${interInserted} inserted, ${interUpdated} updated`);
+         }
+       }
+
+      if (useTempDb) {
+        // Apply upgrade SQL to temp DB
+        if (upgradeSql) {
+          await tempPrisma.$executeRawUnsafe(upgradeSql);
+          console.log('Applied upgrade SQL to temp DB');
         }
-      }
-      if (files['feedback.json'] && selected.feedback) await importTable('feedback', files['feedback.json'], mode === 'replace');
-      if (selected.dashboard) {
-        if (files['article_views.json']) await importTable('article_views', files['article_views.json'], mode === 'replace');
-        if (files['page_views.json']) await importTable('page_views', files['page_views.json'], mode === 'replace');
-        if (files['daily_question_stats.json']) await importTable('daily_question_stats', files['daily_question_stats.json'], mode === 'replace');
-        if (files['token_usage.json']) await importTable('token_usage', files['token_usage.json'], mode === 'replace');
-        if (files['user_sessions.json']) {
-          console.log(`Starting import for user_sessions, data length: ${files['user_sessions.json'].length}`);
-          let sessInserted = 0, sessUpdated = 0, interInserted = 0, interUpdated = 0;
-          for (const sess of files['user_sessions.json']) {
-            const { chat_interactions, ...sessData } = sess;
-            const existingSess = await prisma.user_sessions.findUnique({ where: { session_id: sess.session_id } });
-            const newSess = await prisma.user_sessions.upsert({
-              where: { session_id: sess.session_id },
-              update: sessData,
-              create: sessData
-            });
-            if (existingSess) sessUpdated++; else sessInserted++;
-            for (const inter of chat_interactions) {
-              const existingInter = await prisma.chat_interactions.findUnique({ where: { id: inter.id } });
-              await prisma.chat_interactions.upsert({
-                where: { id: inter.id },
-                update: { ...inter, session_id: newSess.session_id },
-                create: { ...inter, session_id: newSess.session_id }
-              });
-              if (existingInter) interUpdated++; else interInserted++;
-            }
-          }
-          console.log(`user_sessions: ${sessInserted} inserted, ${sessUpdated} updated; chat_interactions: ${interInserted} inserted, ${interUpdated} updated`);
-        }
+        // Copy temp DB to main DB
+        const currentDbPath = process.env.DATABASE_URL.replace('file:', '');
+        await fsPromises.copyFile(tempDbPath, currentDbPath);
+        await tempPrisma.$disconnect();
+        await fsPromises.unlink(tempDbPath);
+        console.log('Imported via temp DB and upgraded.');
       }
 
       // Clean temp
