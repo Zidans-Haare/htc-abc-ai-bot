@@ -188,6 +188,17 @@ CREATE TABLE "users" (
 );
 
 -- CreateTable
+CREATE TABLE "auth_sessions" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "user_id" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expires_at" DATETIME NOT NULL,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL,
+    CONSTRAINT "auth_sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
 CREATE TABLE "documents" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "article_id" INTEGER,
@@ -199,6 +210,9 @@ CREATE TABLE "documents" (
     "updated_at" DATETIME NOT NULL,
     CONSTRAINT "documents_article_id_fkey" FOREIGN KEY ("article_id") REFERENCES "hochschuhl_abc" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "auth_sessions_token_key" ON "auth_sessions"("token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "images_filename_key" ON "images"("filename");
