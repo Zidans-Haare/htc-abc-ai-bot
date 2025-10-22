@@ -77,7 +77,7 @@ process.on('uncaughtException', async (err) => {
 });
 
 // --- Controller Imports (after dotenv) ---
-const { streamChat, getSuggestions, testApiKey } = require('./controllers/openaiController.cjs');
+const { streamChat, getSuggestions, testApiKey } = require('./controllers/aiController.cjs');
 const feedbackController = require('./controllers/feedbackController.cjs');
 const adminController = require('./controllers/adminController.cjs');
 const auth = require('./controllers/authController.cjs');

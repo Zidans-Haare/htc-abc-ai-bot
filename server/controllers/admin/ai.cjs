@@ -1,13 +1,13 @@
 const express = require('express');
 const { HochschuhlABC } = require('../db.cjs');
-const { getOpenAIClient, DEFAULT_MODEL } = require('../../utils/openaiClient');
+const { chatCompletion } = require('../../utils/aiProvider');
 
 module.exports = (authMiddleware) => {
   const router = express.Router();
 
-  const hasServerKey = Boolean(process.env.CHAT_AI_TOKEN || process.env.OPENAI_API_KEY || process.env.KISSKI_API_KEY);
+  const hasServerKey = Boolean(process.env.AI_API_KEY);
   if (!hasServerKey) {
-    console.error('CHAT_AI_TOKEN/OPENAI_API_KEY/KISSKI_API_KEY is not set. The AI feature will not work.');
+    console.error('AI_API_KEY is not set. The AI feature will not work.');
     router.post('/analyze-text', authMiddleware, (req, res) => {
       res.status(500).json({ error: 'AI feature is not configured on the server.' });
     });
@@ -17,9 +17,7 @@ module.exports = (authMiddleware) => {
     return router;
   }
 
-  function getClient() {
-    return getOpenAIClient();
-  }
+
 
   router.post('/analyze-text', authMiddleware, async (req, res) => {
     const { text } = req.body;
@@ -29,8 +27,6 @@ module.exports = (authMiddleware) => {
     }
 
     try {
-      const client = getClient();
-
       const allArticles = await HochschuhlABC.findMany({
         select: { article: true, description: true },
         where: { active: true },
@@ -39,17 +35,12 @@ module.exports = (authMiddleware) => {
 
       const prompt = `Du bist ein Lektor für die Wissensdatenbank einer Hochschule. Analysiere den folgenden Text und gib deine Antwort AUSSCHLIESSLICH als valides JSON-Objekt mit dem Schema {"correctedText": "", "corrections": [{"original": "", "corrected": "", "reason": ""}], "suggestions": [{"suggestion": "", "reason": ""}], "contradictions": [{"contradiction": "", "reason": ""}]}.\n\nText:\n---\n${text}\n---\n\nKontext aus bestehenden Artikeln:\n---\n${context}\n---`;
 
-      const completion = await client.chat.completions.create({
-        model: DEFAULT_MODEL,
-        messages: [
-          { role: 'system', content: 'Du bist ein akribischer Lektor. Antworte ausschließlich mit gültigem JSON.' },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.2,
-        max_tokens: 1200,
-      });
+      const result = await chatCompletion([
+        { role: 'system', content: 'Du bist ein akribischer Lektor. Antworte ausschließlich mit gültigem JSON.' },
+        { role: 'user', content: prompt },
+      ], { temperature: 0.2, maxTokens: 1200 });
 
-      const raw = completion?.choices?.[0]?.message?.content?.trim();
+      const raw = result.content?.trim();
       if (!raw) {
         throw new Error('Empty response from model');
       }
@@ -72,18 +63,12 @@ module.exports = (authMiddleware) => {
     }
 
     try {
-      const client = getClient();
-      const completion = await client.chat.completions.create({
-        model: DEFAULT_MODEL,
-        messages: [
-          { role: 'system', content: 'Du verbesserst Texte basierend auf konkreten Anweisungen. Gib ausschließlich den optimierten Text im Markdown-Format zurück.' },
-          { role: 'user', content: `Anweisung: "${suggestion}"\n\nText:\n---\n${text}\n---` },
-        ],
-        temperature: 0.4,
-        max_tokens: 800,
-      });
+      const result = await chatCompletion([
+        { role: 'system', content: 'Du verbesserst Texte basierend auf konkreten Anweisungen. Gib ausschließlich den optimierten Text im Markdown-Format zurück.' },
+        { role: 'user', content: `Anweisung: "${suggestion}"\n\nText:\n---\n${text}\n---` },
+      ], { temperature: 0.4, maxTokens: 800 });
 
-      const improvedText = completion?.choices?.[0]?.message?.content?.trim();
+      const improvedText = result.content?.trim();
       if (!improvedText) {
         throw new Error('Empty response from model');
       }

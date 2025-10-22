@@ -1,15 +1,8 @@
 const { QuestionAnalysisCache, prisma } = require('../controllers/db.cjs');
-const { getOpenAIClient, DEFAULT_MODEL } = require('./openaiClient');
+const { chatCompletion } = require('./aiProvider');
 const crypto = require('crypto');
 
-let clientCache = null;
 
-function getClient() {
-    if (!clientCache) {
-        clientCache = getOpenAIClient();
-    }
-    return clientCache;
-}
 
 // Cache validity in hours
 const CACHE_VALIDITY_HOURS = 6;
@@ -305,17 +298,12 @@ async function processBatch(questions) {
 
     try {
         const client = getClient();
-        const completion = await client.chat.completions.create({
-            model: DEFAULT_MODEL,
-            messages: [
-                { role: 'system', content: 'Du gruppierst ähnliche Fragen und antwortest ausschließlich mit JSON.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.2,
-            max_tokens: 1000,
-        });
+        const result = await chatCompletion([
+            { role: 'system', content: 'Du gruppierst ähnliche Fragen und antwortest ausschließlich mit JSON.' },
+            { role: 'user', content: prompt }
+        ], { temperature: 0.2, maxTokens: 1000 });
 
-        const text = completion?.choices?.[0]?.message?.content?.trim();
+        const text = result.content?.trim();
 
         // Clean the response to ensure it's valid JSON
         const jsonString = (text || '').replace(/^```json\s*|```\s*$/g, '');

@@ -69,6 +69,8 @@
     "winston": "^3.18.3"
   },
   "optionalDependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@anthropic-ai/sdk": "^0.36.3",
     "@huggingface/transformers": "*",
     "chromadb": "^3.0.17",
     "mysql2": "^3.15.2",

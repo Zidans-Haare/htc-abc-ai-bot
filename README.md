@@ -4,7 +4,7 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 
 ## ✨ Features
 
-- **KI-Chat:** Eine öffentliche Schnittstelle (`/api/chat`), die Anfragen über einen OpenAI-kompatiblen Endpoint (z. B. KISSKI Chat AI) beantwortet.
+- **KI-Chat:** Eine öffentliche Schnittstelle (`/api/chat`), die Anfragen über verschiedene KI-Provider (ChatAI, Google Gemini, Claude, XAI) beantwortet.
 - **Admin-Panel:** Eine passwortgeschützte Weboberfläche zur Verwaltung von Hochschul-ABC-Einträgen, Benutzern, Bildern und zur Überprüfung von Feedback.
 - **Dashboard:** Ein separates, geschütztes Dashboard zur Anzeige von Nutzungsstatistiken und Anwendungsdaten.
 - **Sicherheit:** Die Anwendung verwendet `helmet` zur Absicherung von HTTP-Headern und `express-rate-limit` zum Schutz vor Brute-Force-Angriffen.
@@ -15,7 +15,7 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 - **Backend:** Node.js, Express.js
 - **Datenbank:** SQLite (Standard) über Prisma ORM; optional PostgreSQL/MySQL via `DATABASE_URL`
 - **Frontend:** Statisches HTML, CSS und JavaScript
-- **KI:** OpenAI-kompatible API (z. B. KISSKI Chat AI)
+- **KI:** Mehrere Provider (ChatAI, Google Gemini, Anthropic Claude, XAI)
 
 ## 🚀 Setup & Konfiguration
 
@@ -32,6 +32,8 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     ```
 
     **Optionale Abhängigkeiten:** Die folgenden Pakete werden nur installiert, wenn die entsprechenden Features verwendet werden (z. B. über Umgebungsvariablen):
+    - `@google/generative-ai`: Für Google Gemini (wenn `AI_PROVIDER=google`).
+    - `@anthropic-ai/sdk`: Für Anthropic Claude (wenn `AI_PROVIDER=claude`).
     - `@huggingface/transformers`: Für Hugging Face Embeddings (wenn `EMBEDDING_LIBRARY=huggingface`).
     - `chromadb`: Für ChromaDB als Vektor-Datenbank (wenn `VECTOR_DB_TYPE=chroma`).
     - `mysql2`: Für MySQL-Datenbank (wenn `MAIN_DB_TYPE=mysql`).
@@ -43,9 +45,19 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 
     ```env
     # AI Chat Configuration
-    CHAT_AI_TOKEN=dein-bearer-token      # Bearer token for AI API (alternativ: OPENAI_API_KEY oder KISSKI_API_KEY)
-    OPENAI_BASE_URL=https://chat-ai.academiccloud.de/v1  # Base URL for OpenAI-compatible API
-    OPENAI_MODEL=meta-llama-3.1-8b-instruct  # Model to use for AI responses
+    AI_PROVIDER=chatAi  # 'chatAi' (university), 'openai' (official OpenAI), 'google', 'claude', 'xai'
+    AI_API_KEY=dein-api-key  # API key for the selected provider. Required.
+    AI_BASE_URL=https://chat-ai.academiccloud.de/v1  # Base URL for 'chatAi' or 'xai' (optional)
+    AI_MODEL=meta-llama-3.1-8b-instruct  # Model name (generic, or provider-specific)
+    AI_TEMPERATURE=0.2  # Temperature for responses (0-2)
+    AI_MAX_TOKENS=1000  # Max tokens per response
+    AI_STREAMING=true  # Enable streaming
+
+    # Provider-specific overrides (optional)
+    AI_OPENAI_API_KEY=...  # For official OpenAI
+    AI_GOOGLE_API_KEY=...  # For Google Gemini
+    AI_CLAUDE_API_KEY=...  # For Anthropic Claude
+    AI_XAI_API_KEY=...  # For XAI
 
     # Server Configuration
     PORT=3000  # Server port (default: 3000)

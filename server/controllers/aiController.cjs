@@ -3,7 +3,7 @@ const { getImageList } = require('../utils/imageProvider.js');
 const { estimateTokens, isWithinTokenLimit } = require('../utils/tokenizer');
 const { summarizeConversation } = require('../utils/summarizer');
 const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require('../utils/analytics');
-const { getOpenAIClient, DEFAULT_MODEL } = require('../utils/openaiClient');
+const { chatCompletion, chatCompletionStream } = require('../utils/aiProvider');
 const vectorStore = require('../lib/vectorStore');
 
 // Lazy import to avoid immediate API key check
@@ -17,24 +17,10 @@ function loadCategorizer() {
   return categorizeConversation;
 }
 
-function getChoiceText(response) {
-  return response?.choices?.[0]?.message?.content?.trim() || '';
-}
-
-async function runChatCompletion(client, messages, options = {}) {
-  const response = await client.chat.completions.create({
-    model: options.model || DEFAULT_MODEL,
-    messages,
-    temperature: options.temperature ?? 0.2,
-    max_tokens: options.max_tokens,
-  });
-  return getChoiceText(response);
-}
+// Removed runChatCompletion, using chatCompletion directly
 
 async function logUnansweredQuestion(newQuestion) {
   try {
-    const client = getOpenAIClient();
-
     const unansweredQuestions = await Questions.findMany({
       where: { answered: false, spam: false, deleted: false },
       select: { question: true },
@@ -52,10 +38,10 @@ async function logUnansweredQuestion(newQuestion) {
         Answer with only "yes" or "no".
       `;
 
-      const duplicateAnswer = (await runChatCompletion(client, [
+      const duplicateAnswer = (await chatCompletion([
         { role: 'system', content: 'You determine whether a new question is a duplicate of previous unanswered questions.' },
         { role: 'user', content: duplicatePrompt },
-      ])).toLowerCase();
+      ])).content.toLowerCase();
       if (duplicateAnswer === 'yes') {
         console.log(`Duplicate question not logged: "${newQuestion}"`);
         return;
@@ -63,10 +49,10 @@ async function logUnansweredQuestion(newQuestion) {
     }
 
     const translatePrompt = `Translate the following text to German. If it is already in German, answer with "no".\nText: "${newQuestion}"`;
-    const translatedQuestion = await runChatCompletion(client, [
+    const translatedQuestion = (await chatCompletion([
       { role: 'system', content: 'You translate user inputs to German when they are not already in German.' },
       { role: 'user', content: translatePrompt },
-    ]);
+    ])).content;
 
     let translationToStore = null;
     if (translatedQuestion.toLowerCase() !== 'no') {
@@ -100,7 +86,6 @@ async function streamChat(req, res) {
     }
 
     const userApiKey = req.headers['x-user-api-key'];
-    const client = getOpenAIClient(userApiKey || null);
 
     // Track session
     sessionId = await trackSession(req);
@@ -262,27 +247,13 @@ async function streamChat(req, res) {
       { role: 'user', content: prompt },
     ];
 
-    const stream = await client.chat.completions.create({
-      model: DEFAULT_MODEL,
-      messages: messagesPayload,
-      stream: true,
-      temperature: 0.2,
-    });
+    const stream = chatCompletionStream(messagesPayload, { apiKey: userApiKey, temperature: 0.2 });
 
     let fullResponseText = '';
 
     for await (const chunk of stream) {
-      const choice = chunk?.choices?.[0];
-      if (!choice) continue;
-
-      if (choice.delta?.content) {
-        fullResponseText += choice.delta.content;
-        res.write(`data: ${JSON.stringify({ token: choice.delta.content, conversationId: convoId })}\n\n`);
-      }
-
-      if (choice.finish_reason) {
-        break;
-      }
+      fullResponseText += chunk.token;
+      res.write(`data: ${JSON.stringify({ token: chunk.token, conversationId: convoId })}\n\n`);
     }
 
     await Message.create({
@@ -357,16 +328,10 @@ async function testApiKey(req, res) {
   }
 
   try {
-    const client = getOpenAIClient(apiKey);
-    await client.chat.completions.create({
-      model: DEFAULT_MODEL,
-      messages: [
-        { role: 'system', content: 'You are a key validation assistant.' },
-        { role: 'user', content: 'hello' },
-      ],
-      max_tokens: 5,
-      temperature: 0,
-    });
+    await chatCompletion([
+      { role: 'system', content: 'You are a key validation assistant.' },
+      { role: 'user', content: 'hello' },
+    ], { apiKey, maxTokens: 5, temperature: 0 });
 
     res.status(200).json({ message: trans.api_key_valid });
   } catch (error) {
