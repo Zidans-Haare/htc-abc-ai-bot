@@ -49,5 +49,7 @@ const ChatInteractions = prisma.chat_interactions;
 const Conversation = prisma.conversations;
 const Message = prisma.messages;
 const QuestionAnalysisCache = prisma.question_analysis_cache;
+const DailyQuestionStats = prisma.daily_question_stats;
+const DailyUnansweredStats = prisma.daily_unanswered_stats;
 
-module.exports = { prisma, User, HochschuhlABC, Questions, Feedback, Images, Documents, AuthSession, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache };
+module.exports = { prisma, User, HochschuhlABC, Questions, Feedback, Images, Documents, AuthSession, UserSessions, ArticleViews, ChatInteractions, Conversation, Message, QuestionAnalysisCache, DailyQuestionStats, DailyUnansweredStats };

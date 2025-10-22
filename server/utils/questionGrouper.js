@@ -100,7 +100,7 @@ async function processQuestionsInBackground(questions, cacheKey) {
         await markAsProcessing(cacheKey, true);
 
         // Process in batches
-        const batchSize = 25; // Smaller batches for faster incremental updates
+        const batchSize = 10; // Smaller batches to avoid token limits
         const allGroups = [];
         let processed = 0;
 
@@ -297,24 +297,37 @@ async function processBatch(questions) {
     `;
 
     try {
-        const client = getClient();
         const result = await chatCompletion([
             { role: 'system', content: 'Du gruppierst ähnliche Fragen und antwortest ausschließlich mit JSON.' },
             { role: 'user', content: prompt }
-        ], { temperature: 0.2, maxTokens: 1000 });
+        ], { temperature: 0.2, maxTokens: 2000 });
 
         const text = result.content?.trim();
 
         // Clean the response to ensure it's valid JSON
-        const jsonString = (text || '').replace(/^```json\s*|```\s*$/g, '');
-        const data = JSON.parse(jsonString);
+        let jsonString = (text || '').replace(/^```json\s*|```\s*$/g, '').trim();
+
+        // Try to extract JSON if wrapped in other text
+        const jsonMatch = jsonString.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+            jsonString = jsonMatch[0];
+        }
+
+        let data;
+        try {
+            data = JSON.parse(jsonString);
+        } catch (parseError) {
+            // Try to fix common issues
+            jsonString = jsonString.replace(/,\s*]/g, ']').replace(/,\s*}/g, '}');
+            data = JSON.parse(jsonString);
+        }
 
         if (Array.isArray(data)) {
             console.log(`[QuestionGrouper] Successfully grouped ${questions.length} questions into ${data.length} groups.`);
             return data;
         }
-        
-        console.error("[QuestionGrouper] AI response was not an array:", text);
+
+        console.error("[QuestionGrouper] AI response was not an array or parsing failed:", text);
         return null;
 
     } catch (error) {

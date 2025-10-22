@@ -1,5 +1,5 @@
 const express = require('express');
-const { prisma, UserSessions, ChatInteractions, ArticleViews, HochschuhlABC, Questions, Feedback, Conversation, Message, QuestionAnalysisCache } = require('./db.cjs');
+const { prisma, UserSessions, ChatInteractions, ArticleViews, HochschuhlABC, Questions, Feedback, Conversation, Message, QuestionAnalysisCache, DailyQuestionStats, DailyUnansweredStats } = require('./db.cjs');
 const { getGermanNow, toGermanTime, getGermanDateString, getGermanDaysAgo, groupByGermanDate, groupByGermanHour, groupFeedbackByGermanDate, groupFeedbackByGermanHour } = require('../utils/timezone');
 
 // Optional import for question grouper (requires server-side OpenAI-compatible API key)
@@ -653,7 +653,7 @@ router.get('/frequent-questions', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
         
         try {
-            const dailyStats = await prisma.daily_question_stats.findMany({
+            const dailyStats = await DailyQuestionStats.findMany({
                 where: { analysis_date: today },
                 orderBy: { question_count: 'desc' },
                 take: limit,
@@ -784,7 +784,7 @@ router.get('/unanswered-questions', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
 
         try {
-            const dailyStats = await prisma.daily_unanswered_stats.findMany({
+            const dailyStats = await DailyUnansweredStats.findMany({
                 where: { analysis_date: today },
                 orderBy: { question_count: 'desc' },
                 take: limit,
@@ -1022,7 +1022,7 @@ router.post('/trigger-analysis', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
         
         // Clear today's statistics
-        await prisma.daily_question_stats.deleteMany({ where: { analysis_date: today } });
+        await DailyQuestionStats.deleteMany({ where: { analysis_date: today } });
 
         // Insert new statistics
         const statsData = groupingResult.results.map(group => ({
@@ -1035,7 +1035,7 @@ router.post('/trigger-analysis', async (req, res) => {
         }));
 
         if (statsData.length > 0) {
-            await prisma.daily_question_stats.createMany({
+            await DailyQuestionStats.createMany({
                 data: statsData
             });
         }
@@ -1062,7 +1062,7 @@ router.post('/trigger-analysis', async (req, res) => {
 router.get('/analysis-status', async (req, res) => {
     try {
         // Check when last analysis was performed
-        const stats = await prisma.dailyQuestionStats.findMany({
+        const stats = await DailyQuestionStats.findMany({
             select: {
                 analysis_date: true,
                 created_at: true
