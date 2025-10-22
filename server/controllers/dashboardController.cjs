@@ -9,7 +9,7 @@ try {
     groupSimilarQuestions = questionGrouper.groupSimilarQuestions;
     extractQuestions = questionGrouper.extractQuestions;
 } catch (error) {
-    console.warn('Question grouper not available (CHAT_AI_TOKEN/OPENAI_API_KEY/KISSKI_API_KEY not set)');
+    console.warn('Question grouper not available (AI_API_KEY not set)');
     groupSimilarQuestions = null;
     extractQuestions = null;
 }
@@ -701,7 +701,7 @@ router.get('/frequent-questions', async (req, res) => {
                 questions: [],
                 isProcessing: false,
                 progress: 100,
-                message: 'Tägliche Analyse läuft um Mitternacht. Manuelle Analyse nicht verfügbar (CHAT_AI_TOKEN/OPENAI_API_KEY/KISSKI_API_KEY nicht konfiguriert)',
+                message: 'Tägliche Analyse läuft um Mitternacht. Manuelle Analyse nicht verfügbar (AI_API_KEY nicht konfiguriert)',
                 source: 'unavailable'
             });
         }
@@ -986,7 +986,7 @@ router.post('/trigger-analysis', async (req, res) => {
         // Check if question grouper is available
         if (!groupSimilarQuestions || !extractQuestions) {
             return res.status(400).json({ 
-                error: 'Question analysis not available (CHAT_AI_TOKEN/OPENAI_API_KEY/KISSKI_API_KEY not configured)',
+                error: 'Question analysis not available (AI_API_KEY not configured)',
                 success: false
             });
         }

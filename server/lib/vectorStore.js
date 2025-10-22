@@ -503,10 +503,18 @@ class VectorStoreManager {
 
   async buildSimpleGraph(docs) {
     const { ChatOpenAI } = require("@langchain/openai");
+    // Use current AI provider system - prefer OpenAI-specific key, fallback to general AI key
+    const apiKey = process.env.AI_OPENAI_API_KEY || process.env.AI_API_KEY;
+    const baseURL = process.env.AI_BASE_URL || 'https://chat-ai.academiccloud.de/v1';
+
+    if (!apiKey) {
+      throw new Error('AI_OPENAI_API_KEY or AI_API_KEY environment variable not set for GraphRAG.');
+    }
+
     const llm = new ChatOpenAI({
       model: process.env.EMBEDDING_MODEL || 'gpt-3.5-turbo',
-      openAIApiKey: process.env.CHAT_AI_TOKEN,
-      configuration: { baseURL: process.env.OPENAI_BASE_URL }
+      openAIApiKey: apiKey,
+      configuration: { baseURL }
     });
     const prompt = `Extract entities (e.g., Headline, Group) and relations (e.g., related_to) from: ${docs.map(d => d.pageContent).join('\n')}. Output JSON: {nodes: [{id, type, name}], edges: [{from, to, relation}]}`;
     const response = await llm.invoke(prompt);

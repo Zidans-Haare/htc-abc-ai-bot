@@ -5,7 +5,7 @@ const { User } = require('../server/controllers/db.cjs');
 
 // Suppress AI key warning
 jest.spyOn(console, 'error').mockImplementation((msg) => {
-  if (msg.includes('CHAT_AI_TOKEN/OPENAI_API_KEY/KISSKI_API_KEY is not set')) {
+  if (msg.includes('AI_API_KEY is not set')) {
     return;
   }
   console.error(msg);

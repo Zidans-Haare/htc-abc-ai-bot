@@ -283,7 +283,7 @@ Stellen Sie sicher, dass `.env` oder `.env.test` vorhanden ist. Die Tests prüfe
 
 ## 🔧 Troubleshooting
 
-- **Server startet nicht:** Überprüfen Sie die `.env`-Datei auf korrekte Konfiguration (z. B. `CHAT_AI_TOKEN`, `DATABASE_URL`).
+- **Server startet nicht:** Überprüfen Sie die `.env`-Datei auf korrekte Konfiguration (z. B. `AI_API_KEY`, `DATABASE_URL`).
 - **Datenbankfehler:** Führen Sie `npx prisma migrate dev` aus, um Migrationen anzuwenden.
 - **Vite-Dev-Server:** Verwenden Sie `timeout 10s npm run dev` für Tests, um Blockierungen zu vermeiden.
 - **Nginx-Proxy:** Stellen Sie sicher, dass Nginx auf IPv4 bindet (`127.0.0.1:3000`), um 502-Fehler zu vermeiden.
