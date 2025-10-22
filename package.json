@@ -14,8 +14,8 @@
     "test:coverage": "nyc --reporter=lcov --reporter=text npm run test:direct",
     "test:env": "dotenv -e .env.test -- npm run test:direct",
     "postinstall": "npx prisma generate",
-    "dev:watch": "concurrently \"vite build --watch\" \"nodemon --watch dist --watch server --ext js,cjs,json server/server.cjs -- -dev\"",
-    "dev:watch-https": "concurrently \"vite build --watch\" \"nodemon --watch dist --watch server --ext js,cjs,json server/server.cjs -- -dev -https\"",
+    "dev:watch": "concurrently \"vite build --watch\" \"nodemon --watch dist --watch server --watch .env --ext js,cjs,json server/server.cjs -- -dev\"",
+    "dev:watch-https": "concurrently \"vite build --watch\" \"nodemon --watch dist --watch server --watch .env --ext js,cjs,json server/server.cjs -- -dev -https\"",
     "server": "npm run build && npm start",
     "server:pull+run": "git pull && npm run build && npm start"
   },

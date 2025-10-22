@@ -78,6 +78,31 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     CHROMA_COLLECTION=  # Required if VECTOR_DB_TYPE=chroma
     WEAVIATE_URL=  # Required if VECTOR_DB_TYPE=weaviate
     WEAVIATE_COLLECTION=  # Required if VECTOR_DB_TYPE=weaviate
+
+3.  **Server starten:**
+    Für Produktion ist PM2 der empfohlene Weg, um den Server zu starten und Änderungen an `.env` automatisch zu überwachen und neu zu starten.
+
+    ```bash
+    # Zuerst das Projekt bauen
+    npm run build
+
+    # Dann mit PM2 starten (überwacht .env für Änderungen)
+    pm2 start ecosystem.config.js
+    ```
+
+    Dies stellt sicher, dass der Server bei Änderungen an Umgebungsvariablen (z. B. `VECTOR_DB_TYPE=chroma`) automatisch neu startet, ohne manuelles Eingreifen. PM2 begrenzt automatische Neustarts bei Abstürzen auf 30 Versuche mit 5 Sekunden Verzögerung; manuelle oder watch-basierte Neustarts sind unbegrenzt.
+
+    Für Entwicklung:
+    ```bash
+    npm run dev:watch
+    ```
+    Dies startet den Server mit Hot-Reload für Code- und `.env`-Änderungen.
+
+    Für Tests:
+    ```bash
+    npm test
+    ```
+    Führt die Testsuite aus (interaktiv oder direkt).
     USE_VECTOR_IMAGES=static  # Image list mode for AI: 'static' (default, from DB), 'simple' (from vector DB), 'dynamic' (per-query from vector DB)
 
     # Vector DB Processing Options
@@ -127,12 +152,12 @@ npm run dev:watch
 
 ```bash
 npm run build
-npm start
+pm2 start ecosystem.config.js
 ```
 
 - `npm run build` erstellt einmalig das Bundle unter `dist/`.
-- `npm start` startet den Express-Server in der Standardkonfiguration. Nutzen Sie einen Prozess-Manager (z. B. systemd, pm2) für den Dauerbetrieb.
-- Optional `npm start -- -dev`, um serverseitiges Caching zu deaktivieren (z. B. für Tests in einer Staging-Umgebung).
+- `pm2 start ecosystem.config.js` startet den Express-Server mit PM2, welcher Änderungen an `.env` überwacht und automatisch neu startet. Für Dauerbetrieb und automatische Neustarts bei Umgebungsvariablen-Änderungen empfohlen.
+- Alternativ `npm start` für einfache Starts ohne PM2, aber ohne automatische `.env`-Überwachung.
 
 ### Nginx-Konfiguration (Beispiel für dev.olomek.com)
 
