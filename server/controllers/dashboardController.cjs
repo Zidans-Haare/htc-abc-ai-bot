@@ -349,38 +349,9 @@ router.get('/content-stats', async (req, res) => {
 
 router.get('/top-questions', async (req, res) => {
     try {
-        // Top 5 häufigste Fragen (egal ob beantwortet oder nicht)
+        // Query the view (created in migration)
         const questions = await prisma.$queryRaw`
-            SELECT
-                MIN(q.question) as question,
-                COUNT(*) as count,
-                GROUP_CONCAT(DISTINCT q.question) as similar_questions,
-                SUM(CASE WHEN q.answered = 1 THEN 1 ELSE 0 END) as answered_count,
-                SUM(CASE WHEN q.answered = 0 THEN 1 ELSE 0 END) as unanswered_count
-            FROM questions q
-            WHERE q.spam = 0
-                AND q.deleted = 0
-            GROUP BY
-                LOWER(
-                    REPLACE(
-                        REPLACE(
-                            REPLACE(
-                                REPLACE(
-                                    REPLACE(
-                                        REPLACE(TRIM(q.question), '?', ''),
-                                        '.', ''
-                                    ),
-                                    '!', ''
-                                ),
-                                'where is', 'wo ist'
-                            ),
-                            'what is', 'was ist'
-                        ),
-                        '  ', ' '
-                    )
-                )
-            ORDER BY count DESC
-            LIMIT 5
+            SELECT * FROM top_questions_view LIMIT 5
         `;
 
         const formattedQuestions = questions.map(q => ({
