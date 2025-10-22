@@ -223,13 +223,22 @@ CREATE UNIQUE INDEX "user_sessions_session_id_key" ON "user_sessions"("session_i
 -- CreateIndex
 CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 
+-- CreateTable
+CREATE TABLE "app_versions" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "version" TEXT NOT NULL
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "app_versions_version_key" ON "app_versions"("version");
+
 -- CreateView
 CREATE VIEW top_questions_view AS
 SELECT
     normalized_question AS question,
     SUM(question_count) AS count,
-    SUM(CASE WHEN answered = 1 THEN question_count ELSE 0 END) AS answered_count,
-    SUM(CASE WHEN answered = 0 THEN question_count ELSE 0 END) AS unanswered_count,
+    0 AS answered_count,
+    SUM(question_count) AS unanswered_count,
     GROUP_CONCAT(DISTINCT original_questions) AS similar_questions
 FROM daily_question_stats
 GROUP BY normalized_question

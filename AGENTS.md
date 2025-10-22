@@ -11,7 +11,7 @@
 - You must not use any git actions that change the history.
 - If creating commits or branches, you must ask the user first (best with a: do you want this committed as: ...).
 - Do not modify Vite config's HMR path or allowedHosts unless explicitly requested by the user.
-- Database Changes: Always use Prisma migrations for schema changes. Default to best practices: create migrations with `prisma migrate dev --name descriptive-name`, test on staging, backup before production deployment, use `prisma migrate deploy` for production. Only deviate if user insists strongly on alternative approaches. For views, enable `views` preview feature in `generator` block, define with `view` keyword in `schema.prisma`, and use `prisma db push` or migrations to manage. Removed unused tables: `auth_sessions`, `question_cache`, `sessions`. When schema changes (e.g., adding models/tables), bump the app version in package.json to trigger migration deployment on startup. On version change or new DB creation, `prisma migrate deploy` is run automatically. Use Context7 for up-to-date Prisma docs on views/multi-DB support.
+- Database Changes: Use `prisma migrate deploy` for applying schema changes via migrations. Migrations are used for DB management. For views, they are included in the migration SQL. Removed unused tables: `auth_sessions`, `question_cache`, `sessions`. When schema changes, create new migrations with `prisma migrate dev`. On new DB creation, `prisma migrate deploy` is run to apply all migrations. Migration SQL for current version embedded in migration files. Use Context7 for up-to-date Prisma docs on views/multi-DB support.
 
 # Project Information
 

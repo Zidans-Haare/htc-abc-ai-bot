@@ -484,39 +484,30 @@ const serverCallback = async () => {
   // Auth sessions and dashboard tables are now handled by Prisma schema
   // Removed manual table creation scripts as Prisma manages the schema
 
-  // Connect to database
+  // Check DB and apply migrations if needed
+  const currentVersion = require('../package.json').version;
+
+  // Connect to database and check version
   try {
     await prisma.$connect();
     console.log('✓ Database connection established');
 
-    // Check DB and apply migrations if needed
-    const dbPath = path.join(__dirname, '..', 'hochschuhl-abc.db');
-    const dbExists = fs.existsSync(dbPath);
-    const currentVersion = require('../package.json').version;
-
-    if (!dbExists) {
-      console.log('Database not found, initializing with migrations...');
-      execSync('npx prisma migrate reset --force', { stdio: 'inherit' });
-      console.log('✓ Database initialized with migrations');
-    } else {
-      // Check app version
-      try {
-        const latestVersion = await prisma.app_versions.findFirst({ orderBy: { id: 'desc' } });
-        if (!latestVersion || latestVersion.version !== currentVersion) {
-          console.log('App version changed or not tracked, applying migrations...');
-          execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-          console.log('✓ Migrations applied');
-        }
-      } catch (error) {
-        if (error.code === 'P2021') { // app_versions table missing
-          console.log('App versions table missing, applying migrations...');
-          execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-          console.log('✓ Migrations applied');
-        } else {
-          throw error;
-        }
-      }
+    // Check app version
+    const latestVersion = await prisma.app_versions.findFirst({ orderBy: { id: 'desc' } });
+    if (!latestVersion || latestVersion.version !== currentVersion) {
+      console.log('App version changed or not tracked, applying migrations...');
+      execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+      console.log('✓ Migrations applied');
     }
+  } catch (error) {
+    console.log('Database not found or connection failed, initializing with migrations...');
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    console.log('✓ Database initialized with migrations');
+
+    // Connect again
+    await prisma.$connect();
+    console.log('✓ Database connection established');
+  }
 
     // Update app version
     try {
@@ -542,9 +533,6 @@ const serverCallback = async () => {
       });
       console.log('✓ Default admin user created (username: admin, password: admin)');
     }
-  } catch (error) {
-    console.error('Warning: Could not connect to database:', error.message);
-  }
 
    // Sync vector DB if enabled
    if (process.env.SYNC_ON_START === 'true') {
