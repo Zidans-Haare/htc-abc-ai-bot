@@ -653,18 +653,18 @@ router.get('/frequent-questions', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
         
         try {
-            const dailyStats = await prisma.$queryRaw`
-                SELECT
-                    normalized_question,
-                    question_count,
-                    topic,
-                    languages_detected,
-                    original_questions
-                FROM daily_question_stats
-                WHERE analysis_date = ${today}
-                ORDER BY question_count DESC
-                LIMIT ${limit}
-            `;
+            const dailyStats = await prisma.daily_question_stats.findMany({
+                where: { analysis_date: today },
+                orderBy: { question_count: 'desc' },
+                take: limit,
+                select: {
+                    normalized_question: true,
+                    question_count: true,
+                    topic: true,
+                    languages_detected: true,
+                    original_questions: true
+                }
+            });
 
             if (dailyStats && dailyStats.length > 0) {
                 // Use pre-computed statistics (fast!)
@@ -784,32 +784,18 @@ router.get('/unanswered-questions', async (req, res) => {
         const today = new Date().toISOString().split('T')[0];
 
         try {
-            // Create table if it doesn't exist
-            await prisma.$queryRaw`
-                CREATE TABLE IF NOT EXISTS daily_unanswered_stats (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    analysis_date TEXT NOT NULL,
-                    normalized_question TEXT NOT NULL,
-                    question_count INTEGER NOT NULL,
-                    topic TEXT,
-                    languages_detected TEXT,
-                    original_questions TEXT,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            `;
-
-            const dailyStats = await prisma.$queryRaw`
-                SELECT
-                    normalized_question,
-                    question_count,
-                    topic,
-                    languages_detected,
-                    original_questions
-                FROM daily_unanswered_stats
-                WHERE analysis_date = ${today}
-                ORDER BY question_count DESC
-                LIMIT ${limit}
-            `;
+            const dailyStats = await prisma.daily_unanswered_stats.findMany({
+                where: { analysis_date: today },
+                orderBy: { question_count: 'desc' },
+                take: limit,
+                select: {
+                    normalized_question: true,
+                    question_count: true,
+                    topic: true,
+                    languages_detected: true,
+                    original_questions: true
+                }
+            });
 
             if (dailyStats && dailyStats.length > 0) {
                 // Use pre-computed statistics (fast!)
@@ -1035,22 +1021,8 @@ router.post('/trigger-analysis', async (req, res) => {
         // Store results in daily statistics table
         const today = new Date().toISOString().split('T')[0];
         
-        // Create table if it doesn't exist
-        await prisma.$queryRaw`
-            CREATE TABLE IF NOT EXISTS daily_question_stats (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                analysis_date TEXT NOT NULL,
-                normalized_question TEXT NOT NULL,
-                question_count INTEGER NOT NULL,
-                topic TEXT,
-                languages_detected TEXT,
-                original_questions TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `;
-
         // Clear today's statistics
-        await prisma.$queryRaw`DELETE FROM daily_question_stats WHERE analysis_date = ${today}`;
+        await prisma.daily_question_stats.deleteMany({ where: { analysis_date: today } });
 
         // Insert new statistics
         const statsData = groupingResult.results.map(group => ({
@@ -1063,13 +1035,9 @@ router.post('/trigger-analysis', async (req, res) => {
         }));
 
         if (statsData.length > 0) {
-            // Individual inserts for each stat
-            for (const stat of statsData) {
-                await prisma.$queryRaw`
-                    INSERT INTO daily_question_stats (analysis_date, normalized_question, question_count, topic, languages_detected, original_questions)
-                    VALUES (${stat.analysis_date}, ${stat.normalized_question}, ${stat.question_count}, ${stat.topic}, ${stat.languages_detected}, ${stat.original_questions})
-                `;
-            }
+            await prisma.daily_question_stats.createMany({
+                data: statsData
+            });
         }
 
         console.log(`[Manual Analysis] Completed: ${statsData.length} question groups stored`);
@@ -1094,7 +1062,7 @@ router.post('/trigger-analysis', async (req, res) => {
 router.get('/analysis-status', async (req, res) => {
     try {
         // Check when last analysis was performed
-        const stats = await prisma.daily_question_stats.findMany({
+        const stats = await prisma.dailyQuestionStats.findMany({
             select: {
                 analysis_date: true,
                 created_at: true

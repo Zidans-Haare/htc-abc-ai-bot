@@ -70,6 +70,18 @@ model daily_question_stats {
   updated_at          DateTime  @updatedAt
 }
 
+model daily_unanswered_stats {
+  id                  Int       @id @default(autoincrement())
+  analysis_date       String
+  normalized_question String
+  question_count      Int
+  topic               String?
+  languages_detected  String?
+  original_questions  String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+}
+
 model feedback {
   id                    Int       @id @default(autoincrement())
   user_id               String?
