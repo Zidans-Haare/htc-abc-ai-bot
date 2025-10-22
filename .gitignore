@@ -5,7 +5,6 @@ hochschuhl-abc.db*
 .hochschuhl-abc.db.swp
 chatbot.db*
 .env
-.env.example
 .claude
 .vs/
 .vscode/
