@@ -251,3 +251,8 @@ model unanswered_questions_view {
   @@unique([content, created_at])
   @@map("unanswered_questions_view")
 }
+
+model app_versions {
+  id      Int    @id @default(autoincrement())
+  version String @unique
+}

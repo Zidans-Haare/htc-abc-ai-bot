@@ -93,7 +93,14 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     WEAVIATE_URL=  # Required if VECTOR_DB_TYPE=weaviate
     WEAVIATE_COLLECTION=  # Required if VECTOR_DB_TYPE=weaviate
 
-3.  **Server starten:**
+3.  **Datenbank-Initialisierung:**
+     Die Anwendung verwendet Prisma für die Datenbankverwaltung. Beim ersten Start wird die Datenbank automatisch mit Tabellen und Views erstellt. Bei Versionsänderungen (z. B. nach Schema-Updates) werden Migrationen automatisch angewendet.
+
+     - **Neue Datenbank:** Wenn keine `hochschuhl-abc.db` vorhanden ist, führt die Anwendung `prisma migrate reset` aus, um die Datenbank mit allen Tabellen und Views zu initialisieren.
+     - **Versionsänderungen:** Bei Änderungen der App-Version (in `package.json`) oder fehlender Versionsverfolgung wird `prisma migrate deploy` ausgeführt, um ausstehende Migrationen anzuwenden.
+     - **Manuelle Migration:** Für manuelle Anpassungen verwenden Sie `npx prisma migrate dev --name beschreibung`.
+
+4.  **Server starten:**
     Für Produktion ist PM2 der empfohlene Weg, um den Server zu starten und Änderungen an `.env` automatisch zu überwachen und neu zu starten.
 
     ```bash

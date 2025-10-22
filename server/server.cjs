@@ -489,17 +489,44 @@ const serverCallback = async () => {
     await prisma.$connect();
     console.log('✓ Database connection established');
 
-    // Create schema if tables don't exist (for SQLite)
-    try {
-      await prisma.users.count();
-    } catch (error) {
-      if (error.code === 'P2021') { // Table does not exist
-        console.log('Database tables not found, creating schema...');
-        execSync('npx prisma db push --skip-generate', { stdio: 'inherit' });
-        console.log('✓ Database schema created');
-      } else {
-        throw error;
+    // Check DB and apply migrations if needed
+    const dbPath = path.join(__dirname, '..', 'hochschuhl-abc.db');
+    const dbExists = fs.existsSync(dbPath);
+    const currentVersion = require('../package.json').version;
+
+    if (!dbExists) {
+      console.log('Database not found, initializing with migrations...');
+      execSync('npx prisma migrate reset --force', { stdio: 'inherit' });
+      console.log('✓ Database initialized with migrations');
+    } else {
+      // Check app version
+      try {
+        const latestVersion = await prisma.app_versions.findFirst({ orderBy: { id: 'desc' } });
+        if (!latestVersion || latestVersion.version !== currentVersion) {
+          console.log('App version changed or not tracked, applying migrations...');
+          execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+          console.log('✓ Migrations applied');
+        }
+      } catch (error) {
+        if (error.code === 'P2021') { // app_versions table missing
+          console.log('App versions table missing, applying migrations...');
+          execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+          console.log('✓ Migrations applied');
+        } else {
+          throw error;
+        }
       }
+    }
+
+    // Update app version
+    try {
+      await prisma.app_versions.upsert({
+        where: { version: currentVersion },
+        update: {},
+        create: { version: currentVersion }
+      });
+    } catch (error) {
+      console.error('Warning: Could not update app version:', error.message);
     }
 
     // Create default admin user if no users exist

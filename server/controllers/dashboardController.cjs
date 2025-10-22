@@ -351,7 +351,8 @@ router.get('/top-questions', async (req, res) => {
     try {
         // Query the view
         const questions = await prisma.topQuestionsView.findMany({
-            take: 5
+            take: 5,
+            orderBy: { count: 'desc' }
         });
 
         const formattedQuestions = questions.map(q => ({
