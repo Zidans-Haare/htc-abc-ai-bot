@@ -39,7 +39,7 @@ describe('Database Setup', () => {
     const tables = await prisma.$queryRaw`SELECT name FROM sqlite_master WHERE type='table'`;
     const tableNames = tables.map(t => t.name);
     expect(tableNames).toContain('users');
-    expect(tableNames).toContain('hochschul_abc');
+    expect(tableNames).toContain('hochschuhl_abc');
     expect(tableNames).toContain('conversations');
     expect(tableNames).toContain('feedback');
   });

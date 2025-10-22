@@ -1,5 +1,6 @@
 const express = require('express');
 const { prisma, UserSessions, ChatInteractions, ArticleViews, HochschuhlABC, Questions, Feedback, Conversation, Message, QuestionAnalysisCache } = require('./db.cjs');
+const { getGermanNow, toGermanTime, getGermanDateString, getGermanDaysAgo, groupByGermanDate, groupByGermanHour, groupFeedbackByGermanDate, groupFeedbackByGermanHour } = require('../utils/timezone');
 
 // Optional import for question grouper (requires server-side OpenAI-compatible API key)
 let groupSimilarQuestions, extractQuestions;
@@ -103,46 +104,47 @@ router.get('/sessions', async (req, res) => {
 
         // First try user_sessions, then fallback to feedback data as proxy for activity
         // Use German timezone for date grouping
-        const currentMonth = new Date().getMonth() + 1; // 1-12
-        const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
-        const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
-        
-        let sessions = await prisma.$queryRaw`
-            SELECT
-                DATE(datetime(started_at, ${timezoneOffset})) as date,
-                COUNT(*) as count
-            FROM user_sessions
-            WHERE datetime(started_at, ${timezoneOffset}) >= datetime(${sevenDaysAgo.toISOString()}, ${timezoneOffset})
-            GROUP BY DATE(datetime(started_at, ${timezoneOffset}))
-            ORDER BY date ASC
-        `;
+        const sevenDaysAgoGerman = getGermanDaysAgo(7);
+
+        // Get user sessions from the last 7 days
+        let userSessions = await UserSessions.findMany({
+            where: {
+                started_at: {
+                    not: null
+                }
+            },
+            select: {
+                started_at: true
+            }
+        });
+
+        let sessions = groupByGermanDate(userSessions, 'started_at', sevenDaysAgoGerman);
 
         // If no user_sessions data, use feedback as activity proxy
         if (sessions.length === 0) {
-            sessions = await prisma.$queryRaw`
-                SELECT
-                    DATE(datetime(submitted_at, ${timezoneOffset})) as date,
-                    COUNT(DISTINCT conversation_id) as count
-                FROM feedback
-                WHERE datetime(submitted_at, ${timezoneOffset}) >= datetime(${sevenDaysAgo.toISOString()}, ${timezoneOffset})
-                GROUP BY DATE(datetime(submitted_at, ${timezoneOffset}))
-                ORDER BY date ASC
-            `;
+            const feedback = await Feedback.findMany({
+                select: {
+                    submitted_at: true,
+                    conversation_id: true
+                }
+            });
+
+            sessions = groupFeedbackByGermanDate(feedback, sevenDaysAgoGerman);
         }
 
         // If still no data, use questions as activity proxy
         if (sessions.length === 0) {
-            sessions = await prisma.$queryRaw`
-                SELECT
-                    DATE(datetime(updated_at, ${timezoneOffset})) as date,
-                    COUNT(*) as count
-                FROM questions
-                WHERE datetime(updated_at, ${timezoneOffset}) >= datetime(${sevenDaysAgo.toISOString()}, ${timezoneOffset})
-                    AND spam = 0
-                    AND deleted = 0
-                GROUP BY DATE(datetime(updated_at, ${timezoneOffset}))
-                ORDER BY date ASC
-            `;
+            const questions = await Questions.findMany({
+                where: {
+                    spam: false,
+                    deleted: false
+                },
+                select: {
+                    updated_at: true
+                }
+            });
+
+            sessions = groupByGermanDate(questions, 'updated_at', sevenDaysAgoGerman);
         }
 
         // Fill missing days with 0
@@ -178,48 +180,55 @@ router.get('/sessions/hourly', async (req, res) => {
         const targetDate = new Date(date + 'T00:00:00');
         const nextDay = new Date(date + 'T23:59:59.999');
 
-        // First try user_sessions for hourly data (SQLite syntax with German timezone)
-        // Germany is UTC+1 (winter) or UTC+2 (summer), so we add 2 hours to be safe for summer time
-        const currentMonth = new Date().getMonth() + 1; // 1-12
-        const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
-        const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
+        // First try user_sessions for hourly data (German timezone)
         
-        let hourlyData = await prisma.$queryRaw`
-            SELECT
-                CAST(strftime('%H', datetime(started_at, ${timezoneOffset})) AS INTEGER) as hour,
-                COUNT(*) as count
-            FROM user_sessions
-            WHERE DATE(datetime(started_at, ${timezoneOffset})) = ${date}
-            GROUP BY strftime('%H', datetime(started_at, ${timezoneOffset}))
-            ORDER BY hour ASC
-        `;
+        // Get user sessions for the specified date in German timezone
+        let userSessions = await UserSessions.findMany({
+            where: {
+                started_at: {
+                    not: null
+                }
+            },
+            select: {
+                started_at: true
+            }
+        });
+
+        let hourlyData = groupByGermanHour(userSessions, 'started_at', date);
 
         // If no user_sessions data, use feedback as activity proxy
         if (hourlyData.length === 0) {
-            hourlyData = await prisma.$queryRaw`
-                SELECT
-                    CAST(strftime('%H', datetime(submitted_at, ${timezoneOffset})) AS INTEGER) as hour,
-                    COUNT(DISTINCT conversation_id) as count
-                FROM feedback
-                WHERE DATE(datetime(submitted_at, ${timezoneOffset})) = ${date}
-                GROUP BY strftime('%H', datetime(submitted_at, ${timezoneOffset}))
-                ORDER BY hour ASC
-            `;
+            const feedback = await Feedback.findMany({
+                where: {
+                    submitted_at: {
+                        not: null
+                    }
+                },
+                select: {
+                    submitted_at: true,
+                    conversation_id: true
+                }
+            });
+
+            hourlyData = groupFeedbackByGermanHour(feedback, date);
         }
 
         // If still no data, use questions as activity proxy
         if (hourlyData.length === 0) {
-            hourlyData = await prisma.$queryRaw`
-                SELECT
-                    CAST(strftime('%H', datetime(updated_at, ${timezoneOffset})) AS INTEGER) as hour,
-                    COUNT(*) as count
-                FROM questions
-                WHERE DATE(datetime(updated_at, ${timezoneOffset})) = ${date}
-                    AND spam = 0
-                    AND deleted = 0
-                GROUP BY strftime('%H', datetime(updated_at, ${timezoneOffset}))
-                ORDER BY hour ASC
-            `;
+            const questions = await Questions.findMany({
+                where: {
+                    updated_at: {
+                        not: null
+                    },
+                    spam: false,
+                    deleted: false
+                },
+                select: {
+                    updated_at: true
+                }
+            });
+
+            hourlyData = groupByGermanHour(questions, 'updated_at', date);
         }
 
         // Fill missing hours with 0 (0-23)
@@ -241,20 +250,25 @@ router.get('/sessions/hourly', async (req, res) => {
 
 router.get('/most-viewed-articles', async (req, res) => {
     try {
-        const articles = await prisma.$queryRaw`
-            SELECT
-                h.article,
-                COUNT(av.id) as views
-            FROM hochschuhl_abc h
-            LEFT JOIN article_views av ON h.id = av.article_id
-            WHERE h.active = 1
-            GROUP BY h.id, h.article
-            HAVING views > 0
-            ORDER BY views DESC
-            LIMIT 5
-        `;
+        const articles = await HochschuhlABC.findMany({
+            where: { active: true },
+            include: {
+                article_views: {
+                    select: { id: true }
+                }
+            }
+        });
 
-        res.json(articles);
+        const articlesWithViews = articles
+            .map(article => ({
+                article: article.article,
+                views: article.article_views.length
+            }))
+            .filter(article => article.views > 0)
+            .sort((a, b) => b.views - a.views)
+            .slice(0, 5);
+
+        res.json(articlesWithViews);
     } catch (error) {
         console.error('Error fetching most viewed articles:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -292,18 +306,15 @@ router.get('/feedback-stats', async (req, res) => {
         });
 
         // Feedback over time (last 7 days)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const sevenDaysAgoGerman = getGermanDaysAgo(7);
 
-        const feedbackOverTime = await prisma.$queryRaw`
-            SELECT
-                DATE(submitted_at) as date,
-                COUNT(*) as count
-            FROM feedback
-            WHERE submitted_at >= ${sevenDaysAgo}
-            GROUP BY DATE(submitted_at)
-            ORDER BY date ASC
-        `;
+        const feedbackData = await Feedback.findMany({
+            select: {
+                submitted_at: true
+            }
+        });
+
+        const feedbackOverTime = groupByGermanDate(feedbackData, 'submitted_at', sevenDaysAgoGerman);
 
         res.json({
             positiveFeedback,
@@ -449,32 +460,50 @@ router.get('/category-stats', async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         
         // Get category distribution from conversations
-        // Use German timezone (UTC+1/UTC+2) for proper "today" calculation
-        const currentMonth = new Date().getMonth() + 1; // 1-12
-        const isDST = currentMonth >= 3 && currentMonth <= 10; // March to October (approximate DST)
-        const timezoneOffset = isDST ? '+2 hours' : '+1 hour';
-        
-        const categories = await prisma.$queryRaw`
-            SELECT
-                c.category,
-                COUNT(*) as count,
-                COUNT(CASE WHEN date(datetime(c.created_at, ${timezoneOffset})) = date('now', ${timezoneOffset}) THEN 1 END) as today_count
-            FROM conversations c
-            WHERE c.category != 'Unkategorisiert' OR c.category IS NOT NULL
-            GROUP BY c.category
-            ORDER BY count DESC
-            LIMIT ${limit}
-        `;
+        // Use German timezone for proper "today" calculation
+        const germanNow = getGermanNow();
+        const germanToday = germanNow.toISODate();
+
+        const conversations = await Conversation.findMany({
+            where: {
+                category: {
+                    not: null
+                }
+            },
+            select: {
+                category: true,
+                created_at: true
+            }
+        });
+
+        // Group by category
+        const categoryMap = {};
+        conversations.forEach(conv => {
+            const cat = conv.category || 'Unkategorisiert';
+            if (!categoryMap[cat]) {
+                categoryMap[cat] = { count: 0, today_count: 0 };
+            }
+            categoryMap[cat].count++;
+
+            // Check if created today in German timezone
+            const convGermanDate = getGermanDateString(conv.created_at);
+            if (convGermanDate === germanToday) {
+                categoryMap[cat].today_count++;
+            }
+        });
 
         // Get total conversations for percentage calculation
-        const totalConversations = await Conversation.count();
+        const totalConversations = conversations.length;
 
-        const categoryStats = categories.map(cat => ({
-            category: cat.category || 'Unkategorisiert',
-            count: Number(cat.count),
-            today_count: Number(cat.today_count),
-            percentage: totalConversations > 0 ? Math.round((Number(cat.count) / totalConversations) * 100) : 0
-        }));
+        const categoryStats = Object.entries(categoryMap)
+            .map(([category, stats]) => ({
+                category,
+                count: stats.count,
+                today_count: stats.today_count,
+                percentage: totalConversations > 0 ? Math.round((stats.count / totalConversations) * 100) : 0
+            }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, limit);
 
         res.json(categoryStats);
     } catch (error) {
@@ -536,22 +565,52 @@ router.get('/frequent-messages', async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         
         // Get most frequent user messages - simplified approach
-        const frequentMessages = await prisma.$queryRaw`
-            SELECT
-                content,
-                COUNT(*) as count,
-                MIN(created_at) as first_seen,
-                MAX(created_at) as last_seen
-            FROM messages
-            WHERE role = 'user'
-            AND LENGTH(TRIM(content)) > 3
-            AND content NOT LIKE '%<%'
-            AND content NOT LIKE '%undefined%'
-            GROUP BY LOWER(TRIM(content))
-            HAVING count > 1
-            ORDER BY count DESC, last_seen DESC
-            LIMIT ${limit}
-        `;
+        const messages = await Message.findMany({
+            where: {
+                role: 'user',
+                content: {
+                    not: {
+                        contains: '<'
+                    },
+                    not: {
+                        contains: 'undefined'
+                    }
+                }
+            },
+            select: {
+                content: true,
+                created_at: true
+            }
+        });
+
+        // Filter and group messages
+        const messageGroups = {};
+        messages.forEach(msg => {
+            const trimmed = msg.content.trim();
+            if (trimmed.length <= 3) return;
+
+            const normalized = trimmed.toLowerCase();
+            if (!messageGroups[normalized]) {
+                messageGroups[normalized] = {
+                    content: trimmed,
+                    count: 0,
+                    first_seen: msg.created_at,
+                    last_seen: msg.created_at,
+                    examples: []
+                };
+            }
+            messageGroups[normalized].count++;
+            messageGroups[normalized].last_seen = msg.created_at > messageGroups[normalized].last_seen ? msg.created_at : messageGroups[normalized].last_seen;
+            messageGroups[normalized].first_seen = msg.created_at < messageGroups[normalized].first_seen ? msg.created_at : messageGroups[normalized].first_seen;
+            if (messageGroups[normalized].examples.length < 3) {
+                messageGroups[normalized].examples.push(trimmed);
+            }
+        });
+
+        const frequentMessages = Object.values(messageGroups)
+            .filter(group => group.count > 1)
+            .sort((a, b) => b.count - a.count || b.last_seen.getTime() - a.last_seen.getTime())
+            .slice(0, limit);
 
         // Simple post-processing for similar messages
         const processedMessages = [];
@@ -574,7 +633,7 @@ router.get('/frequent-messages', async (req, res) => {
                      count: Number(msg.count),
                      first_seen: msg.first_seen.toString(),
                      last_seen: msg.last_seen.toString(),
-                     examples: [msg.content] // Single example for now
+                     examples: msg.examples
                  });
             }
         }
@@ -1035,16 +1094,35 @@ router.post('/trigger-analysis', async (req, res) => {
 router.get('/analysis-status', async (req, res) => {
     try {
         // Check when last analysis was performed
-        const latestAnalysis = await prisma.$queryRaw`
-            SELECT
-                analysis_date,
-                COUNT(*) as question_groups,
-                MAX(created_at) as updated_at
-            FROM daily_question_stats
-            GROUP BY analysis_date
-            ORDER BY analysis_date DESC
-            LIMIT 1
-        `;
+        const stats = await prisma.daily_question_stats.findMany({
+            select: {
+                analysis_date: true,
+                created_at: true
+            },
+            orderBy: {
+                analysis_date: 'desc'
+            }
+        });
+
+        // Group by analysis_date
+        const analysisGroups = {};
+        stats.forEach(stat => {
+            if (!analysisGroups[stat.analysis_date]) {
+                analysisGroups[stat.analysis_date] = {
+                    analysis_date: stat.analysis_date,
+                    question_groups: 0,
+                    updated_at: stat.created_at
+                };
+            }
+            analysisGroups[stat.analysis_date].question_groups++;
+            if (stat.created_at > analysisGroups[stat.analysis_date].updated_at) {
+                analysisGroups[stat.analysis_date].updated_at = stat.created_at;
+            }
+        });
+
+        const latestAnalysis = Object.values(analysisGroups)
+            .sort((a, b) => b.analysis_date.localeCompare(a.analysis_date))
+            .slice(0, 1);
 
         const analysisAvailable = groupSimilarQuestions && extractQuestions;
 
