@@ -227,30 +227,17 @@ view TopQuestionsView {
   answered_count    Int?
   unanswered_count  Int?
   similar_questions String?
+  @@map("top_questions_view")
 }
 
 view UnansweredQuestionsView {
   content    String
   created_at DateTime
   category   String?
-}
-
-model top_questions_view {
-  question          String @unique
-  count             Int?
-  answered_count    Int?
-  unanswered_count  Int?
-  similar_questions String?
-  @@map("top_questions_view")
-}
-
-model unanswered_questions_view {
-  content    String
-  created_at DateTime
-  category   String?
-  @@unique([content, created_at])
   @@map("unanswered_questions_view")
 }
+
+
 
 model app_versions {
   id      Int    @id @default(autoincrement())
