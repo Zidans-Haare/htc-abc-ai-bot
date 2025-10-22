@@ -27,6 +27,13 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 ### Installation
 
 1.  **Abhängigkeiten installieren:**
+
+    Für grundlegende Funktionalität (ohne KI-Provider, Vektor-DBs usw.):
+    ```bash
+    npm install --production --no-optional
+    ```
+
+    Für vollständige Installation (mit allen optionalen Abhängigkeiten):
     ```bash
     npm install
     ```
@@ -35,8 +42,15 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     - `@google/generative-ai`: Für Google Gemini (wenn `AI_PROVIDER=google`).
     - `@anthropic-ai/sdk`: Für Anthropic Claude (wenn `AI_PROVIDER=claude`).
     - `@huggingface/transformers`: Für Hugging Face Embeddings (wenn `EMBEDDING_LIBRARY=huggingface`).
+    - `@langchain/community`: Für LangChain-Community-Integrationen.
+    - `@langchain/core`: Kernbibliothek für LangChain.
+    - `@langchain/openai`: LangChain-Integration für OpenAI.
+    - `@langchain/textsplitters`: Textaufteilung für LangChain.
+    - `@xenova/transformers`: Für Xenova Embeddings (wenn `EMBEDDING_LIBRARY=xenova`).
     - `chromadb`: Für ChromaDB als Vektor-Datenbank (wenn `VECTOR_DB_TYPE=chroma`).
+    - `langchain`: LangChain-Bibliothek.
     - `mysql2`: Für MySQL-Datenbank (wenn `MAIN_DB_TYPE=mysql`).
+    - `openai`: Offizielle OpenAI-API-Bibliothek (wenn `AI_PROVIDER=openai`).
     - `pg`: Für PostgreSQL-Datenbank (wenn `MAIN_DB_TYPE=postgresql`).
     - `weaviate-client`: Für Weaviate als Vektor-Datenbank (wenn `VECTOR_DB_TYPE=weaviate`).
 
