@@ -270,16 +270,6 @@ module.exports = (adminAuth) => {
         // Save backup schema to temp file
         const backupSchemaPath = path.join(__dirname, '..', '..', 'temp_backup_schema.prisma');
         await fsPromises.writeFile(backupSchemaPath, backupSchemaContent);
-        // Generate diff SQL
-        const { execSync } = require('child_process');
-        const currentSchemaPath = path.join(__dirname, '..', '..', '..', 'prisma', 'schema.prisma');
-        try {
-          upgradeSql = execSync(`npx prisma migrate diff --from-schema ${backupSchemaPath} --to-schema ${currentSchemaPath} --script`, { encoding: 'utf8' });
-          console.log('Generated upgrade SQL');
-        } catch (err) {
-          console.error('Failed to generate diff SQL:', err.message);
-          return res.status(500).json({ error: 'Failed to generate upgrade SQL' });
-        }
         // Create temp DB with backup schema
         ({ tempPrisma, tempDbPath } = await createTempPrisma());
         const tempUrl = `file:${tempDbPath}`;
@@ -343,30 +333,46 @@ module.exports = (adminAuth) => {
         }
         console.log(`conversations: ${convInserted} inserted, ${convUpdated} updated; messages: ${msgInserted} inserted, ${msgUpdated} updated`);
       }
-       if (files['documents.json'] && selected.dokumente) {
-         await importTable('documents', files['documents.json'], mode === 'replace');
-         // Copy files
-         for (const doc of files['documents.json']) {
-           const src = path.join('temp', 'documents', doc.filepath);
-           const dest = path.join('uploads', 'documents', doc.filepath);
-           try {
-             await fsPromises.mkdir(path.dirname(dest), { recursive: true });
-             await fsPromises.copyFile(src, dest);
-           } catch {}
-         }
-       }
-        if (files['images.json'] && selected.bilder) {
-          await importTable('images', files['images.json'], mode === 'replace');
+        if (files['documents.json'] && selected.dokumente) {
+          await importTable('documents', files['documents.json'], mode === 'replace');
+          // Handle files
+          const docDir = path.join('uploads', 'documents');
+          if (mode === 'replace') {
+            // Delete all existing files
+            try {
+              await fsPromises.rm(docDir, { recursive: true, force: true });
+            } catch {}
+          }
           // Copy files
-          for (const img of files['images.json']) {
-            const src = path.join('temp', 'images', img.filename);
-            const dest = path.join('uploads', 'images', img.filename);
+          for (const doc of files['documents.json']) {
+            const src = path.join('temp', 'documents', doc.filepath);
+            const dest = path.join(docDir, doc.filepath);
             try {
               await fsPromises.mkdir(path.dirname(dest), { recursive: true });
               await fsPromises.copyFile(src, dest);
             } catch {}
           }
         }
+         if (files['images.json'] && selected.bilder) {
+           await importTable('images', files['images.json'], mode === 'replace');
+           // Handle files
+           const imgDir = path.join('uploads', 'images');
+           if (mode === 'replace') {
+             // Delete all existing files
+             try {
+               await fsPromises.rm(imgDir, { recursive: true, force: true });
+             } catch {}
+           }
+           // Copy files
+           for (const img of files['images.json']) {
+             const src = path.join('temp', 'images', img.filename);
+             const dest = path.join(imgDir, img.filename);
+             try {
+               await fsPromises.mkdir(path.dirname(dest), { recursive: true });
+               await fsPromises.copyFile(src, dest);
+             } catch {}
+           }
+         }
        if (files['feedback.json'] && selected.feedback) await importTable('feedback', files['feedback.json'], mode === 'replace');
        if (selected.dashboard) {
          if (files['article_views.json']) await importTable('article_views', files['article_views.json'], mode === 'replace');
@@ -401,28 +407,32 @@ module.exports = (adminAuth) => {
          }
        }
 
-      if (useTempDb) {
-        // Apply upgrade SQL to temp DB
-        if (upgradeSql) {
-          await tempPrisma.$executeRawUnsafe(upgradeSql);
-          console.log('Applied upgrade SQL to temp DB');
-        }
-        // Copy temp DB to main DB
-        const currentDbPath = process.env.DATABASE_URL.replace('file:', '');
-        await fsPromises.copyFile(tempDbPath, currentDbPath);
-        await tempPrisma.$disconnect();
-        await fsPromises.unlink(tempDbPath);
-        console.log('Imported via temp DB and upgraded.');
-      }
+       if (useTempDb) {
+         // Push current schema to temp DB to upgrade
+         const currentSchemaPath = path.join(__dirname, '..', '..', '..', 'prisma', 'schema.prisma');
+         execSync(`DATABASE_URL=${tempUrl} npx prisma db push --schema ${currentSchemaPath} --accept-data-loss`, { stdio: 'inherit' });
+         console.log('Upgraded temp DB to current schema');
+         // Copy temp DB to main DB
+         const currentDbPath = process.env.DATABASE_URL.replace('file:', '');
+         await fsPromises.copyFile(tempDbPath, currentDbPath);
+         await tempPrisma.$disconnect();
+         await fsPromises.unlink(tempDbPath);
+         console.log('Imported via temp DB and upgraded.');
+       }
 
-      // Clean temp
-      await fsPromises.rm('temp', { recursive: true, force: true });
+       // Clean temp
+       await fsPromises.rm('temp', { recursive: true, force: true });
 
-      res.json({ success: true });
-    } catch (err) {
-      console.error('Import failed', err);
-      res.status(500).json({ error: 'Import failed' });
-    }
+       res.json({ success: true });
+     } catch (err) {
+       console.error('Import failed', err);
+       // Clean up on failure
+       try {
+         await fsPromises.rm('temp', { recursive: true, force: true });
+         if (tempDbPath) await fsPromises.unlink(tempDbPath);
+       } catch {}
+       res.status(500).json({ error: 'Import failed' });
+     }
   });
 
   return router;
