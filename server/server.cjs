@@ -503,7 +503,13 @@ const serverCallback = async () => {
     console.log('✓ Database connection established');
 
     // Check app version
-    const latestVersion = await prisma.app_versions.findFirst({ orderBy: { id: 'desc' } });
+    let latestVersion;
+    try {
+      latestVersion = await prisma.app_versions.findFirst({ orderBy: { id: 'desc' } });
+    } catch (e) {
+      console.log('\n\nDatabase tables not yet initialized (expected on first run), creating them now...\n\n');
+      // If table doesn't exist, latestVersion remains undefined, will trigger db push
+    }
     if (!latestVersion || latestVersion.version !== currentVersion) {
       console.log('App version changed or not tracked, applying migrations...');
       execSync('npx prisma migrate deploy', { stdio: 'inherit' });
