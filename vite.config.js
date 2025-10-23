@@ -71,6 +71,7 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
+    compress: true,
     allowedHosts: ['dev.olomek.com',  'localhost', '127.0.0.1'],
     proxy: {
       '/api': {
