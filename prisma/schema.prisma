@@ -221,21 +221,7 @@ model documents {
   @@map("documents")
 }
 
-view TopQuestionsView {
-  question          String
-  count             Int?
-  answered_count    Int?
-  unanswered_count  Int?
-  similar_questions String?
-  @@map("top_questions_view")
-}
 
-view UnansweredQuestionsView {
-  content    String
-  created_at DateTime
-  category   String?
-  @@map("unanswered_questions_view")
-}
 
 
 
