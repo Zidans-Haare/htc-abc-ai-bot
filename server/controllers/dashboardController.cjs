@@ -1,6 +1,7 @@
 const express = require('express');
 const { prisma, UserSessions, ChatInteractions, ArticleViews, HochschuhlABC, Questions, Feedback, Conversation, Message, QuestionAnalysisCache, DailyQuestionStats, DailyUnansweredStats } = require('./db.cjs');
 const { getGermanNow, toGermanTime, getGermanDateString, getGermanDaysAgo, groupByGermanDate, groupByGermanHour, groupFeedbackByGermanDate, groupFeedbackByGermanHour } = require('../utils/timezone');
+const { raw_sql_wrapper } = require('../../utils/sql_wrapper');
 
 // Optional import for question grouper (requires server-side OpenAI-compatible API key)
 let groupSimilarQuestions, extractQuestions;
@@ -348,20 +349,10 @@ router.get('/content-stats', async (req, res) => {
 });
 
  router.get('/top-questions', async (req, res) => {
-     try {
-         // Query with raw SQL
-         const questions = await prisma.$queryRaw`
-             SELECT
-                 normalized_question AS question,
-                 SUM(question_count) AS count,
-                 0 AS answered_count,
-                 SUM(question_count) AS unanswered_count,
-                 GROUP_CONCAT(DISTINCT original_questions) AS similar_questions
-             FROM daily_question_stats
-             GROUP BY normalized_question
-             ORDER BY count DESC
-             LIMIT 5
-         `;
+      try {
+          // Query with raw SQL
+          const sql = raw_sql_wrapper('get_top_questions');
+          const questions = await prisma.$queryRawUnsafe(sql);
 
          const formattedQuestions = questions.map(q => ({
              question: q.question,
@@ -807,33 +798,8 @@ router.get('/unanswered-questions', async (req, res) => {
 
         // Fallback to real-time analysis
          // First get potentially unanswered messages using raw SQL
-         const potentialUnanswered = await prisma.$queryRaw`
-             SELECT
-                 m.content,
-                 m.created_at,
-                 c.category
-             FROM messages m
-             JOIN conversations c ON m.conversation_id = c.id
-             LEFT JOIN messages m_response ON m_response.conversation_id = c.id
-                 AND m_response.role = 'model'
-                 AND m_response.created_at > m.created_at
-                 AND ABS(strftime('%s', m_response.created_at) - strftime('%s', m.created_at)) < 30
-             WHERE m.role = 'user'
-             AND LENGTH(TRIM(m.content)) > 5
-             AND m.content NOT LIKE '%<%'
-             AND (
-                 m_response.content IS NULL
-                 OR m_response.content LIKE '%kann ich leider nicht%'
-                 OR m_response.content LIKE '%keine Informationen%'
-                 OR m_response.content LIKE '%tut mir leid%'
-                 OR m_response.content LIKE '%sorry%'
-                 OR m_response.content LIKE '%Unfortunately%'
-                 OR LENGTH(m_response.content) < 50
-             )
-             AND m.created_at >= datetime('now', '-7 days')
-             ORDER BY m.created_at DESC
-             LIMIT 200
-         `;
+         const sql = raw_sql_wrapper('get_unanswered_questions');
+         const potentialUnanswered = await prisma.$queryRawUnsafe(sql);
 
         if (potentialUnanswered.length === 0) {
             return res.json({
