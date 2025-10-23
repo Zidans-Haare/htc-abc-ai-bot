@@ -218,8 +218,8 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 3.  **Datenbank-Initialisierung:**
      Die Anwendung verwendet Prisma für die Datenbankverwaltung. Beim ersten Start wird die Datenbank automatisch mit Tabellen und Views erstellt. Bei Versionsänderungen (z. B. nach Schema-Updates) werden Migrationen automatisch angewendet.
 
-     - **Neue Datenbank:** Wenn keine `hochschuhl-abc.db` vorhanden ist, führt die Anwendung `prisma migrate reset` aus, um die Datenbank mit allen Tabellen und Views zu initialisieren.
-     - **Versionsänderungen:** Bei Änderungen der App-Version (in `package.json`) oder fehlender Versionsverfolgung wird `prisma migrate deploy` ausgeführt, um ausstehende Migrationen anzuwenden.
+     - **Neue Datenbank:** Wenn keine `hochschuhl-abc.db` vorhanden ist, führt die Anwendung `prisma db push` aus, um die Datenbank mit dem aktuellen Schema zu initialisieren.
+     - **Versionsänderungen:** Bei Änderungen der App-Version (in `package.json`) oder fehlender Versionsverfolgung wird `prisma migrate deploy` ausgeführt, um ausstehende Migrationen anzuwenden (falls vorhanden).
      - **Manuelle Migration:** Für manuelle Anpassungen verwenden Sie `npx prisma migrate dev --name beschreibung`.
 
 4.  **Server starten:**

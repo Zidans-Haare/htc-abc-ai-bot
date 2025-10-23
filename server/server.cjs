@@ -499,10 +499,10 @@ const serverCallback = async () => {
       execSync('npx prisma migrate deploy', { stdio: 'inherit' });
       console.log('✓ Migrations applied');
     }
-  } catch (error) {
-    console.log('Database not found or connection failed, initializing with migrations...');
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-    console.log('✓ Database initialized with migrations');
+   } catch (error) {
+     console.log('Database not found or connection failed, initializing with schema push...');
+     execSync('npx prisma db push', { stdio: 'inherit' });
+     console.log('✓ Database initialized with schema push');
 
     // Connect again
     await prisma.$connect();

@@ -11,7 +11,7 @@
 - You must not use any git actions that change the history.
 - If creating commits or branches, you must ask the user first (best with a: do you want this committed as: ...).
 - Do not modify Vite config's HMR path or allowedHosts unless explicitly requested by the user.
-- Database Changes: Use `prisma migrate deploy` for applying schema changes via migrations. Migrations are used for DB management. Views removed from migrations and schema; complex queries now use raw SQL. Removed unused tables: `auth_sessions`, `question_cache`, `sessions`. When schema changes, create new migrations with `prisma migrate dev`. On new DB creation, `prisma migrate deploy` is run to apply all migrations. Migration SQL for current version embedded in migration files. Use Context7 for up-to-date Prisma docs on multi-DB support.
+- Database Changes: Use `prisma migrate deploy` for applying schema changes via migrations. Migrations are used for DB management. Views removed from migrations and schema; complex queries now use raw SQL. Removed unused tables: `auth_sessions`, `question_cache`, `sessions`. When schema changes, create new migrations with `prisma migrate dev`. On new DB creation, `prisma db push` is run to apply schema directly. Migration SQL for current version embedded in migration files. Use Context7 for up-to-date Prisma docs on multi-DB support.
 
 # Project Information
 
