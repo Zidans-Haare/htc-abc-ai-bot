@@ -114,7 +114,7 @@ module.exports = (adminAuth) => {
         archive.append(JSON.stringify(imgs, null, 2), { name: 'images.json' });
         // Add files
         for (const img of imgs) {
-          const filePath = `uploads/${img.filename}`;
+          const filePath = `uploads/images/${img.filename}`;
           console.log(`Adding image file: ${filePath}`);
           if (fs.existsSync(filePath)) {
             try {
@@ -355,18 +355,18 @@ module.exports = (adminAuth) => {
            } catch {}
          }
        }
-       if (files['images.json'] && selected.bilder) {
-         await importTable('images', files['images.json'], mode === 'replace');
-         // Copy files
-         for (const img of files['images.json']) {
-           const src = path.join('temp', 'images', img.filename);
-           const dest = path.join('uploads', img.filename);
-           try {
-             await fsPromises.mkdir(path.dirname(dest), { recursive: true });
-             await fsPromises.copyFile(src, dest);
-           } catch {}
-         }
-       }
+        if (files['images.json'] && selected.bilder) {
+          await importTable('images', files['images.json'], mode === 'replace');
+          // Copy files
+          for (const img of files['images.json']) {
+            const src = path.join('temp', 'images', img.filename);
+            const dest = path.join('uploads', 'images', img.filename);
+            try {
+              await fsPromises.mkdir(path.dirname(dest), { recursive: true });
+              await fsPromises.copyFile(src, dest);
+            } catch {}
+          }
+        }
        if (files['feedback.json'] && selected.feedback) await importTable('feedback', files['feedback.json'], mode === 'replace');
        if (selected.dashboard) {
          if (files['article_views.json']) await importTable('article_views', files['article_views.json'], mode === 'replace');
