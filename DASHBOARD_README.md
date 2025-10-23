@@ -6,7 +6,7 @@ Das Dashboard bietet umfassende Analytics für das HTC ABC AI Bot System. Es zei
 ## 🚀 Zugriff
 
 ### **Production:**
-- **URL**: `https://dev.olomek.com/dash`
+- **URL**: `https://aski.htw-dresden.de/dash`
 - **Authentifizierung**: Admin-Login erforderlich
 
 ### **Development:**

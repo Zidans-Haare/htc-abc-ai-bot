@@ -11,7 +11,7 @@ const options = {
     },
     servers: [
       {
-        url: 'https://dev.olomek.com',
+        url: 'https://aski.htw-dresden.de',
         description: 'Production server',
       },
       {

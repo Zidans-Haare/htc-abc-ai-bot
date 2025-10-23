@@ -291,12 +291,17 @@ const requireAuth = (loginPath) => async (req, res, next) => {
 const requireRole = (role, insufficientPath) => async (req, res, next) => {
   try {
     const token = req.cookies.session_token;
+    const originalUrl = req.originalUrl || req.baseUrl || req.url;
+    const isDocsRoute = originalUrl.startsWith('/api/docs');
+    const isApiRoute = originalUrl.startsWith('/api/');
+    const redirectToLogin = () => res.redirect(`/login/?redirect=${encodeURIComponent(originalUrl)}`);
+
     if (!token) {
       // Not logged in
-      if (req.url.startsWith('/api/')) {
+      if (isApiRoute && !isDocsRoute) {
         return res.status(401).json({ error: 'Session expired. Please log in.' });
       }
-      return res.redirect('/login/');
+      return redirectToLogin();
     }
     const session = await auth.getSession(token);
     if (session) {
@@ -305,24 +310,26 @@ const requireRole = (role, insufficientPath) => async (req, res, next) => {
         return next();
       } else {
         // Insufficient permissions
-        if (req.url.startsWith('/api/')) {
+        if (isApiRoute && !isDocsRoute) {
           return res.status(403).json({ error: 'Insufficient permissions. Please log in as a different user.' });
         }
         return res.redirect(insufficientPath);
       }
     } else {
       // Not logged in or expired
-      if (req.url.startsWith('/api/')) {
+      if (isApiRoute && !isDocsRoute) {
         return res.status(401).json({ error: 'Session expired. Please log in.' });
       }
-      return res.redirect('/login/');
+      return redirectToLogin();
     }
   } catch (err) {
     console.error('Auth error:', err);
-    if (req.url.startsWith('/api/')) {
+    const originalUrl = req.originalUrl || req.baseUrl || req.url;
+    const isDocsRoute = originalUrl.startsWith('/api/docs');
+    if (originalUrl.startsWith('/api/') && !isDocsRoute) {
       return res.status(401).json({ error: 'Session error. Please log in.' });
     }
-    return res.redirect('/login/');
+    return res.redirect(`/login/?redirect=${encodeURIComponent(originalUrl)}`);
   }
 };
 

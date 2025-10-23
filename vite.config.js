@@ -57,17 +57,12 @@ export default defineConfig({
             return next();
           }
 
-           if (pathname === '/login' || pathname === '/login/') {
-             req.url = '/src/login/index.html';
-             return next();
-           }
+          if (pathname === '/login' || pathname === '/login/') {
+            req.url = '/src/login/index.html';
+            return next();
+          }
 
-           if (pathname === '/api-docs' || pathname === '/api-docs/') {
-             req.url = '/src/api-docs/index.html';
-             return next();
-           }
-
-           next();
+          next();
         });
       },
     },
@@ -77,7 +72,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     compress: true,
-    allowedHosts: ['dev.olomek.com',  'localhost', '127.0.0.1'],
+    allowedHosts: ['aski.htw-dresden.de',  'localhost', '127.0.0.1'],
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
@@ -105,7 +100,6 @@ export default defineConfig({
         admin: resolve(__dirname, 'src/admin/index.html'), // Served at /admin/
         dash: resolve(__dirname, 'src/dash/index.html'),   // Served at /dash/
         login: resolve(__dirname, 'src/login/index.html'), // Served at /login/
-        apiDocs: resolve(__dirname, 'src/api-docs/index.html'), // Served at /api-docs/
       },
       output: {
         // Optional: Nest outputs to match input folders for easier Express serving

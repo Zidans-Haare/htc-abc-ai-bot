@@ -1,6 +1,6 @@
 # HTW ABC AI Bot
 
-Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assistenten über eine API bereitstellt. Es umfasst ein umfassendes Admin-Panel zur Verwaltung von Inhalten, ein Dashboard zur Überwachung von Analysen und optionale Vektor-Datenbank-Unterstützung für erweiterte semantische Suche. Die Anwendung läuft live unter [dev.olomek.com](https://dev.olomek.com).
+Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assistenten über eine API bereitstellt. Es umfasst ein umfassendes Admin-Panel zur Verwaltung von Inhalten, ein Dashboard zur Überwachung von Analysen und optionale Vektor-Datenbank-Unterstützung für erweiterte semantische Suche. Die Anwendung läuft live unter [aski.htw-dresden.de](https://aski.htw-dresden.de).
 
 ## ✨ Features
 
@@ -302,20 +302,20 @@ pm2 start ecosystem.config.js
 - `pm2 start ecosystem.config.js` startet den Express-Server mit PM2, welcher Änderungen an `.env` überwacht und automatisch neu startet. Für Dauerbetrieb und automatische Neustarts bei Umgebungsvariablen-Änderungen empfohlen.
 - Alternativ `npm start` für einfache Starts ohne PM2, aber ohne automatische `.env`-Überwachung.
 
-### Nginx-Konfiguration (Beispiel für dev.olomek.com)
+### Nginx-Konfiguration (Beispiel für aski.htw-dresden.de)
 
 Für die Produktionsumgebung kann Nginx als Reverse-Proxy verwendet werden. Hier ein Beispiel für die Konfiguration in `/etc/nginx/sites-available/dev`:
 
 ```nginx
 server {
     listen 80;
-    server_name dev.olomek.com;
+    server_name aski.htw-dresden.de;
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name dev.olomek.com;
+    server_name aski.htw-dresden.de;
 
     ssl_certificate     /etc/nginx/ssl/origin.crt;
     ssl_certificate_key /etc/nginx/ssl/origin.key;

@@ -7,6 +7,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const passInput = document.getElementById('login-pass');
   const loginTitle = document.getElementById('login-title');
 
+  const allowedRedirectPrefixes = ['/admin', '/dash', '/api/docs'];
+
+  const resolveRedirectTarget = (target) => {
+    if (target && allowedRedirectPrefixes.some(prefix => target.startsWith(prefix))) {
+      return target;
+    }
+    return '/admin';
+  };
+
   // Set dynamic title based on redirect parameter
   const urlParams = new URLSearchParams(window.location.search);
   const redirectTo = urlParams.get('redirect');
@@ -16,6 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else if (redirectTo && redirectTo.startsWith('/admin')) {
     loginTitle.textContent = 'Admin Login';
     document.title = 'Login - Hochschul ABC Management';
+  } else if (redirectTo && redirectTo.startsWith('/api/docs')) {
+    loginTitle.textContent = 'API-Dokumentation Login';
+    document.title = 'Login - API Docs';
   } else {
     loginTitle.textContent = 'Login';
     document.title = 'Login';
@@ -35,20 +47,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         sessionStorage.setItem('userRole', data.role); // Nur Rolle speichern
 
         // Check for redirect parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectTo = urlParams.get('redirect');
-        if (redirectTo) {
-          // Validate redirect URL to prevent open redirect vulnerability
-          if (redirectTo.startsWith('/admin') || redirectTo.startsWith('/dash')) {
-            window.location.href = redirectTo;
-          } else {
-            // Invalid redirect, default to admin
-            window.location.href = '/admin';
-          }
-        } else {
-          // No redirect specified, default to admin
-          window.location.href = '/admin';
-        }
+        const redirectTarget = resolveRedirectTarget(urlParams.get('redirect'));
+        window.location.href = redirectTarget;
       } else {
         const error = await res.json();
         console.error('Login failed:', error);
@@ -71,20 +71,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (res.ok) {
       console.log('Session valid, redirecting...');
       // Check for redirect parameter even for existing sessions
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectTo = urlParams.get('redirect');
-      if (redirectTo) {
-        // Validate redirect URL to prevent open redirect vulnerability
-        if (redirectTo.startsWith('/admin') || redirectTo.startsWith('/dash')) {
-          window.location.href = redirectTo;
-        } else {
-          // Invalid redirect, default to admin
-          window.location.href = '/admin';
-        }
-      } else {
-        // No redirect specified, default to admin
-        window.location.href = '/admin';
-      }
+      const redirectTarget = resolveRedirectTarget(urlParams.get('redirect'));
+      window.location.href = redirectTarget;
     } else {
       console.log('No valid session, staying on login page...');
       sessionStorage.removeItem('userRole');
