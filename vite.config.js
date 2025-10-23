@@ -57,12 +57,17 @@ export default defineConfig({
             return next();
           }
 
-          if (pathname === '/login' || pathname === '/login/') {
-            req.url = '/src/login/index.html';
-            return next();
-          }
+           if (pathname === '/login' || pathname === '/login/') {
+             req.url = '/src/login/index.html';
+             return next();
+           }
 
-          next();
+           if (pathname === '/api-docs' || pathname === '/api-docs/') {
+             req.url = '/src/api-docs/index.html';
+             return next();
+           }
+
+           next();
         });
       },
     },
@@ -100,6 +105,7 @@ export default defineConfig({
         admin: resolve(__dirname, 'src/admin/index.html'), // Served at /admin/
         dash: resolve(__dirname, 'src/dash/index.html'),   // Served at /dash/
         login: resolve(__dirname, 'src/login/index.html'), // Served at /login/
+        apiDocs: resolve(__dirname, 'src/api-docs/index.html'), // Served at /api-docs/
       },
       output: {
         // Optional: Nest outputs to match input folders for easier Express serving

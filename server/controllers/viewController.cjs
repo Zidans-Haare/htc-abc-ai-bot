@@ -1,5 +1,41 @@
 const { HochschuhlABC } = require('./db.cjs');
 
+/**
+ * @swagger
+ * /api/view/articles:
+ *   get:
+ *     summary: Veröffentlichte Artikel abrufen
+ *     tags: [View]
+ *     parameters:
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [alpha, recent]
+ *         description: Sortierung (alpha für alphabetisch, recent für nach Aktualisierung)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Offset für Paginierung
+ *     responses:
+ *       200:
+ *         description: Liste der Artikel
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   article:
+ *                     type: string
+ *                   content:
+ *                     type: string
+ *       500:
+ *         description: Serverfehler
+ */
 async function getPublishedArticles(req, res) {
     try {
         const { sort } = req.query;

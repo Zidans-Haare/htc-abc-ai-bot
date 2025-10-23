@@ -2,6 +2,50 @@ const express = require('express');
 const router = express.Router();
 const { Feedback } = require('./db.cjs');
 
+/**
+ * @swagger
+ * /api/feedback:
+ *   post:
+ *     summary: Feedback senden
+ *     tags: [Feedback]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - text
+ *               - captcha
+ *               - expected_captcha
+ *             properties:
+ *               text:
+ *                 type: string
+ *                 description: Der Feedback-Text
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Optionale E-Mail-Adresse
+ *               conversation_id:
+ *                 type: string
+ *                 description: Optionale Konversations-ID
+ *               captcha:
+ *                 type: number
+ *                 description: CAPTCHA-Antwort
+ *               expected_captcha:
+ *                 type: number
+ *                 description: Erwartete CAPTCHA-Antwort
+ *               attached_chat_history:
+ *                 type: string
+ *                 description: Optionale angehängte Chat-Historie
+ *     responses:
+ *       200:
+ *         description: Feedback erfolgreich gesendet
+ *       400:
+ *         description: Ungültige Eingabe oder CAPTCHA-Fehler
+ *       500:
+ *         description: Serverfehler
+ */
 router.post('/', async (req, res) => {
     const { text, email, conversation_id, captcha, expected_captcha, attached_chat_history } = req.body;
 

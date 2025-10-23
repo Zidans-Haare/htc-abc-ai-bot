@@ -157,6 +157,43 @@ async function deleteUser(username) {
   }
 }
 
+/**
+ * @swagger
+ * /api/login:
+ *   post:
+ *     summary: Benutzer anmelden
+ *     tags: [Authentifizierung]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Erfolgreiche Anmeldung
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 role:
+ *                   type: string
+ *       400:
+ *         description: Fehlende Anmeldedaten
+ *       401:
+ *         description: Ungültige Anmeldedaten
+ *       500:
+ *         description: Serverfehler
+ */
 router.post('/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
@@ -183,6 +220,29 @@ router.post('/login', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/validate:
+ *   get:
+ *     summary: Session validieren
+ *     tags: [Authentifizierung]
+ *     responses:
+ *       200:
+ *         description: Session ist gültig
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *                 username:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *       401:
+ *         description: Ungültige oder abgelaufene Session
+ */
 router.get('/validate', async (req, res) => {
   const token = req.cookies.session_token;
   const session = token && await getSession(token);
@@ -193,6 +253,16 @@ router.get('/validate', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/logout:
+ *   post:
+ *     summary: Benutzer abmelden
+ *     tags: [Authentifizierung]
+ *     responses:
+ *       200:
+ *         description: Erfolgreiche Abmeldung
+ */
 router.post('/logout', async (req, res) => {
   const token = req.cookies.session_token;
   if (token) {

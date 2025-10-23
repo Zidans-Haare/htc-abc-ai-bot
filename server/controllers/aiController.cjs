@@ -75,6 +75,45 @@ async function logUnansweredQuestion(newQuestion) {
   }
 }
 
+/**
+ * @swagger
+ * /api/chat:
+ *   post:
+ *     summary: Chat-Stream mit AI starten
+ *     tags: [AI]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - prompt
+ *             properties:
+ *               prompt:
+ *                 type: string
+ *                 description: Die Nachricht des Benutzers
+ *               conversationId:
+ *                 type: string
+ *                 description: Optionale Konversations-ID
+ *               anonymousUserId:
+ *                 type: string
+ *                 description: Optionale anonyme Benutzer-ID
+ *               timezoneOffset:
+ *                 type: number
+ *                 description: Zeitzonen-Offset in Minuten
+ *     responses:
+ *       200:
+ *         description: Server-Sent Events Stream mit AI-Antwort
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *       400:
+ *         description: Fehlender Prompt
+ *       500:
+ *         description: Serverfehler
+ */
 async function streamChat(req, res) {
   const startTime = Date.now();
   let sessionId = null;
@@ -247,13 +286,19 @@ async function streamChat(req, res) {
       { role: 'user', content: prompt },
     ];
 
-    const stream = chatCompletionStream(messagesPayload, { apiKey: userApiKey, temperature: 0.2 });
-
     let fullResponseText = '';
 
-    for await (const chunk of stream) {
-      fullResponseText += chunk.token;
-      res.write(`data: ${JSON.stringify({ token: chunk.token, conversationId: convoId })}\n\n`);
+    if (process.env.AI_STREAMING === 'true') {
+      const stream = chatCompletionStream(messagesPayload, { apiKey: userApiKey, temperature: 0.2 });
+
+      for await (const chunk of stream) {
+        fullResponseText += chunk.token;
+        res.write(`data: ${JSON.stringify({ token: chunk.token, conversationId: convoId })}\n\n`);
+      }
+    } else {
+      const response = await chatCompletion(messagesPayload, { apiKey: userApiKey, temperature: 0.2 });
+      fullResponseText = response.content;
+      res.write(`data: ${JSON.stringify({ token: fullResponseText, conversationId: convoId })}\n\n`);
     }
 
     await Message.create({
@@ -319,6 +364,44 @@ const backendTranslations = {
   },
 };
 
+/**
+ * @swagger
+ * /api/test-api-key:
+ *   post:
+ *     summary: API-Schlüssel für Google AI testen
+ *     tags: [AI]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - apiKey
+ *             properties:
+ *               apiKey:
+ *                 type: string
+ *                 description: Der zu testende API-Schlüssel
+ *               language:
+ *                 type: string
+ *                 enum: [de, en]
+ *                 default: de
+ *                 description: Sprache für Fehlermeldungen
+ *     responses:
+ *       200:
+ *         description: API-Schlüssel ist gültig
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: API-Schlüssel fehlt oder ungültig
+ *       500:
+ *         description: Serverfehler
+ */
 async function testApiKey(req, res) {
   const { apiKey, language = 'de' } = req.body;
   const trans = backendTranslations[language] || backendTranslations.de;
@@ -361,6 +444,24 @@ async function testApiKey(req, res) {
   }
 }
 
+/**
+ * @swagger
+ * /api/suggestions:
+ *   get:
+ *     summary: Chat-Vorschläge abrufen
+ *     tags: [AI]
+ *     responses:
+ *       200:
+ *         description: Liste der Vorschläge
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ *       500:
+ *         description: Serverfehler
+ */
 async function getSuggestions(req, res) {
   try {
     const suggestions = await HochschuhlABC.findMany({

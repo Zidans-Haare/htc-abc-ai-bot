@@ -84,6 +84,7 @@ const auth = require('./controllers/authController.cjs');
 const viewController = require('./controllers/viewController.cjs');
 const dashboardController = require('./controllers/dashboardController.cjs');
 const imageController = require('./controllers/imageController.cjs');
+const { swaggerUi, specs } = require('./swagger.js');
 const app = express();
 // Trust proxy layers for correct client IP detection (default 2: Cloudflare -> Nginx -> Node.js)
 app.set('trust proxy', process.env.TRUST_PROXY_COUNT || 2);
@@ -385,6 +386,9 @@ app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
 // app.use('/api/login', loginLimiter); // Disabled for testing
 // app.use('/api', apiLimiter); // General limiter LAST
 
+// API Documentation (admin only)
+app.use('/api/docs', requireRole('admin', '/insufficient-permissions'), swaggerUi.serve, swaggerUi.setup(specs));
+
 // --- API Routes ---
 app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
 app.use('/api/login', loginLimiter); // Login limiter
@@ -431,12 +435,53 @@ app.get('/insufficient-permissions', (req, res) => {
   res.redirect('/login/');
 });
 
-// --- Health Check Route ---
+/**
+ * @swagger
+ * /api/health:
+ *   get:
+ *     summary: Server-Status überprüfen
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Server ist gesund
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ */
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// --- Vector DB Health Check ---
+/**
+ * @swagger
+ * /api/vector-health:
+ *   get:
+ *     summary: Vector Database Status überprüfen
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Vector DB ist verfügbar
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *                 connected:
+ *                   type: boolean
+ *       500:
+ *         description: Vector DB Fehler
+ */
 app.get('/api/vector-health', async (req, res) => {
   try {
     const vectorStore = require('./lib/vectorStore');
