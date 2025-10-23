@@ -47,6 +47,7 @@
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
     "joi": "^18.0.1",
+    "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
     "luxon": "^3.7.2",
     "mammoth": "^1.11.0",

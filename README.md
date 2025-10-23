@@ -58,8 +58,27 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     - `pg`: Für PostgreSQL-Datenbank (wenn `MAIN_DB_TYPE=postgresql`).
     - `weaviate-client`: Für Weaviate als Vektor-Datenbank (wenn `VECTOR_DB_TYPE=weaviate`).
 
-2.  **Konfiguration:**
-    Erstellen Sie eine `.env`-Datei im Projektstammverzeichnis basierend auf `.env.example`. Kopieren Sie `.env.example` nach `.env` und passen Sie die Werte an.
+### Automatisierte Bereitstellung (Ansible)
+
+Für vollständig automatisierte Installationen mit individueller Markenführung steht ein Ansible-Playbook bereit (`deploy/provision.yml`). Es prüft die Basis-Pakete, richtet Node.js ein, klont das Repository, erstellt `.env` und `config/app.yml`, spielt optionale Logo-Dateien ein und startet den Dienst optional über PM2.
+
+Beispielaufruf von der lokalen Administrationsmaschine:
+
+```bash
+ansible-playbook -i server.example.com, -u <ssh-user> \
+  deploy/provision.yml
+```
+
+Das Playbook stellt interaktive Fragen (Farben, Logos, Texte, AI-Provider, Datenbankverbindung usw.) und generiert daraus sämtliche Konfigurationsdateien. Alle Eingaben lassen sich im Nachgang anpassen, indem die generierten Dateien auf dem Server editiert werden (`/config/app.yml`, `.env`).
+
+### Manuelle Konfiguration
+
+1.  **Konfigurationsdateien anlegen:**
+    - `.env`: Enthält Secrets und Laufzeitpfade. Kopieren Sie `.env.example` nach `.env` und passen Sie die Werte an.
+    - `config/app.yml`: Steuert Branding, Texte, Feature-Toggles und AI-Einstellungen. Verwenden Sie `config/app.example.yml` als Vorlage (`cp config/app.example.yml config/app.yml`) und passen Sie den YAML-Inhalt an (Organisation, Farben, Logos, Prompt usw.).
+
+2.  **Umgebungsvariablen in `.env`:**
+    Die wichtigsten Umgebungsvariablen sind:
 
     Die wichtigsten Umgebungsvariablen sind:
 

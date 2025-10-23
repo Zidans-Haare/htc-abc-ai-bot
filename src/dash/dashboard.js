@@ -1,4 +1,5 @@
 import '../styles/tailwind-backend.css';
+import { loadAppConfig } from '../components/app-config.js';
 
 class DashboardManager {
     constructor() {
@@ -8,6 +9,7 @@ class DashboardManager {
     }
 
     async init() {
+        await loadAppConfig();
         await this.loadDashboard();
         this.setupEventListeners();
         this.startAutoRefresh();

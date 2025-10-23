@@ -5,6 +5,58 @@ const { summarizeConversation } = require('../utils/summarizer');
 const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require('../utils/analytics');
 const { chatCompletion, chatCompletionStream } = require('../utils/aiProvider');
 const vectorStore = require('../lib/vectorStore');
+const { getSection } = require('../../config');
+
+const DEFAULT_SYSTEM_PROMPT = `
+--system prompt--
+You are a customer support agent dedicated to answering questions, resolving issues,
+and providing helpful solutions promptly. Maintain a friendly and professional tone in all interactions.
+
+Ensure responses are concise, clear, and directly address the user's concerns. Try to answer to the point and be super helpful and positive.
+Escalate complex issues to human agents when necessary to ensure customer satisfaction.
+
+{{DATE_TIME}}
+{{TIMEZONE_INFO}}
+
+Contact data includes Name, Responsibility, Email, Phone number, Room, and talking hours.
+Whenever you recommend a contact or advise to contact someone, provide complete contact data
+for all relevant individuals, including: Name, Responsibility, Email, Phone number, Room, and talking hours.
+
+If multiple persons are responsible, briefly explain the difference between them and provide full contact data for each.
+
+If there are diverging answers for long and short term students, and the user did not yet specify their status,
+ask for clarification and point out the difference.
+
+**Knowledgebase of the {{ORGANIZATION_NAME}}**:
+{{KNOWLEDGEBASE}}
+
+**Image List**:
+{{IMAGE_LIST}}
+
+If an image is in the Image List that helps to answer the user question, add the image link to the answer.
+Format the url in markdown: "\\n\\n ![](/uploads/images/<image_name>) \\n\\n"
+
+--
+
+If you can not answer a question about the {{ORGANIZATION_NAME}} from the Knowledgebase,
+add the chars "<+>" at the end of the answer.
+
+--
+`;
+
+const compileTemplate = (template, replacements) => {
+  if (!template) {
+    return '';
+  }
+  return template.replace(/{{\s*([A-Z0-9_]+)\s*}}/gi, (match, token) => {
+    const key = token.toUpperCase();
+    if (Object.prototype.hasOwnProperty.call(replacements, key)) {
+      const value = replacements[key];
+      return value === undefined || value === null ? '' : String(value);
+    }
+    return '';
+  });
+};
 
 // Lazy import to avoid immediate API key check
 let categorizeConversation = null;
@@ -231,45 +283,48 @@ async function streamChat(req, res) {
       console.error('Could not determine timezone offset:', e.message);
     }
 
-    const systemPrompt = `
-      --system prompt--
-      You are a customer support agent dedicated to answering questions, resolving issues,
-      and providing helpful solutions promptly. Maintain a friendly and professional tone in all interactions.
+    const aiConfig = getSection('ai', {});
+    const brandingConfig = getSection('branding', {});
+    const systemPromptTemplate = aiConfig.system_prompt || DEFAULT_SYSTEM_PROMPT;
+    const organizationName = brandingConfig.organization_name || 'HTW Dresden';
 
-      Ensure responses are concise, clear, and directly address the user's concerns. Try to answer to the point and be super helpful and positive.
-      Escalate complex issues to human agents when necessary to ensure customer satisfaction.
+    const systemPrompt = compileTemplate(systemPromptTemplate, {
+      ORGANIZATION_NAME: organizationName,
+      DATE_TIME: dateAndTime,
+      TIMEZONE_INFO: timezoneInfo,
+      KNOWLEDGEBASE: hochschulContent,
+      IMAGE_LIST: imageList,
+      USER_PROMPT: prompt,
+    });
 
-      ${dateAndTime}.
-      ${timezoneInfo}
+    const parseNumber = (value) => {
+      const num = Number(value);
+      return Number.isFinite(num) ? num : undefined;
+    };
 
-      Contact data includes Name, Responsibility, Email, Phone number, Room, and talking hours.
-      Whenever you recommend a contact or advise to contact someone, provide complete contact data
-      for all relevant individuals, including: Name, Responsibility, Email, Phone number, Room, and talking hours.
+    const aiOptions = {
+      apiKey: userApiKey,
+    };
 
-      If multiple persons are responsible, briefly explain the difference between them and provide full contact data for each.
+    const configTemperature = parseNumber(aiConfig.temperature);
+    const envTemperature = parseNumber(process.env.AI_TEMPERATURE);
+    aiOptions.temperature = configTemperature ?? envTemperature ?? 0.2;
 
-      If there are diverging Answers for long and short term students, and the user did not yet specify their status,
-      ask for clarification and point out the difference.
+    const configMaxTokens = parseNumber(aiConfig.max_tokens);
+    if (configMaxTokens !== undefined) {
+      aiOptions.maxTokens = configMaxTokens;
+    }
 
+    const configModel = aiConfig.model || process.env.AI_MODEL;
+    if (configModel) {
+      aiOptions.model = configModel;
+    }
 
-      **Knowledgebase of the HTW Desden**:
-      ${hochschulContent}
-
-      **Image List**:
-      ${imageList}
-
-      If an image is in the Image List, that helps to answer the user question, add the image link to the answer.
-      format the url in markdown: "\n\n ![](/uploads/images/<image_name>) \n\n"
-
-
-
-      --
-
-      If you can not answer a question about the HTW Dresden from the Knowledgebase,
-      add the chars "<+>" at the end of the answer.
-
-      --
-    `;
+    const streamingEnabled = aiConfig.streaming !== undefined
+      ? (typeof aiConfig.streaming === 'string'
+        ? aiConfig.streaming.toLowerCase() === 'true'
+        : Boolean(aiConfig.streaming))
+      : process.env.AI_STREAMING === 'true';
 
     // Log token count for system prompt
     const systemTokens = estimateTokens(systemPrompt);
@@ -288,15 +343,15 @@ async function streamChat(req, res) {
 
     let fullResponseText = '';
 
-    if (process.env.AI_STREAMING === 'true') {
-      const stream = chatCompletionStream(messagesPayload, { apiKey: userApiKey, temperature: 0.2 });
+    if (streamingEnabled) {
+      const stream = chatCompletionStream(messagesPayload, aiOptions);
 
       for await (const chunk of stream) {
         fullResponseText += chunk.token;
         res.write(`data: ${JSON.stringify({ token: chunk.token, conversationId: convoId })}\n\n`);
       }
     } else {
-      const response = await chatCompletion(messagesPayload, { apiKey: userApiKey, temperature: 0.2 });
+      const response = await chatCompletion(messagesPayload, aiOptions);
       fullResponseText = response.content;
       res.write(`data: ${JSON.stringify({ token: fullResponseText, conversationId: convoId })}\n\n`);
     }

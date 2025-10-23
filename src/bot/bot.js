@@ -2,6 +2,7 @@ import { setupUI, addMessage, showToast, scrollToBottom, updateTime, renderChatH
 import { loadSettings, saveSettings, resetSettings, handleSettingChange, getSettings, openSettings, closeSettings } from '../components/settings.js';
 import { deleteAllChats, autoDeleteOldChats, loadChat, saveMessageToHistory, getChatHistory } from '../components/history.js';
 import { sendMsg, sendFeedback } from '../components/api.js';
+import { loadAppConfig } from '../components/app-config.js';
 
 // Function to get or create an anonymous user ID
 function getAnonymousUserId() {
@@ -20,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         expectedCaptcha: null,
         useFirstAvatar: true,
         settings: getSettings(),
+        config: null,
 
         init() {
             loadSettings();
@@ -89,6 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         startNewChat() {
             this.conversationId = null;
+            const welcomeMessages = this.config?.branding?.welcome_messages;
+            const welcomeText = Array.isArray(welcomeMessages) && welcomeMessages.length > 0
+                ? welcomeMessages[0]
+                : "Hallo! Ich bin dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?";
             document.getElementById('messages').innerHTML = `
                 <div id="welcome-message">
                     <div class="message ai">
@@ -96,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <img src="/assets/images/smoky_klein.png" alt="Bot Avatar">
                         </div>
                         <div class="bubble">
-                            <span>Hallo! Ich bin dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?</span>
+                            <span>${welcomeText}</span>
                         </div>
                     </div>
                 </div>`;
@@ -198,5 +204,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    app.init();
+    loadAppConfig()
+        .then((config) => {
+            app.config = config;
+            app.init();
+        })
+        .catch(() => {
+            app.init();
+        });
 });

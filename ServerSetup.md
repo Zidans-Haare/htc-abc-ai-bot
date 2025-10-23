@@ -1,5 +1,7 @@
 # ServerSetup
 
+> Schnellstart: Für automatisierte Installationen samt Branding-Anpassungen steht jetzt das Ansible-Playbook `deploy/provision.yml` zur Verfügung (`ansible-playbook -i <host>, -u <user> deploy/provision.yml`). Die folgenden Schritte beschreiben weiterhin die manuelle Vorgehensweise.
+
 ## 1. Basis-System vorbereiten
 Hinweis (Debian): Manche Minimal-Images liefern `sudo` nicht mit. In dem Fall zuerst als `root` `apt install sudo` ausfuehren und den Zielbenutzer per `usermod -aG sudo <BENUTZERNAME>` in die sudo-Gruppe aufnehmen.
 1. Systempakete aktualisieren

@@ -3,10 +3,19 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { User, AuthSession } = require('./db.cjs');
+const { getSection } = require('../../config');
 
 // Session timeout configurations (in milliseconds)
-const SESSION_INACTIVITY_TIMEOUT_MS = (parseInt(process.env.SESSION_INACTIVITY_TIMEOUT_MINUTES) || 1440) * 60 * 1000;
-const SESSION_MAX_DURATION_MS = (parseInt(process.env.SESSION_MAX_DURATION_MINUTES) || 43200) * 60 * 1000;
+const securityConfig = getSection('security', {});
+const inactivityMinutes = parseInt(process.env.SESSION_INACTIVITY_TIMEOUT_MINUTES, 10)
+  || parseInt(securityConfig.session_timeout_minutes, 10)
+  || 1440;
+const maxDurationMinutes = parseInt(process.env.SESSION_MAX_DURATION_MINUTES, 10)
+  || parseInt(securityConfig.session_max_duration_minutes, 10)
+  || 43200;
+
+const SESSION_INACTIVITY_TIMEOUT_MS = inactivityMinutes * 60 * 1000;
+const SESSION_MAX_DURATION_MS = maxDurationMinutes * 60 * 1000;
 
 async function createSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');

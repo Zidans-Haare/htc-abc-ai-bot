@@ -1,0 +1,372 @@
+---
+- name: Provision HTW AI Bot
+  hosts: all
+  become: true
+
+  vars_prompt:
+    - name: app_repo_url
+      prompt: "Git repository URL"
+      private: no
+      default: "https://github.com/Zidans-Haare/htw-ai-bot.git"
+    - name: app_repo_branch
+      prompt: "Git branch to deploy"
+      private: no
+      default: "main"
+    - name: install_path
+      prompt: "Target install path on the server"
+      private: no
+      default: "/opt/htw-ai-bot"
+    - name: deployment_domain
+      prompt: "Public domain of the deployment"
+      private: no
+      default: "aski.htw-dresden.de"
+    - name: storage_uploads
+      prompt: "Uploads directory (relative to project root)"
+      private: no
+      default: "uploads"
+    - name: storage_backups
+      prompt: "Backups directory (relative to project root)"
+      private: no
+      default: "backups"
+    - name: branding_organization_name
+      prompt: "Branding: organization name"
+      private: no
+      default: "HTW Dresden"
+    - name: branding_app_name
+      prompt: "Branding: application name"
+      private: no
+      default: "HTW ABC AI Bot"
+    - name: branding_primary_color
+      prompt: "Branding: primary color (hex)"
+      private: no
+      default: "#00703C"
+    - name: branding_secondary_color
+      prompt: "Branding: secondary color (hex)"
+      private: no
+      default: "#96C93D"
+    - name: branding_accent_color
+      prompt: "Branding: accent color (hex)"
+      private: no
+      default: "#FFB600"
+    - name: branding_footer_text
+      prompt: "Branding: footer text"
+      private: no
+      default: "© 2025 HTW Dresden – Alle Rechte vorbehalten."
+    - name: branding_logo_light
+      prompt: "Branding: public path to light logo"
+      private: no
+      default: "/assets/images/HTW.svg"
+    - name: branding_logo_light_source
+      prompt: "Local path to light logo file (leave empty to keep default)"
+      private: no
+      default: ""
+    - name: branding_logo_dark
+      prompt: "Branding: public path to dark logo"
+      private: no
+      default: "/assets/images/HTW_hell.png"
+    - name: branding_logo_dark_source
+      prompt: "Local path to dark logo file (leave empty to keep default)"
+      private: no
+      default: ""
+    - name: branding_logo_square
+      prompt: "Branding: public path to square logo"
+      private: no
+      default: "/assets/images/HTW_square.png"
+    - name: branding_logo_square_source
+      prompt: "Local path to square logo file (leave empty to keep default)"
+      private: no
+      default: ""
+    - name: branding_favicon
+      prompt: "Branding: public path to favicon"
+      private: no
+      default: "/assets/images/favicon.ico"
+    - name: branding_favicon_source
+      prompt: "Local path to favicon file (leave empty to keep default)"
+      private: no
+      default: ""
+    - name: branding_welcome_message_de
+      prompt: "Welcome message (primary language)"
+      private: no
+      default: "Hallo! Ich bin dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?"
+    - name: branding_welcome_message_en
+      prompt: "Welcome message (secondary language)"
+      private: no
+      default: "Hello! I am your AI assistant from HTW Dresden. How can I support you?"
+    - name: branding_welcome_message_extra
+      prompt: "Additional welcome message (optional)"
+      private: no
+      default: ""
+    - name: ai_provider
+      prompt: "AI provider identifier"
+      private: no
+      default: "openai"
+    - name: ai_model
+      prompt: "AI model identifier"
+      private: no
+      default: "gpt-4o-mini"
+    - name: ai_temperature
+      prompt: "AI temperature"
+      private: no
+      default: "0.2"
+    - name: ai_max_tokens
+      prompt: "AI max tokens"
+      private: no
+      default: "1024"
+    - name: ai_streaming
+      prompt: "Enable AI streaming (yes/no)"
+      private: no
+      default: "yes"
+    - name: ai_system_prompt
+      prompt: "Custom system prompt (leave empty for default)"
+      private: no
+      default: ""
+    - name: ai_follow_up_prompt
+      prompt: "Custom follow-up prompt (leave empty for default)"
+      private: no
+      default: ""
+    - name: ai_api_key
+      prompt: "AI API key"
+      private: yes
+    - name: node_env
+      prompt: "Node environment"
+      private: no
+      default: "production"
+    - name: app_port
+      prompt: "Application port"
+      private: no
+      default: "3000"
+    - name: database_type
+      prompt: "Primary database type (sqlite/postgresql/mysql)"
+      private: no
+      default: "sqlite"
+    - name: database_url
+      prompt: "DATABASE_URL"
+      private: no
+      default: "file:abc.db"
+    - name: vector_db_type
+      prompt: "Vector DB type (none/chroma/weaviate)"
+      private: no
+      default: "none"
+    - name: embedding_library
+      prompt: "Embedding library (xenova/huggingface)"
+      private: no
+      default: "xenova"
+    - name: install_pm2
+      prompt: "Install and configure PM2 (yes/no)"
+      private: no
+      default: "yes"
+    - name: run_prisma_migrations
+      prompt: "Run prisma migrate deploy (yes/no)"
+      private: no
+      default: "yes"
+    - name: pm2_process_name
+      prompt: "PM2 process name"
+      private: no
+      default: "htw"
+    - name: backing_service_user
+      prompt: "System user owning the deployment (leave empty to reuse current user)"
+      private: no
+      default: ""
+
+  vars:
+    project_root: "{{ install_path | default('/opt/htw-ai-bot') }}"
+    repo_url: "{{ app_repo_url }}"
+    project_branch: "{{ app_repo_branch | default('main') }}"
+    storage_uploads_path: "{{ storage_uploads | default('uploads') }}"
+    storage_backups_path: "{{ storage_backups | default('backups') }}"
+    app_user: "{{ ((backing_service_user | default('')) | length > 0) | ternary(backing_service_user, ansible_user_id) }}"
+    app_user_home: "{{ (app_user == 'root') | ternary('/root', '/home/' + app_user) }}"
+    default_system_prompt: |
+      --system prompt--
+      You are a customer support agent dedicated to answering questions, resolving issues,
+      and providing helpful solutions promptly. Maintain a friendly and professional tone in all interactions.
+
+      Ensure responses are concise, clear, and directly address the user's concerns. Try to answer to the point and be super helpful and positive.
+      Escalate complex issues to human agents when necessary to ensure customer satisfaction.
+
+      {{ '{{DATE_TIME}}' }}
+      {{ '{{TIMEZONE_INFO}}' }}
+
+      Contact data includes Name, Responsibility, Email, Phone number, Room, and talking hours.
+      Whenever you recommend a contact or advise to contact someone, provide complete contact data
+      for all relevant individuals, including: Name, Responsibility, Email, Phone number, Room, and talking hours.
+
+      If multiple persons are responsible, briefly explain the difference between them and provide full contact data for each.
+
+      If there are diverging answers for long and short term students, and the user did not yet specify their status,
+      ask for clarification and point out the difference.
+
+      **Knowledgebase of the {{ '{{ORGANIZATION_NAME}}' }}**:
+      {{ '{{KNOWLEDGEBASE}}' }}
+
+      **Image List**:
+      {{ '{{IMAGE_LIST}}' }}
+
+      If an image is in the Image List that helps to answer the user question, add the image link to the answer.
+      Format the url in markdown: "\n\n ![](/uploads/images/<image_name>) \n\n"
+
+      --
+
+      If you can not answer a question about the {{ '{{ORGANIZATION_NAME}}' }} from the Knowledgebase,
+      add the chars "<+>" at the end of the answer.
+
+      --
+    default_follow_up_prompt: |
+      Ask if the user needs more details and suggest two related questions they could ask next.
+
+  pre_tasks:
+    - name: Normalize boolean prompts
+      ansible.builtin.set_fact:
+        install_pm2_flag: "{{ (install_pm2 | default('yes')) | lower in ['yes', 'y', 'true', '1'] }}"
+        run_migrations_flag: "{{ (run_prisma_migrations | default('yes')) | lower in ['yes', 'y', 'true', '1'] }}"
+        ai_streaming_flag: "{{ (ai_streaming | default('yes')) | lower in ['yes', 'y', 'true', '1'] }}"
+        ai_streaming_string: "{{ ( (ai_streaming | default('yes')) | lower in ['yes', 'y', 'true', '1'] ) | ternary('true', 'false') }}"
+
+    - name: Build welcome messages list
+      ansible.builtin.set_fact:
+        branding_welcome_messages: "{{ [branding_welcome_message_de, branding_welcome_message_en, branding_welcome_message_extra | default('')] | reject('equalto', '') | list }}"
+
+    - name: Ensure project parent directory exists
+      ansible.builtin.file:
+        path: "{{ project_root | dirname }}"
+        state: directory
+        mode: '0755'
+
+  tasks:
+    - name: Install base packages
+      ansible.builtin.apt:
+        name:
+          - curl
+          - git
+          - build-essential
+        state: present
+        update_cache: true
+      when: ansible_os_family == 'Debian'
+
+    - name: Install NodeSource repository
+      ansible.builtin.shell: |
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+      args:
+        executable: /bin/bash
+        creates: /etc/apt/sources.list.d/nodesource.list
+      when: ansible_os_family == 'Debian'
+
+    - name: Install Node.js 20.x
+      ansible.builtin.apt:
+        name: nodejs
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Ensure project directory exists
+      ansible.builtin.file:
+        path: "{{ project_root }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+
+    - name: Clone application repository
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ project_root }}"
+        version: "{{ project_branch }}"
+        force: true
+      become_user: "{{ app_user }}"
+
+    - name: Ensure branding asset directories exist
+      ansible.builtin.file:
+        path: "{{ project_root }}/public{{ item.relative | dirname }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+      loop:
+        - { source: "{{ branding_logo_light_source }}", relative: "{{ branding_logo_light }}" }
+        - { source: "{{ branding_logo_dark_source }}", relative: "{{ branding_logo_dark }}" }
+        - { source: "{{ branding_logo_square_source }}", relative: "{{ branding_logo_square }}" }
+        - { source: "{{ branding_favicon_source }}", relative: "{{ branding_favicon }}" }
+      when: item.source | default('') | length > 0
+
+    - name: Upload custom branding assets
+      ansible.builtin.copy:
+        src: "{{ item.source }}"
+        dest: "{{ project_root }}/public{{ item.relative }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0644'
+      loop:
+        - { source: "{{ branding_logo_light_source }}", relative: "{{ branding_logo_light }}" }
+        - { source: "{{ branding_logo_dark_source }}", relative: "{{ branding_logo_dark }}" }
+        - { source: "{{ branding_logo_square_source }}", relative: "{{ branding_logo_square }}" }
+        - { source: "{{ branding_favicon_source }}", relative: "{{ branding_favicon }}" }
+      loop_control:
+        label: "{{ item.relative }}"
+      when: item.source | default('') | length > 0
+
+    - name: Render config/app.yml from template
+      ansible.builtin.template:
+        src: templates/app_config.yml.j2
+        dest: "{{ project_root }}/config/app.yml"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0644'
+
+    - name: Render environment file
+      ansible.builtin.template:
+        src: templates/env.j2
+        dest: "{{ project_root }}/.env"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0640'
+
+    - name: Ensure storage directories exist
+      ansible.builtin.file:
+        path: "{{ project_root }}/{{ item }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+      loop:
+        - "{{ storage_uploads_path }}"
+        - "{{ storage_backups_path }}"
+
+    - name: Install npm dependencies
+      ansible.builtin.command: npm install
+      args:
+        chdir: "{{ project_root }}"
+      become_user: "{{ app_user }}"
+
+    - name: Build production bundle
+      ansible.builtin.command: npm run build
+      args:
+        chdir: "{{ project_root }}"
+      environment:
+        NODE_ENV: production
+      become_user: "{{ app_user }}"
+
+    - name: Run prisma migrations
+      ansible.builtin.command: npx prisma migrate deploy
+      args:
+        chdir: "{{ project_root }}"
+      become_user: "{{ app_user }}"
+      when: run_migrations_flag
+
+    - name: Install PM2 globally
+      ansible.builtin.command: npm install -g pm2
+      when: install_pm2_flag
+
+    - name: Configure PM2 process
+      ansible.builtin.command: pm2 start ecosystem.config.js --name "{{ pm2_process_name }}"
+      args:
+        chdir: "{{ project_root }}"
+      become_user: "{{ app_user }}"
+      when: install_pm2_flag
+
+    - name: Save PM2 startup configuration
+      ansible.builtin.command: pm2 save
+      become_user: "{{ app_user }}"
+      when: install_pm2_flag
+
+    - name: Generate PM2 startup service
+      ansible.builtin.command: pm2 startup systemd -u {{ app_user }} --hp {{ app_user_home }}
+      when: install_pm2_flag

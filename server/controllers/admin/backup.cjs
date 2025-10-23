@@ -13,7 +13,9 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const upload = multer({ dest: 'temp/' });
 
-const BACKUP_PATH = process.env.BACKUP_PATH || 'backups';
+const { getSection } = require('../../../config');
+
+const BACKUP_PATH = process.env.BACKUP_PATH || getSection('storage.backups_path', 'backups');
 let backupInProgress = false;
 
 async function getSchemaHash() {

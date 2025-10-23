@@ -14,13 +14,69 @@ const winston = require('winston');
 const promClient = require('prom-client');
 const bcrypt = require('bcryptjs');
 const { execSync } = require('child_process');
+const { getConfig, getSection, ensureConfigFile } = require('../config');
 
 
 
 // --- Initializations ---
 dotenv.config();
 
-const UPLOAD_LIMIT_MB = parseInt(process.env.UPLOAD_LIMIT_MB) || 10;
+ensureConfigFile();
+const appConfig = getConfig();
+const storageConfig = getSection('storage', {});
+const securityConfig = getSection('security', {});
+const backupPathSetting = process.env.BACKUP_PATH || storageConfig.backups_path || 'backups';
+const uploadsPathSetting = storageConfig.uploads_path || 'uploads';
+
+const aiConfig = getSection('ai', {});
+if (!process.env.AI_PROVIDER && aiConfig.provider) {
+  process.env.AI_PROVIDER = aiConfig.provider;
+}
+if (!process.env.AI_MODEL && aiConfig.model) {
+  process.env.AI_MODEL = aiConfig.model;
+}
+if (!process.env.AI_TEMPERATURE && aiConfig.temperature !== undefined) {
+  process.env.AI_TEMPERATURE = String(aiConfig.temperature);
+}
+const streamingSetting = parseBoolean(aiConfig.streaming);
+if (!process.env.AI_STREAMING && streamingSetting !== undefined) {
+  process.env.AI_STREAMING = streamingSetting ? 'true' : 'false';
+}
+
+const resolveRootPath = (maybePath, fallback) => {
+  const target = maybePath || fallback;
+  if (!target) {
+    return path.resolve(__dirname, '..');
+  }
+  return path.isAbsolute(target) ? target : path.resolve(__dirname, '..', target);
+};
+
+const parseBoolean = (value) => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+  return undefined;
+};
+
+const resolvedUploadsPath = resolveRootPath(uploadsPathSetting, 'uploads');
+const resolvedBackupPath = resolveRootPath(backupPathSetting, 'backups');
+
+const rateLimitWindowMinutes = parseInt(securityConfig.rate_limit_window_minutes, 10) || 15;
+const rateLimitWindowMs = rateLimitWindowMinutes * 60 * 1000;
+const apiRateLimitRequests = parseInt(securityConfig.rate_limit_requests, 10) || 100;
+const dashboardRateLimitRequests = parseInt(securityConfig.dashboard_rate_limit_requests, 10)
+  || Math.max(apiRateLimitRequests, 500);
+const loginRateLimitWindowMinutes = parseInt(securityConfig.login_rate_limit_window_minutes, 10) || 60;
+const loginRateLimitWindowMs = loginRateLimitWindowMinutes * 60 * 1000;
+const loginRateLimitAttempts = parseInt(securityConfig.login_rate_limit_attempts, 10) || 6;
+
+const configUploadLimit = parseInt(getSection('storage.upload_limit_mb', 10), 10) || 10;
+const UPLOAD_LIMIT_MB = parseInt(process.env.UPLOAD_LIMIT_MB, 10) || configUploadLimit;
 
 // Env validation
 const envSchema = Joi.object({
@@ -84,8 +140,10 @@ const auth = require('./controllers/authController.cjs');
 const viewController = require('./controllers/viewController.cjs');
 const dashboardController = require('./controllers/dashboardController.cjs');
 const imageController = require('./controllers/imageController.cjs');
+const configController = require('./controllers/configController.cjs');
 const { swaggerUi, specs } = require('./swagger.js');
 const app = express();
+app.locals.appConfig = appConfig;
 // Trust proxy layers for correct client IP detection (default 2: Cloudflare -> Nginx -> Node.js)
 app.set('trust proxy', process.env.TRUST_PROXY_COUNT || 2);
 const port = process.env.PORT || 3000;
@@ -183,24 +241,24 @@ function logAction(user, action) {
 
 // --- Security & Rate Limiting ---
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100,
+    windowMs: rateLimitWindowMs,
+    max: apiRateLimitRequests,
     standardHeaders: true,
     legacyHeaders: false,
     trustProxy: parseInt(process.env.TRUST_PROXY_COUNT) || 2,
 });
 
 const dashboardLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500, // Higher limit for dashboard API calls
+    windowMs: rateLimitWindowMs,
+    max: dashboardRateLimitRequests,
     standardHeaders: true,
     legacyHeaders: false,
     trustProxy: parseInt(process.env.TRUST_PROXY_COUNT) || 2,
 });
 
 const loginLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 6,
+    windowMs: loginRateLimitWindowMs,
+    max: loginRateLimitAttempts,
     message: "Too many login attempts from this IP, please try again after an hour",
     standardHeaders: true,
     legacyHeaders: false,
@@ -401,6 +459,12 @@ app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
 app.use('/api/login', loginLimiter); // Login limiter
 app.use('/api', apiLimiter); // General limiter LAST
 
+app.get('/api/config/ui', configController.getUiConfig);
+app.get(
+  '/api/config/server',
+  requireRole('admin', '/insufficient-permissions'),
+  configController.getServerConfig,
+);
 app.post('/api/chat', streamChat);
 app.post('/api/test-api-key', testApiKey);
 app.get('/api/suggestions', getSuggestions);
@@ -523,8 +587,8 @@ app.use('/admin', async (req, res, next) => {
 }, express.static(path.join(__dirname, '..', 'dist', 'src', 'admin'), staticAssetOptions));
 
 // --- Uploads Static ---
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
-app.use('/uploads/images', express.static(path.join(__dirname, '..', 'uploads', 'images')));
+app.use('/uploads', express.static(resolvedUploadsPath));
+app.use('/uploads/images', express.static(path.join(resolvedUploadsPath, 'images')));
 
 // --- Backup Static ---
 app.use('/backup', async (req, res, next) => {
@@ -534,7 +598,7 @@ app.use('/backup', async (req, res, next) => {
     return next();
   }
   res.status(403).json({ error: 'Forbidden' });
-}, express.static(path.join(__dirname, '..', process.env.BACKUP_PATH || 'backups')));
+}, express.static(resolvedBackupPath));
 
 // --- Favicon & 404 ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());

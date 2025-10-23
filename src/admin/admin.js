@@ -1,4 +1,5 @@
 import '../styles/tailwind-backend.css';
+import { loadAppConfig } from '../components/app-config.js';
 import { fetchAndParse, overrideFetch } from './utils.js';
 import { initArticles, allArticles, loadArticles, selectArticle, getCurrentId, loadEntry, saveEntry } from './articles.js';
 import { initQuestions } from './questions.js';
@@ -15,6 +16,7 @@ import { initStats } from './stats.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
+  await loadAppConfig();
 
   // Validate session before proceeding
   try {

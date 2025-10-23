@@ -1,7 +1,9 @@
 import '../styles/tailwind-backend.css';
+import { loadAppConfig } from '../components/app-config.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Login page loaded, initializing...');
+  await loadAppConfig();
   const loginForm = document.getElementById('login-form');
   const userInput = document.getElementById('login-user');
   const passInput = document.getElementById('login-pass');

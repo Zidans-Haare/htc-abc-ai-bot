@@ -1,7 +1,9 @@
 import '../styles/tailwind-main.css';
 import { renderMarkup } from '../components/markup.js';
+import { loadAppConfig } from '../components/app-config.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadAppConfig();
     const container = document.getElementById('articles-container');
     const sortToggle = document.getElementById('sort-toggle');
     let currentSort = 'alpha'; // Initial sort is alphabetical

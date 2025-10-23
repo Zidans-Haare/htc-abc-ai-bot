@@ -1,4 +1,5 @@
 import { i18n, i18n_feedback } from './config.js';
+import { getAppConfigSync } from './app-config.js';
 import { renderMarkup } from './markup.js';
 import { getChatHistory, exportHistory, importHistory } from './history.js';
 import { processImagesInBubble } from './imageLightbox.js';
@@ -307,13 +308,14 @@ export function applyUI(settings) {
     const isDarkMode = settings.theme === 'dark' || (settings.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     root.classList.toggle('dark-mode', isDarkMode);
     
-    // Logo switching for dark theme
-    const logos = document.querySelectorAll('.logo, .header-logo');
-    logos.forEach(logo => {
-        if (isDarkMode) {
-            logo.src = logo.src.replace('HTW.svg', 'HTW_hell.png');
-        } else {
-            logo.src = logo.src.replace('HTW_hell.png', 'HTW.svg');
+    // Logo switching for dark theme using branding variants
+    const logos = document.querySelectorAll('[data-app-logo]');
+    logos.forEach((logo) => {
+        const lightVariant = logo.dataset.logoLight || logo.getAttribute('src');
+        const darkVariant = logo.dataset.logoDark || lightVariant;
+        const targetSrc = isDarkMode ? darkVariant : lightVariant;
+        if (targetSrc) {
+            logo.setAttribute('src', targetSrc);
         }
     });
     
@@ -402,11 +404,14 @@ export function startWelcomeAnimation() {
     const welcomeText = document.querySelector('#welcome-message .bubble span');
     if (!welcomeBubble || !welcomeText) return;
 
-    const messages = [
-        "Hallo! Ich bin dein AI-Assistent der HTW Dresden.",
-        "Hello! I am your AI assistant from HTW Dresden.",
-        "你好！我是你来自德累斯顿应用技术大学的 AI 助手。"
-    ];
+    const branding = getAppConfigSync()?.branding;
+    const messages = Array.isArray(branding?.welcome_messages) && branding.welcome_messages.length > 0
+        ? branding.welcome_messages
+        : [
+            "Hallo! Ich bin dein AI-Assistent der HTW Dresden.",
+            "Hello! I am your AI assistant from HTW Dresden.",
+            "你好！我是你来自德累斯顿应用技术大学的 AI 助手。"
+        ];
 
     let messageIndex = 0;
     
@@ -472,8 +477,12 @@ export function showCreditsAnimation() {
     const messagesContainer = document.getElementById('messages');
     messagesContainer.innerHTML = ''; // Clear the chat
 
+    const branding = getAppConfigSync()?.branding;
+    const organizationName = branding?.organization_name || 'HTW Dresden';
+    const organizationLogo = branding?.logo?.light || '/assets/images/HTW.svg';
+
     const credits = [
-        { name: 'Dieses Projekt wurde in Zusammenarbeit von StuRa und Faranto entwickelt, danke an alle Untersützer:', avatar: '/assets/images/HTW.svg' },
+        { name: `Dieses Projekt wurde in Zusammenarbeit von StuRa und Faranto entwickelt, danke an alle Unterstützer von ${organizationName}:`, avatar: organizationLogo },
         { name: 'Nick', avatar: '/assets/images/stu_klein.png' },
         { name: 'Jan', avatar: '/assets/images/smoky_klein.png' },
         { name: 'Hannes', avatar: '/assets/images/smoky_klein.png' },

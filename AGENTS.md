@@ -26,6 +26,9 @@
 - Font Modernization: Self-hosted fonts (Roboto, Inter, Font Awesome) replaced with npm packages (@fontsource/roboto, @fontsource/inter, @fortawesome/fontawesome-free) for better bundling and maintenance. Font files removed from public/assets/fonts/.
 - Tailwind CSS is integrated with Vite using PostCSS v4. Content paths specified via @source directives in src/styles/tailwind-main.css and src/styles/tailwind-backend.css for separate purging. Configs: tailwind.postcss.config.main.js and tailwind.postcss.config.backend.js. Vite handles building, bundling, and hot-reload automatically.
 
+- Configuration is centralized via `config/app.yml` (template in `config/app.example.yml`). The Node server loads it through `config/index.js`, falls back to the example defaults, and exposes subsets via `/api/config/ui` and `/api/config/server`. Frontend pages request `/api/config/ui` (`src/components/app-config.js`) and adjust logos/colors dynamically using `data-app-logo` attributes.
+- Provisioning is automated with `deploy/provision.yml` (Ansible). The playbook installs Node, clones the repo, renders `.env` and `config/app.yml`, uploads optional branding assets, runs `npm install`, `npm run build`, and optionally configures PM2. Invoke with `ansible-playbook -i <host>, deploy/provision.yml` from the operator machine. Prompts cover colors, logos, AI setup, and DB credentials.
+
 - Tailwind purging: Ensure @source paths are relative to src/styles/ and use source(none) for separate scans. Check tailwind.postcss.config.*.js.
 
 - General: Check AGENTS.md for project quirks; run npm run build to verify.
