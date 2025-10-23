@@ -510,8 +510,14 @@ const serverCallback = async () => {
       console.log('\n\nDatabase tables not yet initialized (expected on first run), creating them now...\n\n');
       // If table doesn't exist, latestVersion remains undefined, will trigger db push
     }
-    if (!latestVersion || latestVersion.version !== currentVersion) {
-      console.log('App version changed or not tracked, applying migrations...');
+    if (!latestVersion) {
+      // First run on empty DB, use db push
+      console.log('Initializing database with schema...');
+      execSync('npx prisma db push', { stdio: 'inherit' });
+      console.log('✓ Database initialized');
+    } else if (latestVersion.version !== currentVersion) {
+      // Version change, use migrate deploy
+      console.log('App version changed, applying migrations...');
       execSync('npx prisma migrate deploy', { stdio: 'inherit' });
       console.log('✓ Migrations applied');
     }
