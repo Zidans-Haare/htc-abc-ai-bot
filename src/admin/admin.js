@@ -16,6 +16,24 @@ import { initStats } from './stats.js';
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Admin page loaded, initializing...');
 
+  // Validate session before proceeding
+  try {
+    const res = await fetch('/api/validate');
+    if (!res.ok) {
+      console.log('Session invalid, redirecting to login...');
+      sessionStorage.removeItem('userRole');
+      window.location.href = '/login/';
+      return;
+    }
+    const data = await res.json();
+    sessionStorage.setItem('userRole', data.role); // Ensure role is set
+  } catch (err) {
+    console.error('Session validation error:', err);
+    sessionStorage.removeItem('userRole');
+    window.location.href = '/login/';
+    return;
+  }
+
   // Mobile detection logging
   const logMobileStatus = () => {
     const width = window.innerWidth;

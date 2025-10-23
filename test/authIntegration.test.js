@@ -120,4 +120,104 @@ describe('Auth Integration Tests', () => {
       expect(AuthSession.deleteMany).toHaveBeenCalledWith({ where: { token: 'token123' } });
     });
   });
+
+  describe('Role-based login and validation', () => {
+    it('should login admin user successfully', async () => {
+      const mockUser = { id: 'userId', username: 'admin', password: 'hashed', role: 'admin' };
+      User.findFirst.mockResolvedValue(mockUser);
+      bcrypt.compare.mockResolvedValue(true);
+      AuthSession.create.mockResolvedValue({ id: 'sessionId', token: 'token123' });
+
+      const response = await request(app)
+        .post('/auth/login')
+        .send({ username: 'admin', password: 'pass' });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ role: 'admin' });
+    });
+
+    it('should login editor user successfully', async () => {
+      const mockUser = { id: 'userId', username: 'editor', password: 'hashed', role: 'editor' };
+      User.findFirst.mockResolvedValue(mockUser);
+      bcrypt.compare.mockResolvedValue(true);
+      AuthSession.create.mockResolvedValue({ id: 'sessionId', token: 'token123' });
+
+      const response = await request(app)
+        .post('/auth/login')
+        .send({ username: 'editor', password: 'pass' });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ role: 'editor' });
+    });
+
+    it('should login entwickler user successfully', async () => {
+      const mockUser = { id: 'userId', username: 'entwickler', password: 'hashed', role: 'entwickler' };
+      User.findFirst.mockResolvedValue(mockUser);
+      bcrypt.compare.mockResolvedValue(true);
+      AuthSession.create.mockResolvedValue({ id: 'sessionId', token: 'token123' });
+
+      const response = await request(app)
+        .post('/auth/login')
+        .send({ username: 'entwickler', password: 'pass' });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ role: 'entwickler' });
+    });
+  });
+
+  describe('Invalid credentials and tokens', () => {
+    it('should return 401 for wrong password', async () => {
+      const mockUser = { id: 'userId', username: 'user', password: 'hashed', role: 'admin' };
+      User.findFirst.mockResolvedValue(mockUser);
+      bcrypt.compare.mockResolvedValue(false);
+
+      const response = await request(app)
+        .post('/auth/login')
+        .send({ username: 'user', password: 'wrongpass' });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ error: 'Invalid credentials' });
+    });
+
+    it('should return 401 for non-existent user', async () => {
+      User.findFirst.mockResolvedValue(null);
+
+      const response = await request(app)
+        .post('/auth/login')
+        .send({ username: 'nonexistent', password: 'pass' });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ error: 'Invalid credentials' });
+    });
+
+    it('should return 401 for validate with invalid token', async () => {
+      AuthSession.findFirst.mockResolvedValue(null);
+
+      const response = await request(app)
+        .get('/auth/validate')
+        .set('Cookie', ['session_token=invalidtoken']);
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ valid: false, error: 'Invalid or expired token' });
+    });
+
+    it('should return 401 for validate with expired session', async () => {
+      const mockSession = {
+        updated_at: new Date(Date.now() - 25 * 60 * 60 * 1000), // 25 hours ago
+        created_at: new Date(),
+        expires_at: new Date(Date.now() + 1000000),
+        user: { username: 'user', role: 'admin' }
+      };
+      AuthSession.findFirst.mockResolvedValue(mockSession);
+      AuthSession.deleteMany.mockResolvedValue();
+
+      const response = await request(app)
+        .get('/auth/validate')
+        .set('Cookie', ['session_token=expiredtoken']);
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ valid: false, error: 'Invalid or expired token' });
+      expect(AuthSession.deleteMany).toHaveBeenCalledWith({ where: { token: 'expiredtoken' } });
+    });
+  });
 });

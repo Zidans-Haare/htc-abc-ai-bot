@@ -1472,7 +1472,21 @@ class DashboardManager {
 }
 
 // Initialize Dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Validate session before proceeding
+    try {
+        const res = await fetch('/api/validate');
+        if (!res.ok) {
+            console.log('Session invalid, redirecting to login...');
+            window.location.href = '/login/';
+            return;
+        }
+    } catch (err) {
+        console.error('Session validation error:', err);
+        window.location.href = '/login/';
+        return;
+    }
+
     window.dashboard = new DashboardManager();
 });
 
