@@ -401,7 +401,12 @@ app.get("/api/view/articles", viewController.getPublishedArticles);
 
 // --- Dashboard Routes ---
 app.use('/dash', express.static(path.join(__dirname, '..', 'dist', 'src', 'dash'), staticAssetOptions));
-app.get('/dash', (req, res) => {
+app.get('/dash', async (req, res) => {
+  const token = req.cookies.session_token;
+  const session = token && await auth.getSession(token);
+  if (!session || session.role !== 'admin') {
+    return res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
+  }
   setHtmlNoCache(res);
   res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'dash', 'index.html'));
 });
@@ -411,7 +416,12 @@ app.get('/login', (req, res) => {
   setHtmlNoCache(res);
   res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'login', 'index.html'));
 });
-app.get('/admin', (req, res) => {
+app.get('/admin', async (req, res) => {
+  const token = req.cookies.session_token;
+  const session = token && await auth.getSession(token);
+  if (!session || session.role !== 'admin') {
+    return res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
+  }
   setHtmlNoCache(res);
   res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'admin', 'index.html'));
 });
