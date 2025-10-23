@@ -7,6 +7,7 @@ const archiver = require('archiver');
 const unzipper = require('unzipper');
 const multer = require('multer');
 const crypto = require('crypto');
+const { execSync } = require('child_process');
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
@@ -264,6 +265,7 @@ module.exports = (adminAuth) => {
       let useTempDb = false;
       let tempPrisma = null;
       let tempDbPath = null;
+      let tempUrl = null;
       let upgradeSql = null;
       if (backupSchemaHash && backupSchemaHash !== currentSchemaHash && backupSchemaContent) {
         console.warn(`Schema mismatch: backup hash ${backupSchemaHash}, current hash ${currentSchemaHash}. Using temp DB with diff upgrade.`);
@@ -272,7 +274,7 @@ module.exports = (adminAuth) => {
         await fsPromises.writeFile(backupSchemaPath, backupSchemaContent);
         // Create temp DB with backup schema
         ({ tempPrisma, tempDbPath } = await createTempPrisma());
-        const tempUrl = `file:${tempDbPath}`;
+        tempUrl = `file:${tempDbPath}`;
         // Push backup schema to temp DB
         execSync(`DATABASE_URL=${tempUrl} npx prisma db push --schema ${backupSchemaPath} --accept-data-loss`, { stdio: 'inherit' });
         useTempDb = true;
