@@ -29,7 +29,7 @@ async function loadProvider(provider) {
 }
 
 async function chatCompletion(messages, options = {}) {
-  const provider = process.env.AI_PROVIDER;
+  const provider = options.backend ? (process.env.BACKEND_AI_PROVIDER || process.env.AI_PROVIDER) : process.env.AI_PROVIDER;
   if (!provider) {
     throw new Error('AI_PROVIDER environment variable not set.');
   }
@@ -38,7 +38,7 @@ async function chatCompletion(messages, options = {}) {
 }
 
 async function* chatCompletionStream(messages, options = {}) {
-  const provider = process.env.AI_PROVIDER;
+  const provider = options.backend ? (process.env.BACKEND_AI_PROVIDER || process.env.AI_PROVIDER) : process.env.AI_PROVIDER;
   if (!provider) {
     throw new Error('AI_PROVIDER environment variable not set.');
   }

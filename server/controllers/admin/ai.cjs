@@ -38,7 +38,7 @@ module.exports = (authMiddleware) => {
       const result = await chatCompletion([
         { role: 'system', content: 'Du bist ein akribischer Lektor. Antworte ausschließlich mit gültigem JSON.' },
         { role: 'user', content: prompt },
-      ], { temperature: 0.2, maxTokens: 1200 });
+      ], { temperature: 0.2, maxTokens: 2000, backend: true });
 
       const raw = result.content?.trim();
       if (!raw) {
@@ -66,7 +66,7 @@ module.exports = (authMiddleware) => {
       const result = await chatCompletion([
         { role: 'system', content: 'Du verbesserst Texte basierend auf konkreten Anweisungen. Gib ausschließlich den optimierten Text im Markdown-Format zurück.' },
         { role: 'user', content: `Anweisung: "${suggestion}"\n\nText:\n---\n${text}\n---` },
-      ], { temperature: 0.4, maxTokens: 800 });
+      ], { temperature: 0.4, maxTokens: 800, backend: true });
 
       const improvedText = result.content?.trim();
       if (!improvedText) {

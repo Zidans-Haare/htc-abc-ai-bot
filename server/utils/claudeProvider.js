@@ -10,10 +10,11 @@ async function loadClaudeSDK() {
 
 let sharedClient = null;
 
-async function getClient(explicitKey = null) {
-  const apiKey = explicitKey || process.env.AI_CLAUDE_API_KEY || process.env.AI_API_KEY;
+async function getClient(explicitKey = null, backend = false) {
+  const prefix = backend ? 'BACKEND_' : '';
+  const apiKey = explicitKey || process.env[prefix + 'AI_CLAUDE_API_KEY'] || process.env[prefix + 'AI_API_KEY'];
   if (!apiKey) {
-    throw new Error('AI_CLAUDE_API_KEY or AI_API_KEY environment variable not set.');
+    throw new Error(`${prefix}AI_CLAUDE_API_KEY or ${prefix}AI_API_KEY environment variable not set.`);
   }
 
   if (explicitKey) {
@@ -30,10 +31,11 @@ async function getClient(explicitKey = null) {
 }
 
 async function chatCompletion(messages, options = {}) {
-  const client = await getClient(options.apiKey);
-  const model = options.model || process.env.AI_CLAUDE_MODEL || process.env.AI_MODEL;
-  const temperature = options.temperature || parseFloat(process.env.AI_TEMPERATURE);
-  const maxTokens = options.maxTokens || parseInt(process.env.AI_MAX_TOKENS);
+  const prefix = options.backend ? 'BACKEND_' : '';
+  const client = await getClient(options.apiKey, options.backend);
+  const model = options.model || process.env[prefix + 'AI_CLAUDE_MODEL'] || process.env[prefix + 'AI_MODEL'];
+  const temperature = options.temperature || parseFloat(process.env[prefix + 'AI_TEMPERATURE']);
+  const maxTokens = options.maxTokens || parseInt(process.env[prefix + 'AI_MAX_TOKENS']);
 
   const response = await client.messages.create({
     model,
@@ -46,10 +48,11 @@ async function chatCompletion(messages, options = {}) {
 }
 
 async function* chatCompletionStream(messages, options = {}) {
-  const client = await getClient(options.apiKey);
-  const model = options.model || process.env.AI_CLAUDE_MODEL || process.env.AI_MODEL;
-  const temperature = options.temperature || parseFloat(process.env.AI_TEMPERATURE);
-  const maxTokens = options.maxTokens || parseInt(process.env.AI_MAX_TOKENS);
+  const prefix = options.backend ? 'BACKEND_' : '';
+  const client = await getClient(options.apiKey, options.backend);
+  const model = options.model || process.env[prefix + 'AI_CLAUDE_MODEL'] || process.env[prefix + 'AI_MODEL'];
+  const temperature = options.temperature || parseFloat(process.env[prefix + 'AI_TEMPERATURE']);
+  const maxTokens = options.maxTokens || parseInt(process.env[prefix + 'AI_MAX_TOKENS']);
 
   const stream = await client.messages.create({
     model,

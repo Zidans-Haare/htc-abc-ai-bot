@@ -1,12 +1,14 @@
 # HTW ABC AI Bot
 
-Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assistenten über eine API bereitstellt. Es umfasst ein umfassendes Admin-Panel zur Verwaltung von Inhalten und ein Dashboard zur Überwachung von Analysen.
+Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assistenten über eine API bereitstellt. Es umfasst ein umfassendes Admin-Panel zur Verwaltung von Inhalten, ein Dashboard zur Überwachung von Analysen und optionale Vektor-Datenbank-Unterstützung für erweiterte semantische Suche. Die Anwendung läuft live unter [dev.olomek.com](https://dev.olomek.com).
 
 ## ✨ Features
 
 - **KI-Chat:** Eine öffentliche Schnittstelle (`/api/chat`), die Anfragen über verschiedene KI-Provider (ChatAI, Google Gemini, Claude, XAI) beantwortet.
-- **Admin-Panel:** Eine passwortgeschützte Weboberfläche zur Verwaltung von Hochschul-ABC-Einträgen, Benutzern, Bildern und zur Überprüfung von Feedback.
+- **Admin-Panel:** Eine passwortgeschützte Weboberfläche zur Verwaltung von Hochschul-ABC-Einträgen, Benutzern, Bildern, Dokumenten und zur Überprüfung von Feedback.
 - **Dashboard:** Ein separates, geschütztes Dashboard zur Anzeige von Nutzungsstatistiken und Anwendungsdaten.
+- **Vektor-Datenbank:** Optionale Unterstützung für ChromaDB oder Weaviate zur semantischen Suche in Dokumenten und Bildern.
+- **Embeddings:** Konfigurierbare Text-Einbettungen mit Xenova oder Hugging Face Modellen für erweiterte KI-Funktionen.
 - **Sicherheit:** Die Anwendung verwendet `helmet` zur Absicherung von HTTP-Headern und `express-rate-limit` zum Schutz vor Brute-Force-Angriffen.
 - **Authentifizierung:** Admin- und Dashboard-Bereiche sind durch eine sitzungsbasierte Authentifizierung geschützt.
 
@@ -14,7 +16,9 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 
 - **Backend:** Node.js, Express.js
 - **Datenbank:** SQLite (Standard) über Prisma ORM; optional PostgreSQL/MySQL via `DATABASE_URL`
-- **Frontend:** Statisches HTML, CSS und JavaScript
+- **Vektor-DB:** Optional ChromaDB oder Weaviate für semantische Suche
+- **Embeddings:** Xenova Transformers oder Hugging Face für Text-Einbettungen
+- **Frontend:** Statisches HTML, CSS und JavaScript (gebaut mit Vite)
 - **KI:** Mehrere Provider (ChatAI, Google Gemini, Anthropic Claude, XAI)
 
 ## 🚀 Setup & Konfiguration
@@ -55,43 +59,161 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
     - `weaviate-client`: Für Weaviate als Vektor-Datenbank (wenn `VECTOR_DB_TYPE=weaviate`).
 
 2.  **Konfiguration:**
-    Erstellen Sie eine `.env`-Datei im Projektstammverzeichnis. Hinterlegen Sie dort Ihren Bearer-Token (oder API-Key) sowie optional Basis-URL, Modell und Port.
+    Erstellen Sie eine `.env`-Datei im Projektstammverzeichnis basierend auf `.env.example`. Kopieren Sie `.env.example` nach `.env` und passen Sie die Werte an.
+
+    Die wichtigsten Umgebungsvariablen sind:
 
     ```env
-    # AI Chat Configuration
-    AI_PROVIDER=chatAi  # 'chatAi' (university), 'openai' (official OpenAI), 'google', 'claude', 'xai'
-    AI_API_KEY=dein-api-key  # API key for the selected provider. Required.
-    AI_BASE_URL=https://chat-ai.academiccloud.de/v1  # Base URL for 'chatAi' or 'xai' (optional)
-    AI_MODEL=meta-llama-3.1-8b-instruct  # Model name (generic, or provider-specific)
-    AI_TEMPERATURE=0.2  # Temperature for responses (0-2)
-    AI_MAX_TOKENS=1000  # Max tokens per response
-    AI_STREAMING=true  # Enable streaming
+    # ========================================================================================
+    # AI CHAT CONFIGURATION [REQUIRED]
+    # ========================================================================================
 
-    # Provider-specific overrides (optional)
-    AI_OPENAI_API_KEY=...  # For official OpenAI
-    AI_GOOGLE_API_KEY=...  # For Google Gemini
-    AI_CLAUDE_API_KEY=...  # For Anthropic Claude
-    AI_XAI_API_KEY=...  # For XAI
+    # AI Provider Selection [REQUIRED]
+    # Options: chatAi (university), openai (official OpenAI), google (Gemini), claude (Anthropic), xai
+    AI_PROVIDER=chatAi
 
-    # Server Configuration
-    PORT=3000  # Server port (default: 3000)
-    TRUST_PROXY_COUNT=2  # Number of proxy layers (e.g., Cloudflare + Nginx)
+    # Primary API Key [REQUIRED] - Used for the selected AI_PROVIDER above
+    AI_API_KEY=dein-api-key
 
-    # Main Database Configuration
-    DATABASE_URL="file:/home/htw/htc-abc-ai-bot/hochschuhl-abc.db"  # SQLite (default)
-    # DATABASE_URL="postgresql://username:password@localhost:5432/dbname?schema=public"  # PostgreSQL example
-    # DATABASE_URL="mysql://username:password@localhost:3306/dbname"  # MySQL example
+    # Base URL for API calls [OPTIONAL] - Required for chatAi and xai providers
+    AI_BASE_URL=https://chat-ai.academiccloud.de/v1
 
-    # Session Authentication
-    SESSION_INACTIVITY_TIMEOUT_MINUTES=1440  # Time in minutes after last activity before session expires (default: 1440 for 24 hours). Also sets client-side cookie expiration.
-    SESSION_MAX_DURATION_MINUTES=43200  # Maximum session duration in minutes from creation (default: 43200 for 30 days).
+    # AI Model Selection [OPTIONAL] - Uses provider default if not specified
+    AI_MODEL=openai-gpt-oss-120b
 
-    # Vector Database Configuration
-    VECTOR_DB_TYPE=none  # Vector DB type: 'none', 'chroma', or 'weaviate' (default: none)
-    CHROMA_URL=  # Required if VECTOR_DB_TYPE=chroma
-    CHROMA_COLLECTION=  # Required if VECTOR_DB_TYPE=chroma
-    WEAVIATE_URL=  # Required if VECTOR_DB_TYPE=weaviate
-    WEAVIATE_COLLECTION=  # Required if VECTOR_DB_TYPE=weaviate
+    # Response Temperature [OPTIONAL] - Controls randomness (0.0 = deterministic, 2.0 = very random)
+    # Range: 0.0 - 2.0, Default: 0.2
+    AI_TEMPERATURE=0.2
+
+    # Maximum Response Tokens [OPTIONAL] - Limits response length
+    # Default: 1000
+    AI_MAX_TOKENS=2000
+
+    # Enable Streaming Responses [OPTIONAL] - Send responses as they are generated
+    # Options: true, false, Default: true
+    AI_STREAMING=true
+
+    # ========================================================================================
+    # BACKEND AI CONFIGURATION [OPTIONAL]
+    # ========================================================================================
+    # Option to use separate settings for the backend part of the app
+
+    # BACKEND_AI_PROVIDER=
+    # BACKEND_AI_API_KEY=
+    # BACKEND_AI_BASE_URL=
+    # BACKEND_AI_OPENAI_BASE_URL=
+    # BACKEND_AI_XAI_BASE_URL=
+    # BACKEND_AI_MODEL=
+    # BACKEND_AI_TEMPERATURE=
+    # BACKEND_AI_MAX_TOKENS=8000
+
+    # ========================================================================================
+    # SERVER CONFIGURATION [OPTIONAL]
+    # ========================================================================================
+
+    # Server Port [OPTIONAL] - Port for the Express server to listen on
+    # Default: 3000
+    PORT=3000
+
+    # Trust Proxy Count [OPTIONAL] - Number of proxy layers (e.g., Cloudflare + Nginx)
+    # Default: 2
+    TRUST_PROXY_COUNT=2
+
+    # ========================================================================================
+    # DATABASE CONFIGURATION [REQUIRED]
+    # ========================================================================================
+
+    # Main Database Connection [REQUIRED] - Supports SQLite, PostgreSQL, and MySQL
+    # SQLite (default - file-based, no server required):
+    DATABASE_URL="file:/home/htw/htc-abc-ai-bot/hochschuhl-abc.db"
+
+    # PostgreSQL example:
+    # DATABASE_URL="postgresql://username:password@localhost:5432/dbname?schema=public"
+
+    # MySQL example:
+    # DATABASE_URL="mysql://username:password@localhost:3306/dbname"
+
+    # ========================================================================================
+    # SESSION & AUTHENTICATION [OPTIONAL]
+    # ========================================================================================
+
+    # Session Inactivity Timeout [OPTIONAL] - Minutes after last activity before session expires
+    # Also sets client-side cookie expiration. Default: 1440 (24 hours)
+    SESSION_INACTIVITY_TIMEOUT_MINUTES=1440
+
+    # Maximum Session Duration [OPTIONAL] - Maximum minutes from session creation
+    # Default: 43200 (30 days)
+    SESSION_MAX_DURATION_MINUTES=43200
+
+    # ========================================================================================
+    # VECTOR DATABASE CONFIGURATION [OPTIONAL]
+    # ========================================================================================
+    # Used for document embeddings and semantic search
+
+    # Vector Database Type [OPTIONAL] - Enable vector database for advanced features
+    # Options: none (default), chroma, weaviate
+    VECTOR_DB_TYPE=none
+
+    # ChromaDB Configuration [REQUIRED if VECTOR_DB_TYPE=chroma]
+    CHROMA_URL=http://localhost:8000
+    CHROMA_COLLECTION=htw-kb
+
+    # Weaviate Configuration [REQUIRED if VECTOR_DB_TYPE=weaviate]
+    WEAVIATE_URL=http://localhost:8080
+    WEAVIATE_API_KEY=your-optional-key  # Anonymous for dev
+    WEAVIATE_COLLECTION=htw-kb
+
+    # ========================================================================================
+    # EMBEDDING CONFIGURATION [OPTIONAL]
+    # ========================================================================================
+    # Used when VECTOR_DB_TYPE is enabled
+
+    # Embedding Library [OPTIONAL] - Library for generating text embeddings
+    # Options: none (default), huggingface, openai
+    EMBEDDING_LIBRARY=xenova
+
+    # ========================================================================================
+    # ADVANCED/CUSTOM SETTINGS
+    # ========================================================================================
+
+    # Image List Mode for AI (static|simple|dynamic)
+    USE_VECTOR_IMAGES=static
+
+    # HuggingFace token for embeddings (required if EMBEDDING_LIBRARY=huggingface)
+    HF_TOKEN=hf_...
+
+    # Embedding Model Configuration
+    EMBEDDING_MODEL=all-MiniLM-L12-v2
+    EMBEDDING_DIMENSION=384
+    EMBEDDING_POOLING=mean
+    EMBEDDING_NORMALIZE=true
+
+    # Vector DB Sync Settings
+    VECTORDB_LAST_SYNC=0
+    CHUNK_SIZE=500  # Tokens per chunk (best practice: 200-1000 for RAG)
+    CHUNK_OVERLAP=50  # Overlap for context (prevents split sentences)
+    RETRIEVE_K=3  # Num chunks to retrieve (balance precision/tokens)
+    MIN_SIMILARITY=0.7  # Confidence threshold (cosine score; filter low-relevance)
+    SYNC_ON_START=false  # Auto-sync headlines on server boot (for dev; false in prod)
+
+    # GraphRAG Toggle (requires vector DB)
+    ENABLE_GRAPHRAG=false  # Set true for graph extraction
+    PDF_CHUNK_SIZE=300  # Chunk size for PDF text extraction
+    PDF_EXTRACT_TEXT_ONLY=false  # Set true to skip images in PDF extraction
+    SYNC_BATCH=100  # Batch size for vector DB sync to avoid OOM
+    DISPLAY_TOKEN_USED_FOR_QUERY=true  # Set true to show tokens sent/received in chat UI
+
+    # ========================================================================================
+    # DEVELOPMENT & DEBUGGING [OPTIONAL]
+    # ========================================================================================
+
+    # Domain for CORS and links [OPTIONAL] - Used in development
+    DOMAIN=http://localhost:3000
+
+    # Upload Size Limit [OPTIONAL] - Maximum upload size in MB
+    # Default: 10 (production: 50)
+    UPLOAD_LIMIT_MB=50
+    ```
 
 3.  **Datenbank-Initialisierung:**
      Die Anwendung verwendet Prisma für die Datenbankverwaltung. Beim ersten Start wird die Datenbank automatisch mit Tabellen und Views erstellt. Bei Versionsänderungen (z. B. nach Schema-Updates) werden Migrationen automatisch angewendet.
@@ -228,14 +350,15 @@ Der Zugriff auf das Admin-Panel (`/admin/`) und das Dashboard (`/dash/`) erforde
 
 ```
 .
-├── controllers/     # Anwendungslogik (API-Endpunkte, Datenbankinteraktionen)
-├── logs/            # Log-Dateien (z.B. audit.log)
-├── public/          # Statische Dateien (HTML, CSS, JS für Frontend, Admin, Dashboard)
-├── scripts/         # Skripte für Datenbankmigration und -initialisierung
-├── utils/           # Hilfsfunktionen (z.B. Caching, Tokenizer)
-├── .env             # Konfigurationsdatei (muss manuell erstellt werden)
-├── package.json     # Projektabhängigkeiten und Skripte
-└── server.cjs       # Hauptanwendungsdatei (Server-Setup, Middleware, Routen)
+├── prisma/          # Prisma schema and database migrations
+├── public/          # Static assets (images, documents, fonts)
+├── server/          # Server-side code (controllers, utils, server.cjs)
+├── src/             # Frontend source code (HTML, CSS, JS for bot, admin, dash, login, view)
+├── test/            # Test files and mocks
+├── .env             # Environment configuration (copy from .env.example)
+├── AGENTS.md        # Project-specific documentation for AI assistants
+├── package.json     # Dependencies and scripts
+└── README.md        # This file
 ```
 
 ## 📝 API-Endpunkte (Übersicht)
@@ -296,4 +419,4 @@ Stellen Sie sicher, dass `.env` oder `.env.test` vorhanden ist. Die Tests prüfe
 - **Nginx-Proxy:** Stellen Sie sicher, dass Nginx auf IPv4 bindet (`127.0.0.1:3000`), um 502-Fehler zu vermeiden.
 - **Vector DB Sync:** Bei Problemen mit der Vektor-Datenbank führen Sie `node scripts/migrate_to_prisma.js` aus, um alte Daten zu migrieren.
 
-Für detaillierte Logs prüfen Sie `logs/audit.log` und Konsolen-Ausgaben.
+Für detaillierte Logs prüfen Sie `logs/audit.log` und Konsolen-Ausgaben. Projekt-spezifische Details und Konfigurationstipps finden Sie in `AGENTS.md`.

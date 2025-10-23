@@ -10,10 +10,11 @@ async function loadGoogleSDK() {
 
 let sharedClient = null;
 
-async function getClient(explicitKey = null) {
-  const apiKey = explicitKey || process.env.AI_GOOGLE_API_KEY || process.env.AI_API_KEY;
+async function getClient(explicitKey = null, backend = false) {
+  const prefix = backend ? 'BACKEND_' : '';
+  const apiKey = explicitKey || process.env[prefix + 'AI_GOOGLE_API_KEY'] || process.env[prefix + 'AI_API_KEY'];
   if (!apiKey) {
-    throw new Error('AI_GOOGLE_API_KEY or AI_API_KEY environment variable not set.');
+    throw new Error(`${prefix}AI_GOOGLE_API_KEY or ${prefix}AI_API_KEY environment variable not set.`);
   }
 
   if (explicitKey) {
@@ -30,8 +31,9 @@ async function getClient(explicitKey = null) {
 }
 
 async function chatCompletion(messages, options = {}) {
-  const client = await getClient(options.apiKey);
-  const modelName = options.model || process.env.AI_GOOGLE_MODEL || process.env.AI_MODEL || 'gemini-2.5-flash';
+  const prefix = options.backend ? 'BACKEND_' : '';
+  const client = await getClient(options.apiKey, options.backend);
+  const modelName = options.model || process.env[prefix + 'AI_GOOGLE_MODEL'] || process.env[prefix + 'AI_MODEL'] || 'gemini-2.5-flash';
   const model = client.getGenerativeModel({ model: modelName });
 
   // Convert messages to Gemini format
@@ -41,8 +43,8 @@ async function chatCompletion(messages, options = {}) {
   }));
 
   const config = {
-    temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE),
-    maxOutputTokens: options.maxTokens || parseInt(process.env.AI_MAX_TOKENS),
+    temperature: options.temperature || parseFloat(process.env[prefix + 'AI_TEMPERATURE']),
+    maxOutputTokens: options.maxTokens || parseInt(process.env[prefix + 'AI_MAX_TOKENS']),
   };
 
   const result = await model.generateContent({
@@ -55,8 +57,9 @@ async function chatCompletion(messages, options = {}) {
 }
 
 async function* chatCompletionStream(messages, options = {}) {
-  const client = await getClient(options.apiKey);
-  const modelName = options.model || process.env.AI_GOOGLE_MODEL || process.env.AI_MODEL || 'gemini-2.5-flash';
+  const prefix = options.backend ? 'BACKEND_' : '';
+  const client = await getClient(options.apiKey, options.backend);
+  const modelName = options.model || process.env[prefix + 'AI_GOOGLE_MODEL'] || process.env[prefix + 'AI_MODEL'] || 'gemini-2.5-flash';
   const model = client.getGenerativeModel({ model: modelName });
 
   const contents = messages.map(msg => ({
@@ -65,8 +68,8 @@ async function* chatCompletionStream(messages, options = {}) {
   }));
 
   const config = {
-    temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE),
-    maxOutputTokens: options.maxTokens || parseInt(process.env.AI_MAX_TOKENS),
+    temperature: options.temperature || parseFloat(process.env[prefix + 'AI_TEMPERATURE']),
+    maxOutputTokens: options.maxTokens || parseInt(process.env[prefix + 'AI_MAX_TOKENS']),
   };
 
   const streamingResponse = await model.generateContentStream({
