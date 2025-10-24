@@ -163,7 +163,7 @@ async function loadBackups() {
             dokumente: 'documents',
             bilder: 'images'
           };
-          const dashboardFiles = ['article_views', 'page_views', 'daily_question_stats', 'token_usage', 'user_sessions'];
+          const dashboardFiles = ['article_views', 'page_views', 'daily_question_stats', 'daily_unanswered_stats', 'question_analysis_cache', 'token_usage', 'user_sessions', 'chat_interactions'];
           const hasDashboard = dashboardFiles.some(f => files.includes(f));
           if (hasDashboard) {
             fileMap.dashboard = 'Dashboard';

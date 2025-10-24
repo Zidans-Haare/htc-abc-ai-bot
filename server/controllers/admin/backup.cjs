@@ -38,7 +38,7 @@ module.exports = (adminAuth) => {
   // Ensure backup dir exists
   fsPromises.mkdir(BACKUP_PATH, { recursive: true }).catch(() => {});
 
-  router.post('/create', adminAuth, (req, res) => {
+  router.post('/create', adminAuth, async (req, res) => {
     if (backupInProgress) {
       return res.status(409).json({ error: 'Backup already in progress' });
     }
@@ -47,10 +47,10 @@ module.exports = (adminAuth) => {
     const filename = `backup_${timestamp}.zip`;
 
     backupInProgress = true;
-    // Start backup in background
-    createBackup({ users, artikels, fragen, conversations, dokumente, bilder, feedback, dashboard }, filename);
+    // Create backup synchronously
+    await createBackup({ users, artikels, fragen, conversations, dokumente, bilder, feedback, dashboard }, filename);
 
-    res.json({ filename, status: 'started', message: 'Backup is being created, this may take a while.' });
+    res.json({ filename, status: 'completed', message: 'Backup created successfully.' });
   });
 
   async function createBackup(options, filename) {
@@ -72,27 +72,30 @@ module.exports = (adminAuth) => {
       // Push schema to create tables
       execSync(`DATABASE_URL=file:${tempDbPath} npx prisma db push --accept-data-loss`, { stdio: 'inherit' });
 
-      // Insert data for selected tables
-      if (options.users) {
-        const data = await prisma.users.findMany();
-        const insert = tempDb.prepare('INSERT INTO users (id, username, password, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
-        for (const item of data) {
-          insert.run(item.id, item.username, item.password, item.role, item.created_at.toISOString(), item.updated_at.toISOString());
-        }
-      }
-      if (options.artikels) {
-        const data = await prisma.hochschuhl_abc.findMany();
-        const insert = tempDb.prepare('INSERT INTO hochschuhl_abc (id, article, description, editor, active, archived, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        for (const item of data) {
-          insert.run(item.id, item.article, item.description, item.editor, item.active ? 1 : 0, item.archived ? item.archived.toISOString() : null, item.created_at.toISOString(), item.updated_at.toISOString());
-        }
-      }
-      if (options.fragen) {
-        const data = await prisma.questions.findMany();
-        const insert = tempDb.prepare('INSERT INTO questions (id, question, answer, user, category_id, archived, linked_article_id, answered, spam, deleted, translation, feedback, answered_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        for (const item of data) {
-          insert.run(item.id, item.question, item.answer, item.user, item.category_id, item.archived ? 1 : 0, item.linked_article_id, item.answered ? 1 : 0, item.spam ? 1 : 0, item.deleted ? 1 : 0, item.translation, item.feedback, item.answered_at ? item.answered_at.toISOString() : null, item.created_at.toISOString(), item.updated_at.toISOString());
-        }
+       // Insert data for selected tables
+       if (options.users) {
+         const data = await prisma.users.findMany();
+         console.log(`Backing up ${data.length} users`);
+         const insert = tempDb.prepare('INSERT INTO users (id, username, password, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
+         for (const item of data) {
+           insert.run(item.id, item.username, item.password, item.role, item.created_at.toISOString(), item.updated_at.toISOString());
+         }
+       }
+       if (options.artikels) {
+         const data = await prisma.hochschuhl_abc.findMany();
+         console.log(`Backing up ${data.length} artikels`);
+         const insert = tempDb.prepare('INSERT INTO hochschuhl_abc (id, article, description, editor, active, archived, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+         for (const item of data) {
+           insert.run(item.id, item.article, item.description, item.editor, item.active ? 1 : 0, item.archived ? item.archived.toISOString() : null, item.created_at.toISOString(), item.updated_at.toISOString());
+         }
+       }
+       if (options.fragen) {
+         const data = await prisma.questions.findMany();
+         console.log(`Backing up ${data.length} fragen`);
+         const insert = tempDb.prepare('INSERT INTO questions (id, question, answer, user, category_id, archived, linked_article_id, answered, spam, deleted, translation, feedback, answered_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+         for (const item of data) {
+           insert.run(item.id, item.question, item.answer, item.user, item.category_id, item.archived ? 1 : 0, item.linked_article_id, item.answered ? 1 : 0, item.spam ? 1 : 0, item.deleted ? 1 : 0, item.translation, item.feedback, item.answered_at ? item.answered_at.toISOString() : null, item.created_at.toISOString(), item.updated_at.toISOString());
+         }
         // Add txt files
         try {
           const unanswered = await fsPromises.readFile('ai_fragen/offene_fragen.txt', 'utf8');
@@ -103,17 +106,18 @@ module.exports = (adminAuth) => {
           archive.append(faq, { name: 'faq.txt' });
         } catch {}
       }
-      if (options.conversations) {
-        const convs = await prisma.conversations.findMany({ include: { messages: true } });
-        const convInsert = tempDb.prepare('INSERT INTO conversations (id, anonymous_user_id, category, ai_confidence, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
-        const msgInsert = tempDb.prepare('INSERT INTO messages (id, conversation_id, role, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
-        for (const conv of convs) {
-          convInsert.run(conv.id, conv.anonymous_user_id, conv.category, conv.ai_confidence, conv.created_at.toISOString(), conv.updated_at.toISOString());
-          for (const msg of conv.messages) {
-            msgInsert.run(msg.id, msg.conversation_id, msg.role, msg.content, msg.created_at.toISOString(), msg.updated_at.toISOString());
-          }
-        }
-      }
+       if (options.conversations) {
+         const convs = await prisma.conversations.findMany({ include: { messages: true } });
+         console.log(`Backing up ${convs.length} conversations`);
+         const convInsert = tempDb.prepare('INSERT INTO conversations (id, anonymous_user_id, category, ai_confidence, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
+         const msgInsert = tempDb.prepare('INSERT INTO messages (id, conversation_id, role, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
+         for (const conv of convs) {
+           convInsert.run(conv.id, conv.anonymous_user_id, conv.category, conv.ai_confidence, conv.created_at.toISOString(), conv.updated_at.toISOString());
+           for (const msg of conv.messages) {
+             msgInsert.run(msg.id, msg.conversation_id, msg.role, msg.content, msg.created_at.toISOString(), msg.updated_at.toISOString());
+           }
+         }
+       }
       if (options.dokumente) {
         const docs = await prisma.documents.findMany();
         console.log(`Backing up ${docs.length} documents`);
@@ -160,69 +164,80 @@ module.exports = (adminAuth) => {
           }
         }
       }
-      if (options.feedback) {
-        const data = await prisma.feedback.findMany();
-        const insert = tempDb.prepare('INSERT INTO feedback (id, user_id, text, email, rating, conversation_id, attached_chat_history, submitted_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        for (const item of data) {
-          insert.run(item.id, item.user_id, item.text, item.email, item.rating, item.conversation_id, item.attached_chat_history, item.submitted_at.toISOString(), item.created_at.toISOString(), item.updated_at.toISOString());
-        }
-      }
-      if (options.dashboard) {
-        const articleViews = await prisma.article_views.findMany();
-        const insertAV = tempDb.prepare('INSERT INTO article_views (id, article_id, user_id, viewed_at, question_context, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        for (const item of articleViews) {
-          insertAV.run(item.id, item.article_id, item.user_id, item.viewed_at.toISOString(), item.question_context, item.created_at.toISOString(), item.updated_at.toISOString());
-        }
-        const pageViews = await prisma.page_views.findMany();
-        const insertPV = tempDb.prepare('INSERT INTO page_views (id, path, timestamp, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
-        for (const item of pageViews) {
-          insertPV.run(item.id, item.path, item.timestamp ? item.timestamp.toISOString() : null, item.created_at.toISOString(), item.updated_at.toISOString());
-        }
-        const dailyStats = await prisma.daily_question_stats.findMany();
-        const insertDS = tempDb.prepare('INSERT INTO daily_question_stats (id, analysis_date, normalized_question, question_count, topic, languages_detected, original_questions, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        for (const item of dailyStats) {
-          insertDS.run(item.id, item.analysis_date, item.normalized_question, item.question_count, item.topic, item.languages_detected, item.original_questions, item.created_at.toISOString(), item.updated_at.toISOString());
-        }
-        const dailyUnansweredStats = await prisma.daily_unanswered_stats.findMany();
-        const insertDUS = tempDb.prepare('INSERT INTO daily_unanswered_stats (id, analysis_date, normalized_question, question_count, topic, languages_detected, original_questions, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        for (const item of dailyUnansweredStats) {
-          insertDUS.run(item.id, item.analysis_date, item.normalized_question, item.question_count, item.topic, item.languages_detected, item.original_questions, item.created_at.toISOString(), item.updated_at.toISOString());
-        }
-        const questionAnalysisCache = await prisma.question_analysis_cache.findMany();
-        const insertQAC = tempDb.prepare('INSERT INTO question_analysis_cache (id, cache_key, normalized_question, question_count, topic, languages_detected, original_questions, is_processing, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        for (const item of questionAnalysisCache) {
-          insertQAC.run(item.id, item.cache_key, item.normalized_question, item.question_count, item.topic, item.languages_detected, item.original_questions, item.is_processing ? 1 : 0, item.created_at.toISOString(), item.updated_at.toISOString());
-        }
-        const tokenUsage = await prisma.token_usage.findMany();
-        const insertTU = tempDb.prepare('INSERT INTO token_usage (id, token_count, timestamp, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
-        for (const item of tokenUsage) {
-          insertTU.run(item.id, item.token_count, item.timestamp ? item.timestamp.toISOString() : null, item.created_at.toISOString(), item.updated_at.toISOString());
-        }
-        const userSessions = await prisma.user_sessions.findMany({ include: { chat_interactions: true } });
-        const sessInsert = tempDb.prepare('INSERT INTO user_sessions (id, session_id, ip_address, user_agent, started_at, last_activity, questions_count, successful_answers, ended_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        const interInsert = tempDb.prepare('INSERT INTO chat_interactions (id, session_id, question, answer, was_successful, response_time_ms, tokens_used, timestamp, error_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        for (const sess of userSessions) {
-          sessInsert.run(sess.id, sess.session_id, sess.ip_address, sess.user_agent, sess.started_at ? sess.started_at.toISOString() : null, sess.last_activity ? sess.last_activity.toISOString() : null, sess.questions_count, sess.successful_answers, sess.ended_at ? sess.ended_at.toISOString() : null, sess.created_at.toISOString(), sess.updated_at.toISOString());
-          for (const inter of sess.chat_interactions) {
-            interInsert.run(inter.id, inter.session_id, inter.question, inter.answer, inter.was_successful ? 1 : 0, inter.response_time_ms, inter.tokens_used, inter.timestamp ? inter.timestamp.toISOString() : null, inter.error_message, inter.created_at.toISOString(), inter.updated_at.toISOString());
-          }
-        }
+       if (options.feedback) {
+         const data = await prisma.feedback.findMany();
+         console.log(`Backing up ${data.length} feedback`);
+         const insert = tempDb.prepare('INSERT INTO feedback (id, user_id, text, email, rating, conversation_id, attached_chat_history, submitted_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+         for (const item of data) {
+           insert.run(item.id, item.user_id, item.text, item.email, item.rating, item.conversation_id, item.attached_chat_history, item.submitted_at.toISOString(), item.created_at.toISOString(), item.updated_at.toISOString());
+         }
+       }
+       if (options.dashboard) {
+         const articleViews = await prisma.article_views.findMany();
+         console.log(`Backing up ${articleViews.length} article_views`);
+         const insertAV = tempDb.prepare('INSERT INTO article_views (id, article_id, user_id, viewed_at, question_context, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
+         for (const item of articleViews) {
+           insertAV.run(item.id, item.article_id, item.user_id, item.viewed_at.toISOString(), item.question_context, item.created_at.toISOString(), item.updated_at.toISOString());
+         }
+         const pageViews = await prisma.page_views.findMany();
+         console.log(`Backing up ${pageViews.length} page_views`);
+         const insertPV = tempDb.prepare('INSERT INTO page_views (id, path, timestamp, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
+         for (const item of pageViews) {
+           insertPV.run(item.id, item.path, item.timestamp ? item.timestamp.toISOString() : null, item.created_at.toISOString(), item.updated_at.toISOString());
+         }
+         const dailyStats = await prisma.daily_question_stats.findMany();
+         console.log(`Backing up ${dailyStats.length} daily_question_stats`);
+         const insertDS = tempDb.prepare('INSERT INTO daily_question_stats (id, analysis_date, normalized_question, question_count, topic, languages_detected, original_questions, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+         for (const item of dailyStats) {
+           insertDS.run(item.id, item.analysis_date, item.normalized_question, item.question_count, item.topic, item.languages_detected, item.original_questions, item.created_at.toISOString(), item.updated_at.toISOString());
+         }
+         const dailyUnansweredStats = await prisma.daily_unanswered_stats.findMany();
+         console.log(`Backing up ${dailyUnansweredStats.length} daily_unanswered_stats`);
+         const insertDUS = tempDb.prepare('INSERT INTO daily_unanswered_stats (id, analysis_date, normalized_question, question_count, topic, languages_detected, original_questions, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+         for (const item of dailyUnansweredStats) {
+           insertDUS.run(item.id, item.analysis_date, item.normalized_question, item.question_count, item.topic, item.languages_detected, item.original_questions, item.created_at.toISOString(), item.updated_at.toISOString());
+         }
+         const questionAnalysisCache = await prisma.question_analysis_cache.findMany();
+         console.log(`Backing up ${questionAnalysisCache.length} question_analysis_cache`);
+         const insertQAC = tempDb.prepare('INSERT INTO question_analysis_cache (id, cache_key, normalized_question, question_count, topic, languages_detected, original_questions, is_processing, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+         for (const item of questionAnalysisCache) {
+           insertQAC.run(item.id, item.cache_key, item.normalized_question, item.question_count, item.topic, item.languages_detected, item.original_questions, item.is_processing ? 1 : 0, item.created_at.toISOString(), item.updated_at.toISOString());
+         }
+         const tokenUsage = await prisma.token_usage.findMany();
+         console.log(`Backing up ${tokenUsage.length} token_usage`);
+         const insertTU = tempDb.prepare('INSERT INTO token_usage (id, token_count, timestamp, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
+         for (const item of tokenUsage) {
+           insertTU.run(item.id, item.token_count, item.timestamp ? item.timestamp.toISOString() : null, item.created_at.toISOString(), item.updated_at.toISOString());
+         }
+         const userSessions = await prisma.user_sessions.findMany({ include: { chat_interactions: true } });
+         console.log(`Backing up ${userSessions.length} user_sessions`);
+         const sessInsert = tempDb.prepare('INSERT INTO user_sessions (id, session_id, ip_address, user_agent, started_at, last_activity, questions_count, successful_answers, ended_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+         const interInsert = tempDb.prepare('INSERT INTO chat_interactions (id, session_id, question, answer, was_successful, response_time_ms, tokens_used, timestamp, error_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+         for (const sess of userSessions) {
+           sessInsert.run(sess.id, sess.session_id, sess.ip_address, sess.user_agent, sess.started_at ? sess.started_at.toISOString() : null, sess.last_activity ? sess.last_activity.toISOString() : null, sess.questions_count, sess.successful_answers, sess.ended_at ? sess.ended_at.toISOString() : null, sess.created_at.toISOString(), sess.updated_at.toISOString());
+           for (const inter of sess.chat_interactions) {
+             interInsert.run(inter.id, inter.session_id, inter.question, inter.answer, inter.was_successful ? 1 : 0, inter.response_time_ms, inter.tokens_used, inter.timestamp ? inter.timestamp.toISOString() : null, inter.error_message, inter.created_at.toISOString(), inter.updated_at.toISOString());
+           }
+         }
       }
 
-      // Add DB to archive
-      tempDb.close();
-      archive.file(tempDbPath, { name: 'backup.db' });
-      await fsPromises.unlink(tempDbPath);
+       // Add DB to archive
+       tempDb.close();
+       console.log('Adding backup.db to archive');
+       archive.file(tempDbPath, { name: 'backup.db' });
 
-       console.log('Finalizing backup archive');
-       await new Promise((resolve, reject) => {
-         output.on('close', () => {
-           console.log(`Backup created: ${filename}`);
-           resolve();
-         });
-         output.on('error', reject);
-         archive.finalize();
-       });
+        console.log('Finalizing backup archive');
+        await new Promise((resolve, reject) => {
+          output.on('close', () => {
+            console.log(`Backup created: ${filename}`);
+            resolve();
+          });
+          output.on('error', reject);
+          archive.finalize();
+        });
+
+       // Clean up temp file after archive is complete
+       await fsPromises.unlink(tempDbPath);
     } catch (err) {
       console.error('Backup creation failed', err);
     } finally {
@@ -280,8 +295,55 @@ module.exports = (adminAuth) => {
     const filepath = path.join(BACKUP_PATH, filename);
     try {
       const directory = await unzipper.Open.file(filepath);
-      const files = directory.files.filter(f => f.type === 'File' && f.path.endsWith('.json')).map(f => f.path.replace('.json', ''));
-      res.json({ files });
+      const available = [];
+
+      // Check for backup.db and tables with data
+      const dbFile = directory.files.find(f => f.path === 'backup.db');
+      if (dbFile) {
+        const content = await dbFile.buffer();
+        const tempDbPath = path.join('temp', 'check_backup.db');
+        await fsPromises.writeFile(tempDbPath, content);
+        const tempDb = new Database(tempDbPath);
+
+        const tableChecks = {
+          users: 'SELECT COUNT(*) as count FROM users',
+          hochschuhl_abc: 'SELECT COUNT(*) as count FROM hochschuhl_abc',
+          questions: 'SELECT COUNT(*) as count FROM questions',
+          conversations: 'SELECT COUNT(*) as count FROM conversations',
+          documents: 'SELECT COUNT(*) as count FROM documents',
+          images: 'SELECT COUNT(*) as count FROM images',
+          feedback: 'SELECT COUNT(*) as count FROM feedback',
+          article_views: 'SELECT COUNT(*) as count FROM article_views',
+          page_views: 'SELECT COUNT(*) as count FROM page_views',
+          daily_question_stats: 'SELECT COUNT(*) as count FROM daily_question_stats',
+          daily_unanswered_stats: 'SELECT COUNT(*) as count FROM daily_unanswered_stats',
+          question_analysis_cache: 'SELECT COUNT(*) as count FROM question_analysis_cache',
+          token_usage: 'SELECT COUNT(*) as count FROM token_usage',
+          user_sessions: 'SELECT COUNT(*) as count FROM user_sessions',
+          chat_interactions: 'SELECT COUNT(*) as count FROM chat_interactions'
+        };
+
+        for (const [key, query] of Object.entries(tableChecks)) {
+          try {
+            const result = tempDb.prepare(query).get();
+            if (result.count > 0) {
+              available.push(key);
+            }
+          } catch {}
+        }
+
+        tempDb.close();
+        await fsPromises.unlink(tempDbPath);
+      }
+
+      // Check for folders with files
+      const hasImages = directory.files.some(f => f.path.startsWith('images/') && f.type === 'File');
+      if (hasImages) available.push('images');
+
+      const hasDocuments = directory.files.some(f => f.path.startsWith('documents/') && f.type === 'File');
+      if (hasDocuments) available.push('documents');
+
+      res.json({ files: available });
     } catch (err) {
       console.error('Read backup files failed', err);
       res.status(500).json({ error: 'Failed to read backup files' });
@@ -302,6 +364,7 @@ module.exports = (adminAuth) => {
     console.log(`Import received for ${filename}, mode: ${mode}, selected:`, selected);
     const filepath = path.join(BACKUP_PATH, filename);
 
+    try {
     const directory = await unzipper.Open.file(filepath);
     let backupSchemaHash = null;
     let tempDb = null;
@@ -518,17 +581,6 @@ module.exports = (adminAuth) => {
     await fsPromises.rm('temp', { recursive: true, force: true });
 
     res.json({ success: true });
-        }
-      }
-
-      // Check schema compatibility
-      const currentSchemaHash = await getSchemaHash();
-      if (backupSchemaHash && backupSchemaHash !== currentSchemaHash) {
-        console.warn(`Schema mismatch: backup hash ${backupSchemaHash}, current hash ${currentSchemaHash}. Upgrading temp DB.`);
-        // Push current schema to temp DB
-        const tempDbPath = path.join('temp', 'backup.db');
-        execSync(`DATABASE_URL=file:${tempDbPath} npx prisma db push --schema ${path.join(__dirname, '..', '..', '..', 'prisma', 'schema.prisma')} --accept-data-loss`, { stdio: 'inherit' });
-      }
 
       // Transfer data from temp DB to main DB
       const transferTable = async (table, replace) => {
@@ -626,7 +678,6 @@ module.exports = (adminAuth) => {
         await transferTable('token_usage', mode === 'replace');
         await transferTable('user_sessions', mode === 'replace');
         await transferTable('chat_interactions', mode === 'replace');
-      }
       }
 
       // Close temp DB
