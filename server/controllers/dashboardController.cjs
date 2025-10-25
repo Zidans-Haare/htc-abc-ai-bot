@@ -1,7 +1,7 @@
 const express = require('express');
 const { prisma, UserSessions, ChatInteractions, ArticleViews, HochschuhlABC, Questions, Feedback, Conversation, Message, QuestionAnalysisCache, DailyQuestionStats, DailyUnansweredStats } = require('./db.cjs');
 const { getGermanNow, toGermanTime, getGermanDateString, getGermanDaysAgo, groupByGermanDate, groupByGermanHour, groupFeedbackByGermanDate, groupFeedbackByGermanHour } = require('../utils/timezone');
-const { raw_sql_wrapper } = require('../../utils/sql_wrapper');
+const { raw_sql_wrapper } = require('../utils/sql_wrapper');
 
 // Optional import for question grouper (requires server-side OpenAI-compatible API key)
 let groupSimilarQuestions, extractQuestions;

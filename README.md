@@ -125,13 +125,83 @@ Dieses Projekt ist eine Node.js-Anwendung, die einen KI-gestützten Chat-Assiste
 
     # Main Database Connection [REQUIRED] - Supports SQLite, PostgreSQL, and MySQL
     # SQLite (default - file-based, no server required):
-    DATABASE_URL="file:/home/htw/htc-abc-ai-bot/hochschuhl-abc.db"
+    DATABASE_URL="file:/home/htw/htc-abc-ai-bot/hochschul-abc.db"
 
     # PostgreSQL example:
-    # DATABASE_URL="postgresql://username:password@localhost:5432/dbname?schema=public"
+    DATABASE_URL="postgresql://username:password@localhost:5432/dbname?schema=public"
 
     # MySQL example:
     # DATABASE_URL="mysql://username:password@localhost:3306/dbname"
+
+    # ========================================================================================
+    # BACKUP & DATABASE SWITCHING
+    # ========================================================================================
+
+    ## Backup-Prozess
+
+    Die Anwendung bietet ein integriertes Backup-System für Daten und Dateien über das Admin-Panel (`/admin/backup`).
+
+    ### Backup erstellen:
+    1. Melden Sie sich im Admin-Panel an.
+    2. Gehen Sie zum Backup-Bereich.
+    3. Wählen Sie die zu sichernden Tabellen (z. B. users, artikels, fragen, conversations, dokumente, bilder, feedback, dashboard).
+    4. Klicken Sie auf "Backup erstellen" - eine ZIP-Datei wird in `backups/` gespeichert.
+
+    ### Backup wiederherstellen:
+    1. Laden Sie die ZIP-Datei über "Backup hochladen" hoch oder verwenden Sie eine vorhandene Datei.
+    2. Wählen Sie den Import-Modus:
+       - **replace**: Löscht vorhandene Daten und ersetzt sie komplett.
+       - **append-override**: Fügt hinzu und überschreibt vorhandene Einträge.
+       - **append-keep**: Fügt nur neue Einträge hinzu, behält vorhandene.
+    3. Wählen Sie die zu importierenden Tabellen.
+    4. Klicken Sie auf "Importieren".
+
+    **Hinweise:**
+    - Backups enthalten JSON-Daten und Dateien (Bilder, Dokumente).
+    - Bei Schema-Unterschieden wird eine Warnung angezeigt, aber der Import fortgesetzt.
+    - Temporäre Dateien werden automatisch bereinigt.
+    - Backups sind nach Erstellungsdatum sortiert (neueste zuerst).
+
+    ### Backup-Verwaltung:
+    - Liste aller Backups anzeigen und herunterladen.
+    - Backups umbenennen oder löschen.
+
+    ## Datenbank wechseln (SQLite ↔ PostgreSQL/MySQL)
+
+    Die Anwendung unterstützt SQLite (Standard), PostgreSQL und MySQL. Um die Datenbank zu wechseln:
+
+    1. **Schema aktualisieren:**
+       Ändern Sie in `prisma/schema.prisma` den `provider`:
+       ```prisma
+       datasource db {
+         provider = "postgresql"  // oder "mysql" oder "sqlite"
+         url      = env("DATABASE_URL")
+       }
+       ```
+
+    2. **Umgebungsvariablen aktualisieren:**
+       Ändern Sie in `.env` die `DATABASE_URL`:
+       - SQLite: `DATABASE_URL="file:/path/to/db.db"`
+       - PostgreSQL: `DATABASE_URL="postgresql://user:pass@host:5432/dbname?schema=public"`
+       - MySQL: `DATABASE_URL="mysql://user:pass@host:3306/dbname"`
+
+    3. **Datenbank anwenden:**
+       ```bash
+       npx prisma db push  # Erstellt Tabellen in der neuen DB
+       npx prisma generate  # Regeneriert den Prisma-Client
+       ```
+
+    4. **Daten migrieren (optional):**
+       - Bei Wechsel von SQLite zu PostgreSQL/MySQL: Exportieren Sie Daten manuell (z. B. via Backup) und importieren Sie in die neue DB.
+       - Prisma migriert keine Daten zwischen verschiedenen Providern automatisch.
+
+    5. **Server neu starten:**
+       ```bash
+       npm run build
+       pm2 restart ecosystem.config.js  # oder npm start
+       ```
+
+    **Wichtig:** Sichern Sie Ihre Daten vor dem Wechsel. Testen Sie die Konfiguration in einer Entwicklungsumgebung.
 
     # ========================================================================================
     # SESSION & AUTHENTICATION [OPTIONAL]

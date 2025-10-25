@@ -12,6 +12,7 @@
 - If creating commits or branches, you must ask the user first (best with a: do you want this committed as: ...).
 - Do not modify Vite config's HMR path or allowedHosts unless explicitly requested by the user.
 - Database Changes: Use `prisma migrate deploy` for applying schema changes via migrations. Migrations are used for DB management. Views removed from migrations and schema; complex queries now use raw SQL abstracted through utils/sql_wrapper.js for multi-DB support (SQLite, PostgreSQL, MySQL). Removed unused tables: `auth_sessions`, `question_cache`, `sessions`. When schema changes, create new migrations with `prisma migrate dev`. On new DB creation, `prisma db push` is run to apply schema directly. Migration SQL for current version embedded in migration files. Use Context7 for up-to-date Prisma docs on multi-DB support.
+- Backup System: Refactored for maintainability. Split into modules: backupExporter.js (export), backupImporter.js (import), backupUtils.js (shared utils with Winston logging), backupConfig.js (static config). Unified import logic with transactions and bulk inserts (createMany). Sequence reset post-import for auto-increment sync. Replace-only mode for simplicity. Tests expanded with integration coverage.
 
 # Project Information
 

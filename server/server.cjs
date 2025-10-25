@@ -573,15 +573,40 @@ const serverCallback = async () => {
       execSync('npx prisma migrate deploy', { stdio: 'inherit' });
       console.log('✓ Migrations applied');
     }
-   } catch (error) {
-     console.log('Database not found or connection failed, initializing with schema push...');
-     execSync('npx prisma db push', { stdio: 'inherit' });
-     console.log('✓ Database initialized with schema push');
+    } catch (error) {
+      console.log('Database not found or connection failed, initializing with schema push...');
+      execSync('npx prisma db push', { stdio: 'inherit' });
+      console.log('✓ Database initialized with schema push');
+    }
 
-    // Connect again
-    await prisma.$connect();
-    console.log('✓ Database connection established');
-  }
+    // Sync auto-increment sequences if PostgreSQL
+    if (process.env.DATABASE_URL.startsWith('postgres')) {
+      console.log('Syncing auto-increment sequences...');
+      try {
+        const tables = [
+          'hochschuhl_abc', 'questions', 'messages', 'feedback', 'documents', 'images',
+          'article_views', 'page_views', 'daily_question_stats', 'daily_unanswered_stats', 'question_analysis_cache',
+          'token_usage', 'user_sessions', 'chat_interactions', 'users'
+        ];
+        for (const table of tables) {
+          try {
+            const result = await prisma.$queryRawUnsafe(`SELECT MAX(id) as max_id FROM ${table}`);
+            const maxId = result[0]?.max_id || 0;
+            if (typeof maxId === 'number' && maxId >= 0) {
+              await prisma.$queryRawUnsafe(`ALTER SEQUENCE ${table}_id_seq RESTART WITH ${maxId + 1}`);
+              console.log(`✓ Synced sequence for ${table} to ${maxId + 1}`);
+            } else {
+              console.log(`⚠ Skipped ${table}: invalid max_id ${maxId}`);
+            }
+          } catch (err) {
+            console.log(`⚠ Failed to sync ${table}: ${err.message}`);
+          }
+        }
+        console.log('✓ Auto-increment sequences synced');
+      } catch (err) {
+        console.warn('Sequence sync failed (may not be critical):', err.message);
+      }
+    }
 
     // Update app version
     try {

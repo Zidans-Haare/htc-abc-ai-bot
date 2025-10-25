@@ -7,6 +7,10 @@ const archiver = require('archiver');
 const unzipper = require('unzipper');
 const crypto = require('crypto');
 
+// Import new modules
+const { getSchemaHash, convertFromJSON, copyFiles } = require('../server/controllers/admin/backupUtils');
+const { tableMappings, dateFields, parseSchema } = require('../server/controllers/admin/backupConfig');
+
 describe('Backup System', () => {
   const testDbUrl = process.env.BACKUP_TEST_DB_URL;
   const isInMemory = testDbUrl.includes(':memory:');
@@ -94,7 +98,7 @@ describe('Backup System', () => {
     expect(extractPath).not.toMatch(/server\/temp$/); // Should not be inside server
 
     // In actual code, it's now project root temp
-    const correctExtractPath = path.join(__dirname, '..', '..', '..', 'temp');
+    const correctExtractPath = path.join(__dirname, '..', 'temp');
     expect(correctExtractPath).toBe(path.resolve('temp'));
 
     mockFs.mkdir.mockRestore();
@@ -234,5 +238,46 @@ describe('Backup System', () => {
     }
 
     mockReadFile.mockRestore();
+  });
+
+  // New tests for modules
+  test('should get schema hash', async () => {
+    const hash = await getSchemaHash();
+    expect(typeof hash).toBe('string');
+    expect(hash.length).toBe(64); // SHA256 hex
+  });
+
+  test('should convert date fields from JSON', () => {
+    const item = {
+      id: 1,
+      created_at: '2023-01-01T00:00:00.000Z',
+      updated_at: '2023-01-01T00:00:00.000Z'
+    };
+    const converted = convertFromJSON(item, 'users', dateFields);
+    expect(converted.created_at).toBeInstanceOf(Date);
+    expect(converted.updated_at).toBeInstanceOf(Date);
+  });
+
+  test('should parse schema dynamically', () => {
+    const parsed = parseSchema();
+    expect(parsed.tableMappings).toHaveProperty('users');
+    expect(parsed.dateFields).toHaveProperty('users');
+    expect(Array.isArray(parsed.dateFields.users)).toBe(true);
+  });
+
+  test('should copy files correctly', async () => {
+    const mockCopyFile = jest.spyOn(fsPromises, 'copyFile').mockResolvedValue();
+    const mockMkdir = jest.spyOn(fsPromises, 'mkdir').mockResolvedValue();
+
+    const files = ['test.pdf'];
+    const srcDir = 'temp/documents';
+    const destDir = 'uploads/documents';
+
+    const copied = await copyFiles(files, srcDir, destDir, 'append-override');
+    expect(copied).toBe(1);
+    expect(mockCopyFile).toHaveBeenCalled();
+
+    mockCopyFile.mockRestore();
+    mockMkdir.mockRestore();
   });
 });

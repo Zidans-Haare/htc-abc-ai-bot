@@ -72,29 +72,39 @@ function initBackup() {
     }
   });
 
+  const selectAllBtn = document.getElementById('select-all-btn');
+  selectAllBtn.addEventListener('click', () => {
+    document.querySelectorAll('#import-options input[type="checkbox"]').forEach(cb => cb.checked = true);
+  });
+
   const startImportBtn = document.getElementById('start-import-btn');
   startImportBtn.addEventListener('click', async function() {
     const filename = this.dataset.filename;
-    const mode = document.getElementById('import-mode').value;
+    const mode = 'replace'; // Hardcoded to replace-only
     const selected = {};
     document.querySelectorAll('#import-options input[type="checkbox"]').forEach(cb => {
       selected[cb.id.replace('import-', '')] = cb.checked;
     });
+    const selectedTables = Object.keys(selected).filter(key => selected[key]);
+    if (!confirm(`Final Warning: This will erase all existing data in the selected tables (${selectedTables.join(', ')}) and replace it with data from the backup. This action cannot be undone. Are you sure you want to proceed?`)) {
+      return;
+    }
     startImportBtn.disabled = true;
-    startImportBtn.textContent = 'Importing...';
+    startImportBtn.textContent = 'Restoring...';
     try {
       await fetch(`/api/admin/backup/${filename}/import`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode, selected })
       });
-      alert('Import completed');
+      alert('Full restore completed');
       document.getElementById('backup-import').classList.add('hidden');
     } catch (err) {
-      console.error('Import failed', err);
+      console.error('Restore failed', err);
+      alert('Restore failed');
     } finally {
       startImportBtn.disabled = false;
-      startImportBtn.textContent = 'Start Import';
+      startImportBtn.textContent = 'Start Full Restore';
     }
   });
 
@@ -113,7 +123,7 @@ async function loadBackups() {
         <div class="space-x-2">
           <button class="download-btn px-2 py-1 bg-blue-500 text-white rounded" data-filename="${backup.filename}">Download</button>
           <button class="rename-btn px-2 py-1 bg-yellow-500 text-white rounded" data-filename="${backup.filename}">Rename</button>
-          <button class="import-btn px-2 py-1 bg-green-500 text-white rounded" data-filename="${backup.filename}">Import</button>
+           <button class="import-btn px-2 py-1 bg-green-500 text-white rounded" data-filename="${backup.filename}">Restore</button>
           <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded" data-filename="${backup.filename}">Delete</button>
         </div>
       `;
@@ -144,6 +154,9 @@ async function loadBackups() {
     document.querySelectorAll('.import-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const filename = btn.dataset.filename;
+        if (!confirm('Warning: Restoring from a backup will erase all existing data in the selected tables and replace it with data from the backup. This action cannot be undone. Do you want to proceed?')) {
+          return;
+        }
         try {
           const { files } = await fetchAndParse(`/api/admin/backup/${filename}/files`);
           const importOptions = document.getElementById('import-options');
@@ -187,7 +200,7 @@ async function loadBackups() {
 
     document.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (confirm('Delete this backup?')) {
+        if (confirm('Warning: Deleting this backup will permanently remove the backup file. This action cannot be undone. Are you sure you want to delete this backup?')) {
           await fetch(`/api/admin/backup/${btn.dataset.filename}`, { method: 'DELETE' });
           loadBackups();
         }
