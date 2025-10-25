@@ -19,6 +19,7 @@
 - Use curl for troubleshooting network issues or API calls.
 - Vector DB supports incremental sync: removes old/invalid data, adds new/updated for headlines, PDFs, images, and documents (DOCX, MD, ODT/ODS/ODP, XLSX). Init forces full sync; tracks with .vectordb_last_sync file. Documents are stored in public/documents/ and linked via documents table.
 - Embedding uses free Xenova models; tests added for vector store functionality.
+- Testing: Uses Jest with isolated test DB via BACKUP_TEST_DB_URL in .env.test. Falls back to .env but errors if unsafe. Defaults to in-memory SQLite with restore test skips. Run with `npm test`.
 - Context7 MCP tool is available; it exposes local context7 knowledge services and should be used whenever tasks can benefit from that capability.
 - Investigated 'serialize' npm modules: serialize-error and dom-serializer were unused dependencies, removed from package.json. No serialization logic needed porting to Prisma.
 - Path Migration: Image paths updated to absolute /assets/images/ for correct loading from public/assets/images/. Other assets use relative paths.

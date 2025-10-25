@@ -7,31 +7,18 @@ const archiver = require('archiver');
 const unzipper = require('unzipper');
 const multer = require('multer');
 const crypto = require('crypto');
-const { execSync } = require('child_process');
 const { PrismaClient } = require('@prisma/client');
-const Database = require('better-sqlite3');
 
 const prisma = new PrismaClient();
 const upload = multer({ dest: 'temp/' });
 
-const BACKUP_PATH = process.env.BACKUP_PATH || 'backups';
+const BACKUP_PATH = path.resolve(__dirname, '..', '..', '..', process.env.BACKUP_PATH || 'backups');
 let backupInProgress = false;
 
 async function getSchemaHash() {
   const schemaPath = path.join(__dirname, '..', '..', '..', 'prisma', 'schema.prisma');
   const schemaContent = await fsPromises.readFile(schemaPath, 'utf8');
   return crypto.createHash('sha256').update(schemaContent).digest('hex');
-}
-
-async function createTempPrisma() {
-  const tempDbPath = path.join(__dirname, '..', '..', 'temp_import.db');
-  const tempUrl = `file:${tempDbPath}`;
-  const tempPrisma = new PrismaClient({ datasourceUrl: tempUrl });
-  // Ensure temp DB is empty (delete if exists)
-  try {
-    await fsPromises.unlink(tempDbPath);
-  } catch {}
-  return { tempPrisma, tempDbPath };
 }
 
 module.exports = (adminAuth) => {
@@ -42,15 +29,20 @@ module.exports = (adminAuth) => {
     if (backupInProgress) {
       return res.status(409).json({ error: 'Backup already in progress' });
     }
+
     const { users, artikels, fragen, conversations, dokumente, bilder, feedback, dashboard } = req.body;
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `backup_${timestamp}.zip`;
 
     backupInProgress = true;
-    // Create backup synchronously
-    await createBackup({ users, artikels, fragen, conversations, dokumente, bilder, feedback, dashboard }, filename);
-
-    res.json({ filename, status: 'completed', message: 'Backup created successfully.' });
+    try {
+      await createBackup({ users, artikels, fragen, conversations, dokumente, bilder, feedback, dashboard }, filename);
+      res.json({ filename, status: 'completed', message: 'Backup created successfully.' });
+    } catch (err) {
+      backupInProgress = false;
+      res.status(500).json({ error: 'Backup failed' });
+    }
+    backupInProgress = false;
   });
 
   async function createBackup(options, filename) {
@@ -66,45 +58,21 @@ module.exports = (adminAuth) => {
       const schemaPath = path.join(__dirname, '..', '..', '..', 'prisma', 'schema.prisma');
       archive.file(schemaPath, { name: 'schema.prisma' });
 
-      // Create temp DB
-      const tempDbPath = path.join(__dirname, '..', '..', '..', 'temp', 'backup_temp.db');
-      const tempDb = new Database(tempDbPath);
-       // Push schema to create tables
-       execSync(`DATABASE_URL=file:${tempDbPath} npx prisma db push --accept-data-loss`, { stdio: 'inherit' });
-
-       // Utility functions for dynamic export/import
-       function convertToSQLite(value) {
-         if (value instanceof Date) return value.toISOString();
-         if (typeof value === 'boolean') return value ? 1 : 0;
-         return value;
-       }
-
-       async function exportTable(prismaModel, tableName, tempDb, data) {
-         const columns = tempDb.prepare(`PRAGMA table_info(${tableName})`).all();
-         const colNames = columns.map(c => c.name);
-         const placeholders = colNames.map(() => '?').join(', ');
-         const insert = tempDb.prepare(`INSERT INTO ${tableName} (${colNames.join(', ')}) VALUES (${placeholders})`);
-         for (const item of data) {
-           const values = colNames.map(col => convertToSQLite(item[col]));
-           insert.run(...values);
-         }
-       }
-
-       // Insert data for selected tables
-       if (options.users) {
-         const data = await prisma.users.findMany();
-         console.log(`Backing up ${data.length} users`);
-         await exportTable(prisma.users, 'users', tempDb, data);
-       }
-       if (options.artikels) {
-         const data = await prisma.hochschuhl_abc.findMany();
-         console.log(`Backing up ${data.length} artikels`);
-         await exportTable(prisma.hochschuhl_abc, 'hochschuhl_abc', tempDb, data);
-       }
-       if (options.fragen) {
-         const data = await prisma.questions.findMany();
-         console.log(`Backing up ${data.length} fragen`);
-         await exportTable(prisma.questions, 'questions', tempDb, data);
+      // Export data as JSON
+      if (options.users) {
+        const data = await prisma.users.findMany();
+        console.log(`Backing up ${data.length} users`);
+        archive.append(JSON.stringify(data, null, 2), { name: 'users.json' });
+      }
+      if (options.artikels) {
+        const data = await prisma.hochschuhl_abc.findMany();
+        console.log(`Backing up ${data.length} artikels`);
+        archive.append(JSON.stringify(data, null, 2), { name: 'hochschuhl_abc.json' });
+      }
+      if (options.fragen) {
+        const data = await prisma.questions.findMany();
+        console.log(`Backing up ${data.length} fragen`);
+        archive.append(JSON.stringify(data, null, 2), { name: 'questions.json' });
         // Add txt files
         try {
           const unanswered = await fsPromises.readFile('ai_fragen/offene_fragen.txt', 'utf8');
@@ -115,40 +83,40 @@ module.exports = (adminAuth) => {
           archive.append(faq, { name: 'faq.txt' });
         } catch {}
       }
-       if (options.conversations) {
-         const convs = await prisma.conversations.findMany();
-         console.log(`Backing up ${convs.length} conversations`);
-         await exportTable(prisma.conversations, 'conversations', tempDb, convs);
-         const msgs = await prisma.messages.findMany();
-         console.log(`Backing up ${msgs.length} messages`);
-         await exportTable(prisma.messages, 'messages', tempDb, msgs);
-       }
-       if (options.dokumente) {
-         const docs = await prisma.documents.findMany();
-         console.log(`Backing up ${docs.length} documents`);
-         await exportTable(prisma.documents, 'documents', tempDb, docs);
-         // Add files
-         for (const doc of docs) {
-           const filePath = `uploads/documents/${doc.filepath}`;
-           console.log(`Adding document file: ${filePath}`);
-           if (fs.existsSync(filePath)) {
-             try {
-               archive.file(filePath, { name: `documents/${doc.filepath}` });
-               console.log(`Added document file: ${doc.filepath}`);
-             } catch (err) {
-               console.log(`Failed to add document file: ${doc.filepath}, error: ${err.message}`);
-             }
-           } else {
-             console.log(`Document file not found: ${filePath}`);
-           }
-         }
+      if (options.conversations) {
+        const convs = await prisma.conversations.findMany();
+        console.log(`Backing up ${convs.length} conversations`);
+        archive.append(JSON.stringify(convs, null, 2), { name: 'conversations.json' });
+        const msgs = await prisma.messages.findMany();
+        console.log(`Backing up ${msgs.length} messages`);
+        archive.append(JSON.stringify(msgs, null, 2), { name: 'messages.json' });
       }
-       if (options.bilder) {
-         const imgs = await prisma.images.findMany();
-         console.log(`Backing up ${imgs.length} images`);
-         await exportTable(prisma.images, 'images', tempDb, imgs);
+      if (options.dokumente) {
+        const docs = await prisma.documents.findMany();
+        console.log(`Backing up ${docs.length} documents`);
+        archive.append(JSON.stringify(docs, null, 2), { name: 'documents.json' });
         // Add files
-        for (const img of imgs) {
+        for (const doc of docs) {
+          const filePath = `uploads/documents/${doc.filepath}`;
+          console.log(`Adding document file: ${filePath}`);
+          if (fs.existsSync(filePath)) {
+            try {
+              archive.file(filePath, { name: `documents/${doc.filepath}` });
+              console.log(`Added document file: ${doc.filepath}`);
+            } catch (err) {
+              console.log(`Failed to add document file: ${doc.filepath}, error: ${err.message}`);
+            }
+          } else {
+            console.log(`Document file not found: ${filePath}`);
+          }
+        }
+      }
+      if (options.bilder) {
+        const data = await prisma.images.findMany();
+        console.log(`Backing up ${data.length} bilder`);
+        archive.append(JSON.stringify(data, null, 2), { name: 'images.json' });
+        // Add files
+        for (const img of data) {
           const filePath = `uploads/images/${img.filename}`;
           console.log(`Adding image file: ${filePath}`);
           if (fs.existsSync(filePath)) {
@@ -163,433 +131,471 @@ module.exports = (adminAuth) => {
           }
         }
       }
-       if (options.feedback) {
-         const data = await prisma.feedback.findMany();
-         console.log(`Backing up ${data.length} feedback`);
-         await exportTable(prisma.feedback, 'feedback', tempDb, data);
-       }
-        if (options.dashboard) {
-          const tables = ['article_views', 'page_views', 'daily_question_stats', 'daily_unanswered_stats', 'question_analysis_cache', 'token_usage', 'user_sessions', 'chat_interactions'];
-          for (const table of tables) {
-            const data = await prisma[table].findMany(table === 'user_sessions' ? { include: { chat_interactions: true } } : {});
-            console.log(`Backing up ${data.length} ${table}`);
-            if (table === 'user_sessions') {
-              // Handle relations
-              const sessions = data;
-              await exportTable(prisma.user_sessions, 'user_sessions', tempDb, sessions);
-              const interactions = sessions.flatMap(s => s.chat_interactions);
-              await exportTable(prisma.chat_interactions, 'chat_interactions', tempDb, interactions);
-            } else {
-              await exportTable(prisma[table], table, tempDb, data);
-            }
-          }
+      if (options.feedback) {
+        const data = await prisma.feedback.findMany();
+        console.log(`Backing up ${data.length} feedback`);
+        archive.append(JSON.stringify(data, null, 2), { name: 'feedback.json' });
+      }
+      if (options.dashboard) {
+        const tables = ['article_views', 'page_views', 'daily_question_stats', 'daily_unanswered_stats', 'question_analysis_cache', 'token_usage', 'user_sessions', 'chat_interactions'];
+        for (const table of tables) {
+          const data = await prisma[table].findMany();
+          console.log(`Backing up ${data.length} ${table}`);
+          archive.append(JSON.stringify(data, null, 2), { name: `${table}.json` });
         }
+      }
 
-       // Add DB to archive
-       tempDb.close();
-       console.log('Adding backup.db to archive');
-       archive.file(tempDbPath, { name: 'backup.db' });
-
-        console.log('Finalizing backup archive');
-        await new Promise((resolve, reject) => {
-          output.on('close', () => {
-            console.log(`Backup created: ${filename}`);
-            resolve();
-          });
-          output.on('error', reject);
-          archive.finalize();
-        });
-
-       // Clean up temp file after archive is complete
-       await fsPromises.unlink(tempDbPath);
+      archive.finalize();
+      await new Promise((resolve, reject) => {
+        output.on('close', resolve);
+        output.on('error', reject);
+      });
     } catch (err) {
       console.error('Backup creation failed', err);
-    } finally {
-      backupInProgress = false;
+      throw err;
     }
   }
 
   router.get('/list', adminAuth, async (req, res) => {
     try {
       const files = await fsPromises.readdir(BACKUP_PATH);
-      const backups = [];
-      for (const file of files) {
-        if (file.endsWith('.zip')) {
-          const stat = await fsPromises.stat(path.join(BACKUP_PATH, file));
-          backups.push({
-            filename: file,
-            date: stat.mtime,
-            size: stat.size
-          });
-        }
-      }
-      backups.sort((a, b) => b.date - a.date);
-      res.json(backups);
+      const backupFiles = files.filter(f => f.endsWith('.zip')).map(f => {
+        const filepath = path.join(BACKUP_PATH, f);
+        const stats = fs.statSync(filepath);
+        return { filename: f, size: stats.size, date: stats.mtime };
+      }).sort((a, b) => b.date - a.date); // Sort newest first
+      res.json(backupFiles);
     } catch (err) {
-      console.error('List backups failed', err);
-      res.status(500).json({ error: 'List backups failed' });
+      res.status(500).json({ error: 'Failed to list backup files' });
     }
   });
 
-  router.delete('/:filename', adminAuth, async (req, res) => {
+  router.get('/:filename', adminAuth, (req, res) => {
     const { filename } = req.params;
-    try {
-      await fsPromises.unlink(path.join(BACKUP_PATH, filename));
-      res.json({ success: true });
-    } catch (err) {
-      console.error('Delete backup failed', err);
-      res.status(500).json({ error: 'Delete backup failed' });
-    }
+    const filepath = path.join(BACKUP_PATH, filename);
+    res.download(filepath);
+  });
+
+  router.post('/upload', adminAuth, upload.single('backup'), async (req, res) => {
+    const tempPath = req.file.path;
+    const destPath = path.join(BACKUP_PATH, req.file.originalname);
+    await fsPromises.rename(tempPath, destPath);
+    res.json({ success: true });
   });
 
   router.put('/:filename/rename', adminAuth, async (req, res) => {
     const { filename } = req.params;
     const { newName } = req.body;
-    try {
-      await fsPromises.rename(path.join(BACKUP_PATH, filename), path.join(BACKUP_PATH, newName));
-      res.json({ success: true });
-    } catch (err) {
-      console.error('Rename backup failed', err);
-      res.status(500).json({ error: 'Rename backup failed' });
-    }
+    const oldPath = path.join(BACKUP_PATH, filename);
+    const newPath = path.join(BACKUP_PATH, newName);
+    await fsPromises.rename(oldPath, newPath);
+    res.json({ success: true });
+  });
+
+  router.delete('/:filename', adminAuth, async (req, res) => {
+    const { filename } = req.params;
+    const filepath = path.join(BACKUP_PATH, filename);
+    await fsPromises.unlink(filepath);
+    res.json({ success: true });
   });
 
   router.get('/:filename/files', adminAuth, async (req, res) => {
     const { filename } = req.params;
     const filepath = path.join(BACKUP_PATH, filename);
     try {
-      const directory = await unzipper.Open.file(filepath);
-      const available = [];
-
-      // Check for backup.db and tables with data
-      const dbFile = directory.files.find(f => f.path === 'backup.db');
-      if (dbFile) {
-        const content = await dbFile.buffer();
-        const tempDbPath = path.join('temp', 'check_backup.db');
-        await fsPromises.writeFile(tempDbPath, content);
-        const tempDb = new Database(tempDbPath);
-
-        const tableChecks = {
-          users: 'SELECT COUNT(*) as count FROM users',
-          hochschuhl_abc: 'SELECT COUNT(*) as count FROM hochschuhl_abc',
-          questions: 'SELECT COUNT(*) as count FROM questions',
-          conversations: 'SELECT COUNT(*) as count FROM conversations',
-          documents: 'SELECT COUNT(*) as count FROM documents',
-          images: 'SELECT COUNT(*) as count FROM images',
-          feedback: 'SELECT COUNT(*) as count FROM feedback',
-          article_views: 'SELECT COUNT(*) as count FROM article_views',
-          page_views: 'SELECT COUNT(*) as count FROM page_views',
-          daily_question_stats: 'SELECT COUNT(*) as count FROM daily_question_stats',
-          daily_unanswered_stats: 'SELECT COUNT(*) as count FROM daily_unanswered_stats',
-          question_analysis_cache: 'SELECT COUNT(*) as count FROM question_analysis_cache',
-          token_usage: 'SELECT COUNT(*) as count FROM token_usage',
-          user_sessions: 'SELECT COUNT(*) as count FROM user_sessions',
-          chat_interactions: 'SELECT COUNT(*) as count FROM chat_interactions'
-        };
-
-        for (const [key, query] of Object.entries(tableChecks)) {
-          try {
-            const result = tempDb.prepare(query).get();
-            if (result.count > 0) {
-              available.push(key);
-            }
-          } catch {}
+      const files = [];
+      const zip = fs.createReadStream(filepath).pipe(unzipper.Parse({ forceStream: true }));
+      for await (const entry of zip) {
+        const fileName = entry.path;
+        if (fileName.endsWith('.json')) {
+          files.push(fileName.replace('.json', ''));
         }
-
-        tempDb.close();
-        await fsPromises.unlink(tempDbPath);
+        entry.autodrain();
       }
-
-      // Check for folders with files
-      const hasImages = directory.files.some(f => f.path.startsWith('images/') && f.type === 'File');
-      if (hasImages) available.push('images');
-
-      const hasDocuments = directory.files.some(f => f.path.startsWith('documents/') && f.type === 'File');
-      if (hasDocuments) available.push('documents');
-
-      res.json({ files: available });
+      res.json({ files });
     } catch (err) {
-      console.error('Read backup files failed', err);
-      res.status(500).json({ error: 'Failed to read backup files' });
+      res.status(500).json({ error: 'Failed to list files' });
     }
-  });
-
-  router.post('/upload', adminAuth, upload.single('file'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    const filename = req.file.originalname;
-    const dest = path.join(BACKUP_PATH, filename);
-    await fsPromises.rename(req.file.path, dest);
-    res.json({ filename });
   });
 
   router.post('/:filename/import', adminAuth, async (req, res) => {
+    console.log(`Import route called for ${req.params.filename}`);
     const { filename } = req.params;
-    const { mode, selected } = req.body; // mode: 'replace', 'append-override', 'append-keep'; selected: { users: true, artikels: true, ... }
-    console.log(`Import received for ${filename}, mode: ${mode}, selected:`, selected);
+    const { mode, selected } = req.body;
+    console.log(`Import mode: ${mode}, selected: ${JSON.stringify(selected)}`);
     const filepath = path.join(BACKUP_PATH, filename);
-
-    try {
-    const directory = await unzipper.Open.file(filepath);
-    let backupSchemaHash = null;
-    let tempDb = null;
-    for (const file of directory.files) {
-      if (file.type === 'File') {
-        const content = await file.buffer();
-        if (file.path === 'schema-hash.txt') {
-          backupSchemaHash = content.toString().trim();
-        } else if (file.path === 'backup.db') {
-          // Save temp DB
-          const tempDbPath = path.join('temp', 'backup.db');
-          await fsPromises.writeFile(tempDbPath, content);
-          tempDb = new Database(tempDbPath);
-        } else {
-          // For files, save temporarily
-          const tempPath = path.join('temp', file.path);
-          await fsPromises.mkdir(path.dirname(tempPath), { recursive: true });
-          await fsPromises.writeFile(tempPath, content);
+    console.log(`Backup filepath: ${filepath}`);
+     try {
+       // Extract
+       const extractPath = path.join(__dirname, '..', '..', '..', 'temp');
+       // Clean up any existing temp directory
+       try {
+         await fsPromises.rm(extractPath, { recursive: true, force: true });
+       } catch {}
+       await fsPromises.mkdir(extractPath, { recursive: true });
+      await new Promise((resolve, reject) => {
+        fs.createReadStream(filepath)
+          .pipe(unzipper.Extract({ path: extractPath }))
+          .on('close', resolve)
+          .on('error', reject);
+      });
+      console.log('Backup extracted successfully');
+      // Read schema hash
+      let backupSchemaHash;
+      try {
+        backupSchemaHash = await fsPromises.readFile(path.join(extractPath, 'schema-hash.txt'), 'utf8');
+      } catch {}
+      const currentSchemaHash = await getSchemaHash();
+      if (backupSchemaHash && backupSchemaHash !== currentSchemaHash) {
+        console.warn(`Schema mismatch: backup hash ${backupSchemaHash}, current hash ${currentSchemaHash}. Import may fail or require manual migration.`);
+      }
+      // Convert function
+      function convertFromJSON(item, tableName) {
+        const result = { ...item };
+        const dateFields = {
+          users: ['created_at', 'updated_at'],
+          hochschuhl_abc: ['archived', 'created_at', 'updated_at'],
+          questions: ['answered_at', 'created_at', 'updated_at'],
+          conversations: ['created_at', 'updated_at'],
+          messages: ['created_at', 'updated_at'],
+          feedback: ['submitted_at', 'created_at', 'updated_at'],
+          documents: ['uploaded_at', 'created_at', 'updated_at'],
+          images: ['created_at', 'updated_at'],
+          article_views: ['viewed_at', 'created_at', 'updated_at'],
+          page_views: ['timestamp', 'created_at', 'updated_at'],
+          daily_question_stats: ['created_at', 'updated_at'],
+          daily_unanswered_stats: ['created_at', 'updated_at'],
+          question_analysis_cache: ['created_at', 'updated_at'],
+          token_usage: ['timestamp', 'created_at', 'updated_at'],
+          user_sessions: ['started_at', 'last_activity', 'ended_at', 'created_at', 'updated_at'],
+          chat_interactions: ['timestamp', 'created_at', 'updated_at']
+        };
+        if (dateFields[tableName]) {
+          for (const field of dateFields[tableName]) {
+            if (result[field] && typeof result[field] === 'string') {
+              result[field] = new Date(result[field]);
+            }
+          }
         }
+        return result;
       }
-    }
-
-    // Check schema compatibility
-    const currentSchemaHash = await getSchemaHash();
-    if (backupSchemaHash && backupSchemaHash !== currentSchemaHash) {
-      console.warn(`Schema mismatch: backup hash ${backupSchemaHash}, current hash ${currentSchemaHash}. Upgrading temp DB.`);
-      // Push current schema to temp DB
-      const tempDbPath = path.join('temp', 'backup.db');
-      execSync(`DATABASE_URL=file:${tempDbPath} npx prisma db push --schema ${path.join(__dirname, '..', '..', '..', 'prisma', 'schema.prisma')} --accept-data-loss`, { stdio: 'inherit' });
-     }
-
-     // Utility functions for dynamic import
-     function convertFromSQLite(item, tableName) {
-       const result = { ...item };
-       const model = prisma._dmmf.modelMap[tableName];
-       if (!model) return result; // Fallback if model not found
-
-       model.fields.forEach(field => {
-         const value = result[field.name];
-         if (value !== undefined) {
-           if (field.type === 'Boolean' && typeof value === 'number' && (value === 0 || value === 1)) {
-             result[field.name] = value === 1;
-           } else if (field.type === 'DateTime' && typeof value === 'string') {
-             result[field.name] = new Date(value);
-           }
-         }
-       });
-       return result;
-     }
-
-     async function importTable(prismaModel, tableName, tempDb, mode) {
-       const data = tempDb.prepare(`SELECT * FROM ${tableName}`).all();
-       console.log(`Transferring ${data.length} ${tableName}`);
-       if (mode === 'replace') await prismaModel.deleteMany();
-
-       const model = prisma._dmmf.modelMap[tableName];
-       const idField = model ? model.fields.find(f => f.isId) : null;
-       const whereKey = idField ? idField.name : 'id'; // Default to 'id' if not found
-
-       for (const item of data) {
-         if (mode === 'append-keep') {
-           const existing = await prismaModel.findUnique({ where: { [whereKey]: item[whereKey] } });
-           if (existing) continue;
-         }
-         const transformed = convertFromSQLite(item, tableName);
-         await prismaModel.upsert({
-           where: { [whereKey]: item[whereKey] },
-           update: transformed,
-           create: transformed
-         });
-       }
-     }
-
-     // Transfer data from temp DB to main DB
-      if (selected.users) {
-        await importTable(prisma.users, 'users', tempDb, mode);
-      }
-     if (selected.artikels) {
-       await importTable(prisma.hochschuhl_abc, 'hochschuhl_abc', tempDb, mode);
-     }
-     if (selected.fragen) {
-       await importTable(prisma.questions, 'questions', tempDb, mode);
-     }
-     if (selected.conversations) {
-       await importTable(prisma.conversations, 'conversations', tempDb, mode);
-       await importTable(prisma.messages, 'messages', tempDb, mode);
-     }
-     if (selected.dokumente) {
-       await importTable(prisma.documents, 'documents', tempDb, mode);
-      // Handle files
-      const docDir = path.join('uploads', 'documents');
-      if (mode === 'replace') {
-        try {
-          await fsPromises.rm(docDir, { recursive: true, force: true });
-        } catch {}
-      }
-      for (const doc of data) {
-        const src = path.join('temp', 'documents', doc.filepath);
-        const dest = path.join(docDir, doc.filepath);
-        try {
-          await fsPromises.mkdir(path.dirname(dest), { recursive: true });
-          await fsPromises.copyFile(src, dest);
-        } catch {}
-      }
-    }
-     if (selected.bilder) {
-       await importTable(prisma.images, 'images', tempDb, mode);
-      // Handle files
-      const imgDir = path.join('uploads', 'images');
-      if (mode === 'replace') {
-        try {
-          await fsPromises.rm(imgDir, { recursive: true, force: true });
-        } catch {}
-      }
-      for (const img of data) {
-        const src = path.join('temp', 'images', img.filename);
-        const dest = path.join(imgDir, img.filename);
-        try {
-          await fsPromises.mkdir(path.dirname(dest), { recursive: true });
-          await fsPromises.copyFile(src, dest);
-        } catch {}
-      }
-    }
-     if (selected.feedback) {
-       await importTable(prisma.feedback, 'feedback', tempDb, mode);
-     }
-     if (selected.dashboard) {
-       const tables = ['article_views', 'page_views', 'daily_question_stats', 'daily_unanswered_stats', 'question_analysis_cache', 'token_usage', 'user_sessions', 'chat_interactions'];
-       for (const table of tables) {
-         if (table === 'user_sessions') {
-           await importTable(prisma.user_sessions, 'user_sessions', tempDb, mode);
-           await importTable(prisma.chat_interactions, 'chat_interactions', tempDb, mode);
-         } else {
-           await importTable(prisma[table], table, tempDb, mode);
-         }
-       }
-     }
-
-    // Close temp DB
-    if (tempDb) tempDb.close();
-
-    // Clean temp
-    await fsPromises.rm('temp', { recursive: true, force: true });
-
-    res.json({ success: true });
-
-      // Transfer data from temp DB to main DB
-      const transferTable = async (table, replace) => {
-        const data = tempDb.prepare(`SELECT * FROM ${table}`).all();
-        console.log(`Transferring ${data.length} records for ${table}`);
-        if (replace) {
-          // For replace mode, delete all from main
-          if (table === 'users') await prisma.users.deleteMany();
-          else if (table === 'hochschuhl_abc') await prisma.hochschuhl_abc.deleteMany();
-          else if (table === 'questions') await prisma.questions.deleteMany();
-          else if (table === 'conversations') await prisma.conversations.deleteMany();
-          else if (table === 'messages') await prisma.messages.deleteMany();
-          else if (table === 'documents') await prisma.documents.deleteMany();
-          else if (table === 'images') await prisma.images.deleteMany();
-          else if (table === 'feedback') await prisma.feedback.deleteMany();
-          else if (table === 'article_views') await prisma.article_views.deleteMany();
-          else if (table === 'page_views') await prisma.page_views.deleteMany();
-          else if (table === 'daily_question_stats') await prisma.daily_question_stats.deleteMany();
-          else if (table === 'daily_unanswered_stats') await prisma.daily_unanswered_stats.deleteMany();
-          else if (table === 'question_analysis_cache') await prisma.question_analysis_cache.deleteMany();
-          else if (table === 'token_usage') await prisma.token_usage.deleteMany();
-          else if (table === 'user_sessions') await prisma.user_sessions.deleteMany();
-          else if (table === 'chat_interactions') await prisma.chat_interactions.deleteMany();
-        }
-        let inserted = 0, updated = 0;
+      async function importTable(prismaModel, tableName, data, mode, whereKey = 'id') {
+        console.log(`Importing ${data.length} ${tableName} records`);
+        if (mode === 'replace') await prismaModel.deleteMany();
+        let processed = 0;
         for (const item of data) {
           if (mode === 'append-keep') {
-            const where = table === 'user_sessions' ? { session_id: item.session_id } : { id: item.id };
-            const existing = await prisma[table].findUnique({ where });
+            const existing = await prismaModel.findUnique({ where: { [whereKey]: item[whereKey] } });
             if (existing) continue;
           }
-          const where = table === 'user_sessions' ? { session_id: item.session_id } : { id: item.id };
-          await prisma[table].upsert({
-            where,
-            update: item,
-            create: item
+          const transformed = convertFromJSON(item, tableName);
+          await prismaModel.upsert({
+            where: { [whereKey]: item[whereKey] },
+            update: transformed,
+            create: transformed
           });
-          // Since we don't track existing easily, assume upsert handles
+          processed++;
         }
-        console.log(`${table}: transferred`);
-      };
-
-      if (selected.users) await transferTable('users', mode === 'replace');
-      if (selected.artikels) await transferTable('hochschuhl_abc', mode === 'replace');
-      if (selected.fragen) await transferTable('questions', mode === 'replace');
+        console.log(`Successfully imported ${processed} ${tableName} records`);
+      }
+      console.log('Starting data import');
+      // Import
+      if (selected.users) {
+        try {
+          const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'users.json'), 'utf8'));
+          await importTable(prisma.users, 'users', data, mode);
+        } catch (err) {
+          console.log(`Failed to import users: ${err.message}`);
+        }
+      }
+      if (selected.artikels) {
+        try {
+          const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'hochschuhl_abc.json'), 'utf8'));
+          await importTable(prisma.hochschuhl_abc, 'hochschuhl_abc', data, mode);
+        } catch (err) {
+          console.log(`Failed to import artikels: ${err.message}`);
+        }
+      }
+      if (selected.fragen) {
+        try {
+          const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'questions.json'), 'utf8'));
+          await importTable(prisma.questions, 'questions', data, mode);
+        } catch (err) {
+          console.log(`Failed to import fragen: ${err.message}`);
+        }
+      }
       if (selected.conversations) {
-        await transferTable('conversations', mode === 'replace');
-        await transferTable('messages', mode === 'replace');
+        try {
+          const convs = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'conversations.json'), 'utf8'));
+          await importTable(prisma.conversations, 'conversations', convs, mode);
+          const msgs = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'messages.json'), 'utf8'));
+          await importTable(prisma.messages, 'messages', msgs, mode);
+        } catch (err) {
+          console.log(`Failed to import conversations: ${err.message}`);
+        }
       }
       if (selected.dokumente) {
-        await transferTable('documents', mode === 'replace');
+        try {
+          const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'documents.json'), 'utf8'));
+          await importTable(prisma.documents, 'documents', data, mode);
+          // Handle files
+          const docDir = path.join('uploads', 'documents');
+          if (mode === 'replace') {
+            try {
+              await fsPromises.rm(docDir, { recursive: true, force: true });
+            } catch (err) {}
+          }
+          console.log(`Copying ${data.length} document files`);
+          let copied = 0;
+          for (const doc of data) {
+            const src = path.join(extractPath, 'documents', doc.filepath);
+            const dest = path.join(docDir, doc.filepath);
+            try {
+              await fsPromises.mkdir(path.dirname(dest), { recursive: true });
+              await fsPromises.copyFile(src, dest);
+              copied++;
+            } catch (err) {
+              console.log(`Failed to copy document ${doc.filepath}: ${err.message}`);
+            }
+          }
+          console.log(`Successfully copied ${copied} document files`);
+        } catch (err) {
+          console.log(`Failed to import dokumente: ${err.message}`);
+        }
+      }
+      if (selected.bilder) {
+        try {
+          const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'images.json'), 'utf8'));
+          await importTable(prisma.images, 'images', data, mode);
+          // Handle files
+          const imgDir = path.join('uploads', 'images');
+          if (mode === 'replace') {
+            try {
+              await fsPromises.rm(imgDir, { recursive: true, force: true });
+            } catch (err) {}
+          }
+          console.log(`Copying ${data.length} image files`);
+          let copied = 0;
+          for (const img of data) {
+            const src = path.join(extractPath, 'images', img.filename);
+            const dest = path.join(imgDir, img.filename);
+            try {
+              await fsPromises.mkdir(path.dirname(dest), { recursive: true });
+              await fsPromises.copyFile(src, dest);
+              copied++;
+            } catch (err) {
+              console.log(`Failed to copy image ${img.filename}: ${err.message}`);
+            }
+          }
+          console.log(`Successfully copied ${copied} image files`);
+        } catch (err) {
+          console.log(`Failed to import bilder: ${err.message}`);
+        }
+      }
+      if (selected.feedback) {
+        try {
+          const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'feedback.json'), 'utf8'));
+          await importTable(prisma.feedback, 'feedback', data, mode);
+        } catch (err) {
+          console.log(`Failed to import feedback: ${err.message}`);
+        }
+      }
+      if (selected.dashboard) {
+        const tables = ['article_views', 'page_views', 'daily_question_stats', 'daily_unanswered_stats', 'question_analysis_cache', 'token_usage', 'user_sessions', 'chat_interactions'];
+        for (const table of tables) {
+          try {
+            const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, `${table}.json`), 'utf8'));
+            if (table === 'user_sessions') {
+              await importTable(prisma.user_sessions, 'user_sessions', data, mode, 'session_id');
+            } else {
+              await importTable(prisma[table], table, data, mode);
+            }
+          } catch (err) {
+            console.log(`Failed to import ${table}: ${err.message}`);
+          }
+        }
+      }
+      // Clean
+      await fsPromises.rm(extractPath, { recursive: true, force: true });
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Import failed', err);
+      res.status(500).json({ error: 'Import failed' });
+    }
+  });
+
+  router.post('/import', adminAuth, upload.single('backup'), async (req, res) => {
+    const { users, artikels, fragen, conversations, dokumente, bilder, feedback, dashboard } = req.body;
+    const mode = req.body.mode || 'append-override';
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No backup file uploaded' });
+    }
+     try {
+       // Extract
+       const extractPath = path.join(__dirname, '..', '..', '..', 'temp');
+       // Clean up any existing temp directory
+       try {
+         await fsPromises.rm(extractPath, { recursive: true, force: true });
+       } catch {}
+       await fsPromises.mkdir(extractPath, { recursive: true });
+      await new Promise((resolve, reject) => {
+        fs.createReadStream(file.path)
+          .pipe(unzipper.Extract({ path: extractPath }))
+          .on('close', resolve)
+          .on('error', reject);
+      });
+      // Read schema hash
+      let backupSchemaHash;
+      try {
+        backupSchemaHash = await fsPromises.readFile(path.join(extractPath, 'schema-hash.txt'), 'utf8');
+      } catch {}
+      const currentSchemaHash = await getSchemaHash();
+      if (backupSchemaHash && backupSchemaHash !== currentSchemaHash) {
+        console.warn(`Schema mismatch: backup hash ${backupSchemaHash}, current hash ${currentSchemaHash}. Import may fail or require manual migration.`);
+      }
+      // Convert function
+      function convertFromJSON(item, tableName) {
+        const result = { ...item };
+        const dateFields = {
+          users: ['created_at', 'updated_at'],
+          hochschuhl_abc: ['archived', 'created_at', 'updated_at'],
+          questions: ['answered_at', 'created_at', 'updated_at'],
+          conversations: ['created_at', 'updated_at'],
+          messages: ['created_at', 'updated_at'],
+          feedback: ['submitted_at', 'created_at', 'updated_at'],
+          documents: ['uploaded_at', 'created_at', 'updated_at'],
+          images: ['created_at', 'updated_at'],
+          article_views: ['viewed_at', 'created_at', 'updated_at'],
+          page_views: ['timestamp', 'created_at', 'updated_at'],
+          daily_question_stats: ['created_at', 'updated_at'],
+          daily_unanswered_stats: ['created_at', 'updated_at'],
+          question_analysis_cache: ['created_at', 'updated_at'],
+          token_usage: ['timestamp', 'created_at', 'updated_at'],
+          user_sessions: ['started_at', 'last_activity', 'ended_at', 'created_at', 'updated_at'],
+          chat_interactions: ['timestamp', 'created_at', 'updated_at']
+        };
+        if (dateFields[tableName]) {
+          for (const field of dateFields[tableName]) {
+            if (result[field] && typeof result[field] === 'string') {
+              result[field] = new Date(result[field]);
+            }
+          }
+        }
+        return result;
+      }
+      async function importTable(prismaModel, tableName, data, mode, whereKey = 'id') {
+        console.log(`Importing ${data.length} ${tableName} records`);
+        if (mode === 'replace') await prismaModel.deleteMany();
+        let processed = 0;
+        for (const item of data) {
+          if (mode === 'append-keep') {
+            const existing = await prismaModel.findUnique({ where: { [whereKey]: item[whereKey] } });
+            if (existing) continue;
+          }
+          const transformed = convertFromJSON(item, tableName);
+          await prismaModel.upsert({
+            where: { [whereKey]: item[whereKey] },
+            update: transformed,
+            create: transformed
+          });
+          processed++;
+        }
+        console.log(`Successfully imported ${processed} ${tableName} records`);
+      }
+      // Transfer data from JSON files
+      if (users) {
+        const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'users.json'), 'utf8'));
+        await importTable(prisma.users, 'users', data, mode);
+      }
+      if (artikels) {
+        const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'hochschuhl_abc.json'), 'utf8'));
+        await importTable(prisma.hochschuhl_abc, 'hochschuhl_abc', data, mode);
+      }
+      if (fragen) {
+        const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'questions.json'), 'utf8'));
+        await importTable(prisma.questions, 'questions', data, mode);
+      }
+      if (conversations) {
+        const convs = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'conversations.json'), 'utf8'));
+        await importTable(prisma.conversations, 'conversations', convs, mode);
+        const msgs = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'messages.json'), 'utf8'));
+        await importTable(prisma.messages, 'messages', msgs, mode);
+      }
+      if (dokumente) {
+        const data = JSON.parse(await fsPromises.readFile(path.join(extractPath, 'documents.json'), 'utf8'));
+        await importTable(prisma.documents, 'documents', data, mode);
         // Handle files
         const docDir = path.join('uploads', 'documents');
         if (mode === 'replace') {
           try {
             await fsPromises.rm(docDir, { recursive: true, force: true });
-          } catch {}
+          } catch (err) {}
         }
-        const docs = tempDb.prepare('SELECT * FROM documents').all();
-        for (const doc of docs) {
+        console.log(`Copying ${data.length} document files`);
+        let copied = 0;
+        for (const doc of data) {
           const src = path.join('temp', 'documents', doc.filepath);
           const dest = path.join(docDir, doc.filepath);
           try {
             await fsPromises.mkdir(path.dirname(dest), { recursive: true });
             await fsPromises.copyFile(src, dest);
-          } catch {}
+            copied++;
+          } catch (err) {
+            console.log(`Failed to copy document ${doc.filepath}: ${err.message}`);
+          }
         }
+        console.log(`Successfully copied ${copied} document files`);
       }
-      if (selected.bilder) {
-        await transferTable('images', mode === 'replace');
+      if (bilder) {
+        const data = JSON.parse(await fsPromises.readFile(path.join('temp', 'images.json'), 'utf8'));
+        await importTable(prisma.images, 'images', data, mode);
         // Handle files
         const imgDir = path.join('uploads', 'images');
         if (mode === 'replace') {
           try {
             await fsPromises.rm(imgDir, { recursive: true, force: true });
-          } catch {}
+          } catch (err) {}
         }
-        const imgs = tempDb.prepare('SELECT * FROM images').all();
-        for (const img of imgs) {
+        console.log(`Copying ${data.length} image files`);
+        let copied = 0;
+        for (const img of data) {
           const src = path.join('temp', 'images', img.filename);
           const dest = path.join(imgDir, img.filename);
           try {
             await fsPromises.mkdir(path.dirname(dest), { recursive: true });
             await fsPromises.copyFile(src, dest);
-          } catch {}
+            copied++;
+          } catch (err) {
+            console.log(`Failed to copy image ${img.filename}: ${err.message}`);
+          }
+        }
+        console.log(`Successfully copied ${copied} image files`);
+      }
+      if (feedback) {
+        const data = JSON.parse(await fsPromises.readFile(path.join('temp', 'feedback.json'), 'utf8'));
+        await importTable(prisma.feedback, 'feedback', data, mode);
+      }
+      if (dashboard) {
+        const tables = ['article_views', 'page_views', 'daily_question_stats', 'daily_unanswered_stats', 'question_analysis_cache', 'token_usage', 'user_sessions', 'chat_interactions'];
+        for (const table of tables) {
+          const data = JSON.parse(await fsPromises.readFile(path.join('temp', `${table}.json`), 'utf8'));
+          if (table === 'user_sessions') {
+            await importTable(prisma.user_sessions, 'user_sessions', data, mode, 'session_id');
+          } else {
+            await importTable(prisma[table], table, data, mode);
+          }
         }
       }
-      if (selected.feedback) await transferTable('feedback', mode === 'replace');
-      if (selected.dashboard) {
-        await transferTable('article_views', mode === 'replace');
-        await transferTable('page_views', mode === 'replace');
-        await transferTable('daily_question_stats', mode === 'replace');
-        await transferTable('daily_unanswered_stats', mode === 'replace');
-        await transferTable('question_analysis_cache', mode === 'replace');
-        await transferTable('token_usage', mode === 'replace');
-        await transferTable('user_sessions', mode === 'replace');
-        await transferTable('chat_interactions', mode === 'replace');
-      }
-
-      // Close temp DB
-        if (tempDb) tempDb.close();
-
-        // Clean temp
-        await fsPromises.rm('temp', { recursive: true, force: true });
-
-        res.json({ success: true });
-      } catch (err) {
-        console.error('Import failed', err);
-        // Clean up on failure
-        try {
-          if (tempDb) tempDb.close();
-          await fsPromises.rm('temp', { recursive: true, force: true });
-        } catch {}
-        res.status(500).json({ error: 'Import failed' });
-      }
-   });
+      // Clean temp
+      await fsPromises.rm(extractPath, { recursive: true, force: true });
+      await fsPromises.unlink(file.path);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Import failed', err);
+      res.status(500).json({ error: 'Import failed' });
+    }
+  });
 
   return router;
 };
