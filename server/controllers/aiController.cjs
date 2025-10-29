@@ -79,7 +79,7 @@ async function logUnansweredQuestion(newQuestion) {
  * @swagger
  * /api/chat:
  *   post:
- *     summary: Chat-Stream mit AI starten
+ *     summary: Chat-Antwort vom AI-Backend abrufen
  *     tags: [AI]
  *     requestBody:
  *       required: true
@@ -104,11 +104,23 @@ async function logUnansweredQuestion(newQuestion) {
  *                 description: Zeitzonen-Offset in Minuten
  *     responses:
  *       200:
- *         description: Server-Sent Events Stream mit AI-Antwort
+ *         description: JSON-Antwort mit generierter AI-Nachricht
  *         content:
- *           text/event-stream:
+ *           application/json:
  *             schema:
- *               type: string
+ *               type: object
+ *               properties:
+ *                 conversationId:
+ *                   type: string
+ *                 response:
+ *                   type: string
+ *                 tokens:
+ *                   type: object
+ *                   properties:
+ *                     sent:
+ *                       type: integer
+ *                     received:
+ *                       type: integer
  *       400:
  *         description: Fehlender Prompt
  *       500:
@@ -129,11 +141,6 @@ async function streamChat(req, res) {
     // Track session
     sessionId = await trackSession(req);
     req.res = res;
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders();
 
     const convoId = conversationId || new Date().toISOString() + Math.random().toString(36).slice(2);
     console.log(`Processing conversationId: ${convoId}`);
@@ -293,12 +300,10 @@ async function streamChat(req, res) {
 
       for await (const chunk of stream) {
         fullResponseText += chunk.token;
-        res.write(`data: ${JSON.stringify({ token: chunk.token, conversationId: convoId })}\n\n`);
       }
     } else {
       const response = await chatCompletion(messagesPayload, { apiKey: userApiKey, temperature: 0.2 });
       fullResponseText = response.content;
-      res.write(`data: ${JSON.stringify({ token: fullResponseText, conversationId: convoId })}\n\n`);
     }
 
     await Message.create({
@@ -331,12 +336,16 @@ async function streamChat(req, res) {
       await trackArticleView(articleId, sessionId, prompt);
     }
 
+    const responsePayload = {
+      conversationId: convoId,
+      response: fullResponseText,
+    };
+
     if (process.env.DISPLAY_TOKEN_USED_FOR_QUERY === 'true') {
-      res.write(`data: ${JSON.stringify({ tokens: { sent: sentTokens, received: tokensUsed }, conversationId: convoId })}\n\n`);
+      responsePayload.tokens = { sent: sentTokens, received: tokensUsed };
     }
 
-    res.write('data: [DONE]\n\n');
-    res.end();
+    res.json(responsePayload);
   } catch (error) {
     console.error('Error in streamChat:', error);
     if (!res.headersSent) {

@@ -541,48 +541,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         body: JSON.stringify({ prompt: question }),
       });
 
-      if (!response.body) {
-        throw new Error('No response body');
+      const responseData = await response.json();
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Fehler beim Abrufen der AI-Antwort.');
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let fullResponse = '';
-      aiResponse.innerHTML = ''; // Clear previous content
+      aiResponse.innerHTML = renderMarkup(responseData.response || '');
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          break;
-        }
-        buffer += decoder.decode(value, { stream: true });
-        
-        // Process buffer line by line
-        let boundary = buffer.lastIndexOf('\n');
-        if (boundary === -1) continue; // Wait for a full line
-
-        const lines = buffer.substring(0, boundary).split('\n');
-        buffer = buffer.substring(boundary + 1);
-
-        for (const line of lines) {
-            if (line.startsWith('data: ')) {
-                const jsonString = line.substring(6);
-                if (jsonString === '[DONE]') {
-                    continue;
-                }
-                try {
-                    const json = JSON.parse(jsonString);
-                    if (json.token) {
-                        fullResponse += json.token;
-                        aiResponse.innerHTML = renderMarkup(fullResponse);
-                    }
-                } catch (e) {
-                    console.error('Failed to parse stream chunk:', e, 'Chunk:', jsonString);
-                }
-            }
-        }
-      }
       // Enable the button after the test is complete
       const markAsAnsweredBtn = document.getElementById('mark-as-answered-btn');
       markAsAnsweredBtn.disabled = false;

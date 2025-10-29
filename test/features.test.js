@@ -3,12 +3,13 @@ const app = require('../server/server.cjs');
 const auth = require('../server/controllers/authController.cjs');
 const { User, HochschuhlABC } = require('../server/controllers/db.cjs');
 
-// Suppress AI key warning
-jest.spyOn(console, 'error').mockImplementation((msg) => {
-  if (msg.includes('AI_API_KEY is not set')) {
+// Suppress AI key warning without recursive logging
+const originalConsoleError = console.error;
+jest.spyOn(console, 'error').mockImplementation((msg, ...args) => {
+  if (typeof msg === 'string' && msg.includes('AI_API_KEY is not set')) {
     return;
   }
-  console.error(msg);
+  originalConsoleError(msg, ...args);
 });
 
 describe('Core Features', () => {
@@ -30,7 +31,7 @@ describe('Core Features', () => {
 
   it('POST /api/chat returns response', async () => {
     // Mock the AI call since we don't have real token
-    const res = await agent.post('/api/chat').send({ message: 'Hello' });
+    const res = await agent.post('/api/chat').send({ prompt: 'Hello' });
     // In test env, it might fail, so check for error or success
     expect([200, 400, 500]).toContain(res.status);
     if (res.status === 200) {

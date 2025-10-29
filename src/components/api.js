@@ -65,113 +65,57 @@ export async function sendMsg(app, promptText) {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify({ 
-                prompt: txt, 
+            body: JSON.stringify({
+                prompt: txt,
                 conversationId: currentConversationId,
-                anonymousUserId: app.anonymousUserId, // Add this line
-                timezoneOffset: new Date().getTimezoneOffset() 
+                anonymousUserId: app.anonymousUserId,
+                timezoneOffset: new Date().getTimezoneOffset()
             })
         });
 
-        if (!response.body) {
-            throw new Error("Streaming not supported or response has no body.");
+        const responseData = await response.json();
+        if (!response.ok) {
+            throw new Error(responseData.error || 'Fehler bei der Verbindung zum Server.');
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let firstChunk = true;
-        let buffer = '';
+        document.getElementById('typing').style.display = 'none';
 
-        const processEvent = (eventString) => {
-            const trimmedEvent = eventString.trim();
-            if (!trimmedEvent) return;
-
-            const lines = trimmedEvent.split('\n');
-
-            for (const line of lines) {
-                if (!line.startsWith('data: ')) {
-                    continue;
-                }
-
-                const dataContent = line.substring(6);
-                if (dataContent === '[DONE]') {
-                    continue;
-                }
-
-                let data;
-                try {
-                    data = JSON.parse(dataContent);
-                } catch (err) {
-                    console.error('Failed to parse SSE data chunk:', err, dataContent);
-                    continue;
-                }
-
-                if (firstChunk) {
-                    document.getElementById('typing').style.display = 'none';
-                    currentConversationId = data.conversationId;
-                    if (isNewChat) {
-                        app.conversationId = currentConversationId;
-                    }
-
-                    const m = document.createElement('div');
-                    m.className = 'message ai';
-                    const avatar = document.createElement('div');
-                    avatar.className = 'avatar';
-                    const avatarSrc = app.useFirstAvatar ? '/assets/images/smoky_klein.png' : '/assets/images/stu_klein.png';
-                    avatar.innerHTML = `<img src="${avatarSrc}" alt="Bot Avatar" />`;
-                    app.useFirstAvatar = !app.useFirstAvatar;
-                    m.appendChild(avatar);
-
-                    aiMessageBubble = document.createElement('div');
-                    aiMessageBubble.className = 'bubble';
-                    aiMessageBubble.innerHTML = '<span></span>';
-                    m.appendChild(aiMessageBubble);
-                    document.getElementById('messages').appendChild(m);
-
-                    // Post-process images (resize images to be max the width of the prompt bubble)
-                    processImagesInBubble(aiMessageBubble);
-
-                    firstChunk = false;
-                }
-
-                if (data.token) {
-                    fullResponse += data.token;
-                    aiMessageBubble.querySelector('span').innerHTML = renderMarkup(fullResponse);
-                    app.scrollToBottom();
-                }
-
-                if (data.tokens) {
-                    tokensInfo = data.tokens;
-                }
-            }
-        };
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                if (buffer.trim() !== '') {
-                    processEvent(buffer);
-                    buffer = '';
-                }
-                finalizeMessage();
-                break;
-            }
-
-            buffer += decoder.decode(value, { stream: true });
-            const events = buffer.split('\n\n');
-            buffer = events.pop() || '';
-
-            for (const event of events) {
-                processEvent(event);
-            }
+        currentConversationId = responseData.conversationId;
+        if (isNewChat) {
+            app.conversationId = currentConversationId;
         }
+
+        const messageWrapper = document.createElement('div');
+        messageWrapper.className = 'message ai';
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        const avatarSrc = app.useFirstAvatar ? '/assets/images/smoky_klein.png' : '/assets/images/stu_klein.png';
+        avatar.innerHTML = `<img src="${avatarSrc}" alt="Bot Avatar" />`;
+        app.useFirstAvatar = !app.useFirstAvatar;
+        messageWrapper.appendChild(avatar);
+
+        aiMessageBubble = document.createElement('div');
+        aiMessageBubble.className = 'bubble';
+        aiMessageBubble.innerHTML = '<span></span>';
+        messageWrapper.appendChild(aiMessageBubble);
+        document.getElementById('messages').appendChild(messageWrapper);
+
+        fullResponse = responseData.response || '';
+        tokensInfo = responseData.tokens || null;
+
+        aiMessageBubble.querySelector('span').innerHTML = renderMarkup(fullResponse);
+        processImagesInBubble(aiMessageBubble);
+        app.scrollToBottom();
+
+        finalizeMessage();
     } catch (e) {
         console.error(e);
+        const errorMessage = e?.message || 'Fehler bei der Verbindung zum Server.';
         if (fullResponse) {
             finalizeMessage();
-            showToast('Fehler bei der Verbindung zum Server.');
+            showToast(errorMessage);
         } else {
-            addMessage('Fehler bei der Verbindung zum Server.', false, new Date());
+            addMessage(errorMessage, false, new Date());
         }
     } finally {
         document.getElementById('typing').style.display = 'none';

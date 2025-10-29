@@ -3,12 +3,13 @@ const app = require('../server/server.cjs');
 const auth = require('../server/controllers/authController.cjs');
 const { User } = require('../server/controllers/db.cjs');
 
-// Suppress AI key warning
-jest.spyOn(console, 'error').mockImplementation((msg) => {
-  if (msg.includes('AI_API_KEY is not set')) {
+// Suppress AI key warning without recursive logging
+const originalConsoleError = console.error;
+jest.spyOn(console, 'error').mockImplementation((msg, ...args) => {
+  if (typeof msg === 'string' && msg.includes('AI_API_KEY is not set')) {
     return;
   }
-  console.error(msg);
+  originalConsoleError(msg, ...args);
 });
 
 describe('API Endpoints', () => {
@@ -60,7 +61,7 @@ describe('API Endpoints', () => {
   // Security: Test input sanitization (XSS prevention)
   it('POST /api/chat sanitizes input', async () => {
     const maliciousInput = '<script>alert("xss")</script> Hello';
-    const res = await agent.post('/api/chat').send({ message: maliciousInput });
+    const res = await agent.post('/api/chat').send({ prompt: maliciousInput });
 
     expect([200, 400]).toContain(res.status);
     if (res.status === 200) {
@@ -81,7 +82,7 @@ describe('API Endpoints', () => {
   // Security: Test XSS in head/body injection
   it('POST /api/chat prevents JS injection in head', async () => {
     const headInjection = '<head><script>alert("xss")</script></head> Hello';
-    const res = await agent.post('/api/chat').send({ message: headInjection });
+    const res = await agent.post('/api/chat').send({ prompt: headInjection });
 
     expect([200, 400]).toContain(res.status);
     if (res.status === 200) {
@@ -92,7 +93,7 @@ describe('API Endpoints', () => {
 
   it('POST /api/chat prevents JS injection in body', async () => {
     const bodyInjection = '<body onload="alert(\'xss\')"> Hello';
-    const res = await agent.post('/api/chat').send({ message: bodyInjection });
+    const res = await agent.post('/api/chat').send({ prompt: bodyInjection });
 
     expect([200, 400]).toContain(res.status);
     if (res.status === 200) {
