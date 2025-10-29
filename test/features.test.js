@@ -36,6 +36,8 @@ describe('Core Features', () => {
     expect([200, 400, 500]).toContain(res.status);
     if (res.status === 200) {
       expect(res.body.response).toBeDefined();
+      expect(Array.isArray(res.body.images)).toBe(true);
+      expect(res.body.imageBaseUrl).toBeDefined();
     }
   });
 

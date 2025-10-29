@@ -68,6 +68,8 @@ describe('API Endpoints', () => {
       // Check that script tags are removed or escaped
       expect(res.body.response).not.toContain('<script>');
       expect(res.body.response).toContain('Hello'); // But sanitized
+      expect(Array.isArray(res.body.images)).toBe(true);
+      expect(res.body.imageBaseUrl).toBeDefined();
     }
   });
 
@@ -88,6 +90,8 @@ describe('API Endpoints', () => {
     if (res.status === 200) {
       expect(res.body.response).not.toContain('<script>');
       expect(res.body.response).not.toContain('<head>');
+      expect(Array.isArray(res.body.images)).toBe(true);
+      expect(res.body.imageBaseUrl).toBeDefined();
     }
   });
 
@@ -99,6 +103,8 @@ describe('API Endpoints', () => {
     if (res.status === 200) {
       expect(res.body.response).not.toContain('<body');
       expect(res.body.response).not.toContain('onload');
+      expect(Array.isArray(res.body.images)).toBe(true);
+      expect(res.body.imageBaseUrl).toBeDefined();
     }
   });
 

@@ -17,6 +17,40 @@ function loadCategorizer() {
   return categorizeConversation;
 }
 
+function parseImageEntries(imageListString) {
+  if (!imageListString) return [];
+  return imageListString
+    .split(/\n{2,}/)
+    .map(entry => entry.trim())
+    .filter(Boolean)
+    .map(entry => {
+      const [namePart, ...descriptionParts] = entry.split(/description:/i);
+      if (!namePart) {
+        return null;
+      }
+      const filename = namePart.replace(/image_name:/i, '').trim();
+      const description = descriptionParts.join('description:').trim();
+      if (!filename) {
+        return null;
+      }
+      return {
+        filename,
+        description,
+      };
+    })
+    .filter(Boolean);
+}
+
+function buildImageBaseUrl(req) {
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const protocol = forwardedProto ? forwardedProto.split(',')[0].trim() : req.protocol;
+  const host = req.get('host');
+  if (!host) {
+    return null;
+  }
+  return `${protocol}://${host}/uploads/images/`;
+}
+
 // Removed runChatCompletion, using chatCompletion directly
 
 async function logUnansweredQuestion(newQuestion) {
@@ -121,6 +155,20 @@ async function logUnansweredQuestion(newQuestion) {
  *                       type: integer
  *                     received:
  *                       type: integer
+ *                 images:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       filename:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       url:
+ *                         type: string
+ *                         format: uri
+ *                 imageBaseUrl:
+ *                   type: string
  *       400:
  *         description: Fehlender Prompt
  *       500:
@@ -200,6 +248,9 @@ async function streamChat(req, res) {
       mode: process.env.USE_VECTOR_IMAGES || 'static',
       query: prompt
     });
+    const imageEntries = parseImageEntries(imageList);
+    const imageBaseUrl = buildImageBaseUrl(req);
+    const imageInstructionBase = imageBaseUrl ? imageBaseUrl.replace(/\/+$/, '') : '/uploads/images';
 
     const historyText = messages.map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`).join('\n');
     const fullTextForTokenCheck = `**Inhalt des Hochschul ABC (2025)**:\n${hochschulContent}\n\n**Gesprächsverlauf**:\n${historyText}\n\nBenutzerfrage: ${prompt}`;
@@ -266,7 +317,7 @@ async function streamChat(req, res) {
       ${imageList}
 
       If an image is in the Image List, that helps to answer the user question, add the image link to the answer.
-      format the url in markdown: "\n\n ![](/uploads/images/<image_name>) \n\n"
+      Use the base URL "${imageInstructionBase}" and format the url in markdown as absolute path, for example: "\\n\\n ![](${imageInstructionBase}/<image_name>) \\n\\n"
 
 
 
@@ -336,9 +387,26 @@ async function streamChat(req, res) {
       await trackArticleView(articleId, sessionId, prompt);
     }
 
+    const normalizedImageBaseUrl = imageBaseUrl ? imageBaseUrl.replace(/\/+$/, '') : '/uploads/images';
+    const imagesForPayload = imageEntries.map(entry => {
+      let url;
+      try {
+        url = imageBaseUrl ? new URL(entry.filename, imageBaseUrl).toString() : `/uploads/images/${entry.filename}`;
+      } catch (err) {
+        url = `/uploads/images/${entry.filename}`;
+      }
+      return {
+        filename: entry.filename,
+        description: entry.description,
+        url,
+      };
+    });
+
     const responsePayload = {
       conversationId: convoId,
       response: fullResponseText,
+      images: imagesForPayload,
+      imageBaseUrl: normalizedImageBaseUrl,
     };
 
     if (process.env.DISPLAY_TOKEN_USED_FOR_QUERY === 'true') {
