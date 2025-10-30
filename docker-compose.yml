@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3001:3000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/hochschul_abc
+      - AI_PROVIDER=chatAi
+      - AI_API_KEY=your-api-key-here
+      - AI_BASE_URL=https://chat-ai.academiccloud.de/v1
+      - PORT=3000
+    depends_on:
+      - db
+    volumes:
+      - ./uploads:/app/uploads
+      - ./backups:/app/backups
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=hochschul_abc
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

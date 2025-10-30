@@ -1,0 +1,89 @@
+branding:
+  organization_name: "HTW Dresden"
+  app_name: "HTW ABC AI Bot"
+  primary_color: "#00703C"
+  secondary_color: "#96C93D"
+  accent_color: "#FFB600"
+  neutral_color: "#F5F7F8"
+  text_color: "#1F2933"
+  meta_description: "HTW Dresden AI Chat Assistant - Dein intelligenter Helfer für alle Fragen rund um die HTW Dresden."
+  logo:
+    light: "/assets/images/HTW.svg"
+    dark: "/assets/images/HTW_hell.png"
+    square: "/assets/images/HTW_square.png"
+  favicon: "/assets/images/favicon.ico"
+  footer_text: "© 2025 HTW Dresden – Alle Rechte vorbehalten."
+  welcome_messages:
+    - "Hallo! Ich bin dein AI-Assistent der HTW Dresden. Wie kann ich dir helfen?"
+    - "Hello! I am your AI assistant from HTW Dresden. How can I support you?"
+  default_language: "de"
+
+features:
+  enable_dashboard: true
+  enable_feedback: true
+  enable_public_kb: true
+  enable_metrics: true
+  maintenance_mode: false
+
+ai:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  temperature: 0.2
+  max_tokens: 1024
+  streaming: true
+  system_prompt: |
+    You are the helpful assistant for the HTW Dresden knowledgebase project.
+    Answer concisely, stay factual, and reference official sources where possible.
+    If you are unsure, suggest contacting the university administration.
+  follow_up_prompt: |
+    Ask if the user needs more details and suggest two related questions they could ask.
+
+database:
+  primary:
+    type: "sqlite"
+    url: "file:abc.db"
+  vector:
+    type: "none"
+    url: null
+
+storage:
+  backups_path: "backups"
+  uploads_path: "uploads"
+  documents_path: "public/documents"
+  images_path: "public/assets/images"
+  upload_limit_mb: 10
+
+contact:
+  support_email: "support@htw-dresden.de"
+  imprint_url: "/impressum"
+  privacy_url: "/datenschutz"
+
+security:
+  session_timeout_minutes: 1440
+  session_max_duration_minutes: 43200
+  rate_limit_window_minutes: 15
+  rate_limit_requests: 100
+  dashboard_rate_limit_requests: 500
+  login_rate_limit_window_minutes: 60
+  login_rate_limit_attempts: 6
+
+deployment:
+  domain: "aski.htw-dresden.de"
+  https_enabled: true
+  pm2_process_name: "htw"
+
+integrations:
+  analytics_provider: "plausible"
+  analytics_script_url: "https://plausible.io/js/script.js"
+  analytics_site_id: "aski.htw-dresden.de"
+
+themes:
+  chat_background_gradient:
+    - "#0f172a"
+    - "#1d4ed8"
+    - "#22d3ee"
+  dashboard_theme: "light"
+
+documentation:
+  swagger_enabled: true
+  swagger_route: "/api/docs"
