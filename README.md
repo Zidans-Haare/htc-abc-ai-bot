@@ -490,3 +490,89 @@ Stellen Sie sicher, dass `.env` oder `.env.test` vorhanden ist. Die Tests prüfe
 - **Vector DB Sync:** Bei Problemen mit der Vektor-Datenbank führen Sie `node scripts/migrate_to_prisma.js` aus, um alte Daten zu migrieren.
 
 Für detaillierte Logs prüfen Sie `logs/audit.log` und Konsolen-Ausgaben. Projekt-spezifische Details und Konfigurationstipps finden Sie in `AGENTS.md`.
+
+## 🐳 Produktive Bereitstellung mit Docker
+
+Für eine einfache und isolierte Bereitstellung auf einem nackten Debian- oder Ubuntu-Server verwenden Sie Docker. Dies vermeidet manuelle Installation von Node.js, PostgreSQL usw. und stellt alles in Containern bereit.
+
+### Voraussetzungen
+- Debian oder Ubuntu Server (nackt, ohne vorinstallierte Software).
+- Root- oder sudo-Zugang.
+
+### Schritt-für-Schritt-Anleitung
+
+1. **Server vorbereiten:**
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+   sudo apt install -y curl git
+   ```
+
+2. **Docker installieren:**
+   ```bash
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sudo sh get-docker.sh
+   sudo usermod -aG docker $USER  # Optional: Aktueller User zu Docker-Gruppe hinzufügen (nach Logout neu anmelden)
+   ```
+
+3. **Projekt klonen:**
+   ```bash
+   git clone <repository-url> htw-abc-ai-bot
+   cd htw-abc-ai-bot
+   ```
+
+4. **Umgebung konfigurieren:**
+   ```bash
+   cp .env.example .env
+   nano .env  # Bearbeiten: AI_API_KEY, DATABASE_URL (bleibt postgresql://user:password@db:5432/hochschul_abc), etc.
+   ```
+
+5. **Docker-Container starten:**
+   ```bash
+   docker compose up -d --build
+   ```
+   - Dies baut das Image, startet App (Port 3000) und PostgreSQL (Port 5432), initialisiert die DB automatisch.
+   - App läuft unter `http://server-ip:3000`.
+
+6. **Nginx als Reverse-Proxy einrichten (empfohlen für Produktion):**
+   ```bash
+   sudo apt install -y nginx
+   sudo nano /etc/nginx/sites-available/htw-abc-ai-bot
+   ```
+   Fügen Sie hinzu:
+   ```nginx
+   server {
+       listen 80;
+       server_name your-domain.com;  # Ersetzen durch echte Domain
+
+       location / {
+           proxy_pass http://127.0.0.1:3000;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+       }
+   }
+   ```
+   Aktivieren und Nginx neu starten:
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/htw-abc-ai-bot /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl restart nginx
+   ```
+
+7. **SSL mit Let's Encrypt (optional):**
+   ```bash
+   sudo apt install -y certbot python3-certbot-nginx
+   sudo certbot --nginx -d your-domain.com
+   ```
+
+8. **Überprüfen und warten:**
+   - App initialisiert DB beim ersten Start (kann 1-2 Min. dauern).
+   - Logs: `docker compose logs -f app`
+   - Stoppen: `docker compose down`
+   - Updates: `git pull && docker compose up -d --build`
+
+**Hinweise:**
+- Volumes für DB (`postgres_data`) und Uploads (`./uploads`, `./backups`) bleiben persistent.
+- Für Sicherheit: `.env` nicht im Container-Image (hier external via env_file möglich, aber aktuell kopiert).
+- Bei Port-Konflikten: Ändern Sie Ports in `docker-compose.yml`.

@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "3001:3000"
+      - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/hochschul_abc
       - AI_PROVIDER=chatAi
