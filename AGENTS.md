@@ -19,6 +19,7 @@
 - The project is hosted at aski.htw-dresden.de.
 - Use curl for troubleshooting network issues or API calls.
 - Vector DB supports incremental sync: removes old/invalid data, adds new/updated for headlines, PDFs, images, and documents (DOCX, MD, ODT/ODS/ODP, XLSX). Init forces full sync; tracks with .vectordb_last_sync file. Documents are stored in public/documents/ and linked via documents table.
+- Environment exposes `http_proxy`/`https_proxy` pointing at `www-cache.htw-dresden.de:3128`; if DNS cannot resolve that host, clear or override the proxy when running networked commands (e.g., `npm install`, Docker builds) or builds will hit `EAI_AGAIN`.
 - Embedding uses free Xenova models; tests added for vector store functionality.
 - Testing: Uses Jest with isolated test DB via BACKUP_TEST_DB_URL in .env.test. Falls back to .env but errors if unsafe. Defaults to in-memory SQLite with restore test skips. Run with `npm test`.
 - Context7 MCP tool is available; it exposes local context7 knowledge services and should be used whenever tasks can benefit from that capability.
@@ -63,3 +64,8 @@
 - Database Maintenance Workflow: This project uses Prisma migrations for database versioning and schema management. Always create migrations for schema changes using `prisma migrate dev --name descriptive-name`. Test migrations on staging before production. Backup databases before applying migrations. Use `prisma migrate deploy` for production deployments. This is the recommended strategy and should be followed.
 - GitHub SSH: Deploy key for pushes stored at `~/.ssh/id_ed25519_github_htw_bot` with matching config in `~/.ssh/config`. Ensure the public key is registered with the GitHub account that has access to `git@github.com:Zidans-Haare/htw-ai-bot.git`.
 - Database switched to PostgreSQL: provider in schema.prisma set to "postgresql", DATABASE_URL updated to PostgreSQL connection string. Schema pushed successfully with all tables created.
+- PostgreSQL cutover workflow: After pointing `.env` `DATABASE_URL` and `MAIN_DB_TYPE` to PostgreSQL, run `npx prisma migrate deploy` against the new database before restoring content. Restore recent backups through the Admin → Backup UI (upload if needed) using replace mode so importer reseeds sequences automatically.
+- Postgres startup logging: `server/server.cjs` syncs sequences on boot; for tables without generated IDs (e.g. `users` using `cuid()`) Postgres logs a warning about missing `*_id_seq`. This is harmless but noisy—ignore unless real sequence failures appear.
+- Vector DB enabled: `.env` now sets `VECTOR_DB_TYPE=chroma`, `CHROMA_URL=http://127.0.0.1:8000`, `CHROMA_COLLECTION=htw-kb`, and `SYNC_ON_START=true`. Ensure the Chromadb container (`chromadb/chroma:latest` on port 8000) remains running so uploads and headlines sync into embeddings.
+- `MIN_SIMILARITY` tuned to `0.5` because Chroma V2 returns distances (lower is better); higher thresholds filter out all matches.
+- KB cleanup: replaced `https://dev.olomek.com/uploads/...` links in `hochsuhl_abc.description` with `/uploads/images/...` so responses stay domain-agnostic; rerun `node server/server.cjs --init-vectordb` after manual DB edits to refresh embeddings.

@@ -1,0 +1,52 @@
+2025-11-02T13:14:03: PM2 log: ===============================================================================
+2025-11-02T13:14:03: PM2 log: --- New PM2 Daemon started ----------------------------------------------------
+2025-11-02T13:14:03: PM2 log: Time                 : Sun Nov 02 2025 13:14:03 GMT+0100 (Mitteleuropäische Normalzeit)
+2025-11-02T13:14:03: PM2 log: PM2 version          : 6.0.10
+2025-11-02T13:14:03: PM2 log: Node.js version      : 20.19.5
+2025-11-02T13:14:03: PM2 log: Current arch         : x64
+2025-11-02T13:14:03: PM2 log: PM2 home             : /var/www/htwd_test/.pm2
+2025-11-02T13:14:03: PM2 log: PM2 PID file         : /var/www/htwd_test/.pm2/pm2.pid
+2025-11-02T13:14:03: PM2 log: RPC socket file      : /var/www/htwd_test/.pm2/rpc.sock
+2025-11-02T13:14:03: PM2 log: BUS socket file      : /var/www/htwd_test/.pm2/pub.sock
+2025-11-02T13:14:03: PM2 log: Application log path : /var/www/htwd_test/.pm2/logs
+2025-11-02T13:14:03: PM2 log: Worker Interval      : 30000
+2025-11-02T13:14:03: PM2 log: Process dump file    : /var/www/htwd_test/.pm2/dump.pm2
+2025-11-02T13:14:03: PM2 log: Concurrent actions   : 2
+2025-11-02T13:14:03: PM2 log: SIGTERM timeout      : 1600
+2025-11-02T13:14:03: PM2 log: Runtime Binary       : /usr/bin/node
+2025-11-02T13:14:03: PM2 log: ===============================================================================
+2025-11-02T13:14:03: PM2 log: [Watch] Start watching htw
+2025-11-02T13:14:03: PM2 log: App [htw:0] starting in -fork mode-
+2025-11-02T13:14:03: PM2 log: App [htw:0] online
+2025-11-02T13:26:53: PM2 log: Change detected on path .env for app htw - restarting
+2025-11-02T13:26:55: PM2 log: Stopping app:htw id:0
+2025-11-02T13:26:55: PM2 log: App [htw:0] exited with code [0] via signal [SIGINT]
+2025-11-02T13:26:55: PM2 log: pid=3642978 msg=process killed
+2025-11-02T13:26:55: PM2 log: App [htw:0] starting in -fork mode-
+2025-11-02T13:26:55: PM2 log: App [htw:0] online
+2025-11-02T13:27:04: PM2 log: Stopping app:htw id:0
+2025-11-02T13:27:05: PM2 log: App [htw:0] exited with code [0] via signal [SIGINT]
+2025-11-02T13:27:05: PM2 log: pid=3723302 msg=process killed
+2025-11-02T13:27:05: PM2 log: App [htw:0] starting in -fork mode-
+2025-11-02T13:27:05: PM2 log: App [htw:0] online
+2025-11-02T13:27:13: PM2 log: Stopping app:htw id:0
+2025-11-02T13:27:13: PM2 log: App [htw:0] exited with code [0] via signal [SIGINT]
+2025-11-02T13:27:13: PM2 log: pid=3724272 msg=process killed
+2025-11-02T13:27:13: PM2 log: App [htw:0] starting in -fork mode-
+2025-11-02T13:27:13: PM2 log: App [htw:0] online
+2025-11-02T13:30:21: PM2 log: Stopping app:htw id:0
+2025-11-02T13:30:21: PM2 log: App [htw:0] exited with code [0] via signal [SIGINT]
+2025-11-02T13:30:21: PM2 log: pid=3725116 msg=process killed
+2025-11-02T13:30:21: PM2 log: App [htw:0] starting in -fork mode-
+2025-11-02T13:30:21: PM2 log: App [htw:0] online
+2025-11-02T13:33:49: PM2 log: Change detected on path .env for app htw - restarting
+2025-11-02T13:33:51: PM2 log: Stopping app:htw id:0
+2025-11-02T13:33:52: PM2 log: App [htw:0] exited with code [0] via signal [SIGINT]
+2025-11-02T13:33:52: PM2 log: pid=3744649 msg=process killed
+2025-11-02T13:33:52: PM2 log: App [htw:0] starting in -fork mode-
+2025-11-02T13:33:52: PM2 log: App [htw:0] online
+2025-11-02T13:34:01: PM2 log: Stopping app:htw id:0
+2025-11-02T13:34:01: PM2 log: App [htw:0] exited with code [0] via signal [SIGINT]
+2025-11-02T13:34:01: PM2 log: pid=3762457 msg=process killed
+2025-11-02T13:34:01: PM2 log: App [htw:0] starting in -fork mode-
+2025-11-02T13:34:01: PM2 log: App [htw:0] online
