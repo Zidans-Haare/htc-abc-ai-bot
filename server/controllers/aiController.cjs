@@ -5,7 +5,7 @@ const { summarizeConversation } = require('../utils/summarizer');
 const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require('../utils/analytics');
 const { chatCompletion, chatCompletionStream } = require('../utils/aiProvider');
 const vectorStore = require('../lib/vectorStore');
-const { buildOpenMensaContext } = require('../utils/openmensa');
+const { buildOpenMensaContext, shouldHandleOpenMensa } = require('../utils/openmensa');
 
 // Lazy import to avoid immediate API key check
 let categorizeConversation = null;
@@ -256,19 +256,43 @@ async function streamChat(req, res) {
     let openMensaSection = '';
     let openMensaMetadata = null;
     if (process.env.OPENMENSA_ENABLED !== 'false') {
-      try {
-        const mensaContext = await buildOpenMensaContext({ prompt, timezoneOffset });
-        if (mensaContext && mensaContext.contextText) {
-          openMensaMetadata = mensaContext;
-          openMensaSection = `
+      let useOpenMensa = shouldHandleOpenMensa(prompt);
+      if (!useOpenMensa) {
+        try {
+          const categorizer = loadCategorizer();
+          const categorizeInput = history
+            .map(msg => ({ role: msg.role === 'model' ? 'assistant' : msg.role, content: msg.content }))
+            .concat({ role: 'user', content: prompt });
+          const classification = await categorizer(categorizeInput);
+          const categoryName = (classification && classification.category) ? classification.category : '';
+          if (categoryName.toLowerCase().includes('mensa')) {
+            useOpenMensa = true;
+          } else if (classification && classification.category === 'Campus-Leben & Mensa') {
+            const confidence = typeof classification.confidence === 'number' ? classification.confidence : 0;
+            if (confidence >= 0.05) {
+              useOpenMensa = true;
+            }
+          }
+        } catch (err) {
+          console.warn('OpenMensa categorization failed:', err.message);
+        }
+      }
+
+      if (useOpenMensa) {
+        try {
+          const mensaContext = await buildOpenMensaContext({ prompt, force: true });
+          if (mensaContext && mensaContext.contextText) {
+            openMensaMetadata = mensaContext;
+            openMensaSection = `
 
       **Aktuelle Mensa-Angebote (OpenMensa)**:
       ${mensaContext.contextText}
 
       Antworte bei Fragen zum Essen oder zur Mensa bevorzugt mit diesen aktuellen Daten. Sag klar, wenn keine Daten vorliegen oder die Mensa geschlossen ist.`;
+          }
+        } catch (err) {
+          console.warn('OpenMensa integration failed:', err.message);
         }
-      } catch (err) {
-        console.warn('OpenMensa integration failed:', err.message);
       }
     }
 

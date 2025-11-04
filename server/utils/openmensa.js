@@ -49,6 +49,67 @@ const KEYWORDS = [
   'verpflegung',
   'openmensa',
   'mensen',
+  'vegan',
+  'vegetar',
+  'nudel',
+  'gericht',
+  'gerichte',
+  'hunger',
+  'appetit',
+  'burger',
+  'pizza',
+  'wrap',
+  'suppe',
+  'woche',
+];
+
+const DAY_KEYWORDS = [
+  'montag',
+  'dienstag',
+  'mittwoch',
+  'donnerstag',
+  'freitag',
+  'samstag',
+  'sonntag',
+  'wochenende',
+  'morgen',
+  'heute',
+  'uebermorgen',
+  'übermorgen',
+  'naechste woche',
+  'naechsten',
+  'kommende',
+];
+
+const FOOD_HINTS = [
+  'vegan',
+  'vegetar',
+  'fleisch',
+  'gericht',
+  'gerichte',
+  'nudel',
+  'nudeln',
+  'gulasch',
+  'burger',
+  'pizza',
+  'wrap',
+  'suppe',
+  'eintopf',
+  'salat',
+  'menu',
+  'menue',
+  'speise',
+  'speisen',
+  'dessert',
+  'fruehstueck',
+  'frühstück',
+  'morgens',
+  'mittag',
+  'mittagessen',
+  'abendessen',
+  'essen',
+  'hunger',
+  'appetit',
 ];
 
 function normalizeInput(text) {
@@ -87,7 +148,13 @@ function getConfiguredCanteens() {
 function shouldHandleOpenMensa(prompt) {
   const normalized = normalizeInput(prompt);
   if (!normalized) return false;
-  return KEYWORDS.some(keyword => normalized.includes(keyword));
+  if (KEYWORDS.some(keyword => normalized.includes(keyword))) {
+    return true;
+  }
+
+  const mentionsDay = DAY_KEYWORDS.some(keyword => normalized.includes(keyword));
+  const mentionsFood = FOOD_HINTS.some(keyword => normalized.includes(keyword));
+  return mentionsDay && mentionsFood;
 }
 
 function resolveCanteensForPrompt(prompt, canteens = getConfiguredCanteens()) {
@@ -349,8 +416,8 @@ function formatMealsForContext(canteen, data, displayDate) {
   return `### ${canteen.displayName}\n${rows.join('\n')}`;
 }
 
-async function buildOpenMensaContext({ prompt }) {
-  if (!shouldHandleOpenMensa(prompt)) {
+async function buildOpenMensaContext({ prompt, force = false }) {
+  if (!force && !shouldHandleOpenMensa(prompt)) {
     return null;
   }
 

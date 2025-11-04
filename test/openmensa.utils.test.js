@@ -14,6 +14,22 @@ describe('OpenMensa utilities', () => {
     expect(shouldHandleOpenMensa('Erzähl mir etwas über Prüfungen.')).toBe(false);
   });
 
+  test('detects implicit mensa queries with day and vegan mention', () => {
+    expect(shouldHandleOpenMensa('Wo gibt es diesen Freitag was Veganes?')).toBe(true);
+  });
+
+  test('detects implicit mensa queries asking for noodles', () => {
+    expect(shouldHandleOpenMensa('Wo gibt es diesen Freitag Nudeln?')).toBe(true);
+  });
+
+  test('detects hunger statement with specific dish', () => {
+    expect(shouldHandleOpenMensa('Ich habe Hunger auf Nudeln mit Gulasch, wo gibt es das heute?')).toBe(true);
+  });
+
+  test('detects weekly burger question', () => {
+    expect(shouldHandleOpenMensa('Wer hat diese Woche Burger im Angebot?')).toBe(true);
+  });
+
   test('normalizes input for alias matching', () => {
     expect(normalizeInput('ZeltschlÖßchen')).toBe('zeltschlosschen');
   });
