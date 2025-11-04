@@ -332,13 +332,19 @@ function formatMealsForContext(canteen, data, displayDate) {
     return `### ${canteen.displayName}\nFür den ${displayDate} sind keine Mahlzeiten veröffentlicht.`;
   }
 
-  const rows = data.meals.slice(0, 12).map(meal => {
+  const maxItems = 3;
+  const visibleMeals = data.meals.slice(0, maxItems);
+  const rows = visibleMeals.map(meal => {
     const category = meal.category ? `[${meal.category}] ` : '';
     const notes = Array.isArray(meal.notes) && meal.notes.length > 0 ? ` (${meal.notes.join(', ')})` : '';
     const prices = formatPrices(meal.prices);
     const priceText = prices ? ` – Preise: ${prices}` : '';
     return `- ${category}${meal.name}${notes}${priceText}`;
   });
+
+  if (data.meals.length > visibleMeals.length) {
+    rows.push('- Weitere Angebote findest du im vollständigen Speiseplan auf OpenMensa.');
+  }
 
   return `### ${canteen.displayName}\n${rows.join('\n')}`;
 }

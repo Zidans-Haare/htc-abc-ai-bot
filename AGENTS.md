@@ -31,6 +31,8 @@
 - Git hygiene: `.pm2/` is now ignored—runtime PID/log artifacts stay local; re-run `pm2 save` if you need to regenerate them after cleanup.
 - OpenMensa integration: Chat answers Mensa/Speiseplan Fragen via https://openmensa.org/api/v2 (IDs 82 Siedepunkt, 80 Matrix, 78 Zeltschlösschen, 88 U-Boot). Enabled by default; set `OPENMENSA_ENABLED=false` to skip fetch. Override canteens with `OPENMENSA_CANTEENS` (`id[:Display Name]` comma list) or API base via `OPENMENSA_API_BASE`. Responses cache 5 min; failures surface as “keine Daten” hints.
 - `<+>` flag: Bot only appends `<+>` when weder HTW-Wissen noch OpenMensa-Daten eine Antwort zulassen; reine Hinweise “keine Daten, bitte checke später” gelten als beantwortet ohne `<+>`.
+- Chat UI: `.bubble` begrenzt auf max 640 px/85 vw, horizontales Scrollen statt Overflow; Tabellen erhalten responsive Layout/Streifen. Lange Texte umbrechen, Code `pre-wrap`.
+- Antwortstil: System-Prompt betont kurze Antworten (<150 Wörter) und Folgefragen; OpenMensa-Ausgabe kürzt auf top 3 Gerichte und verweist auf Rest im Plan.
 - Path Migration: Image paths updated to absolute /assets/images/ for correct loading from public/assets/images/. Other assets use relative paths.
 - ES Modules Adoption: diff_match_patch.js converted to ES module with exports. articles.js updated to use dynamic import for diff_match_patch instead of loadScript.
 - Font Modernization: Self-hosted fonts (Roboto, Inter, Font Awesome) replaced with npm packages (@fontsource/roboto, @fontsource/inter, @fortawesome/fontawesome-free) for better bundling and maintenance. Font files removed from public/assets/fonts/.

@@ -316,6 +316,8 @@ async function streamChat(req, res) {
 
       Ensure responses are concise, clear, and directly address the user's concerns. Try to answer to the point and be super helpful and positive.
       Escalate complex issues to human agents when necessary to ensure customer satisfaction.
+      Keep responses compact (ideally under 150 German words), use short paragraphs or bullet lists, and highlight the key next steps.
+      Offer the user a follow-up option instead of overloading them with details (e.g. frage nach, ob mehr Infos gewünscht sind).
 
       ${dateAndTime}.
       ${timezoneInfo}
