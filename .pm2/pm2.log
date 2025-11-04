@@ -50,3 +50,7 @@
 2025-11-02T13:34:01: PM2 log: pid=3762457 msg=process killed
 2025-11-02T13:34:01: PM2 log: App [htw:0] starting in -fork mode-
 2025-11-02T13:34:01: PM2 log: App [htw:0] online
+2025-11-03T13:14:04: PM2 log: [PM2] This PM2 is not UP TO DATE
+2025-11-03T13:14:04: PM2 log: [PM2] Upgrade to version 6.0.13
+2025-11-04T13:14:04: PM2 log: [PM2] This PM2 is not UP TO DATE
+2025-11-04T13:14:04: PM2 log: [PM2] Upgrade to version 6.0.13

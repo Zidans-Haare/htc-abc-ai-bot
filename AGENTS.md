@@ -24,6 +24,8 @@
 - Testing: Uses Jest with isolated test DB via BACKUP_TEST_DB_URL in .env.test. Falls back to .env but errors if unsafe. Defaults to in-memory SQLite with restore test skips. Run with `npm test`.
 - Context7 MCP tool is available; it exposes local context7 knowledge services and should be used whenever tasks can benefit from that capability.
 - Investigated 'serialize' npm modules: serialize-error and dom-serializer were unused dependencies, removed from package.json. No serialization logic needed porting to Prisma.
+- Tooling note: The environment does not have `rg` (ripgrep) installed; use `grep`/`find` alternatives for searches.
+- Runtime logs: PM2 for this project writes to `.pm2/logs/htw-out.log` and `.pm2/logs/htw-error.log` under the repo root for the current user.
 - Path Migration: Image paths updated to absolute /assets/images/ for correct loading from public/assets/images/. Other assets use relative paths.
 - ES Modules Adoption: diff_match_patch.js converted to ES module with exports. articles.js updated to use dynamic import for diff_match_patch instead of loadScript.
 - Font Modernization: Self-hosted fonts (Roboto, Inter, Font Awesome) replaced with npm packages (@fontsource/roboto, @fontsource/inter, @fortawesome/fontawesome-free) for better bundling and maintenance. Font files removed from public/assets/fonts/.
