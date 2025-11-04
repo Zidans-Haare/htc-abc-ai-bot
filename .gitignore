@@ -29,3 +29,4 @@ backups
 abc_old.db
 uploads_
 hochschul-abc.db
+.pm2/
