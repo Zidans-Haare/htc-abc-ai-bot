@@ -5,6 +5,7 @@ const { summarizeConversation } = require('../utils/summarizer');
 const { trackSession, trackChatInteraction, trackArticleView, extractArticleIds } = require('../utils/analytics');
 const { chatCompletion, chatCompletionStream } = require('../utils/aiProvider');
 const vectorStore = require('../lib/vectorStore');
+const { buildOpenMensaContext } = require('../utils/openmensa');
 
 // Lazy import to avoid immediate API key check
 let categorizeConversation = null;
@@ -252,6 +253,25 @@ async function streamChat(req, res) {
     const imageBaseUrl = buildImageBaseUrl(req);
     const imageInstructionBase = imageBaseUrl ? imageBaseUrl.replace(/\/+$/, '') : '/uploads/images';
 
+    let openMensaSection = '';
+    let openMensaMetadata = null;
+    if (process.env.OPENMENSA_ENABLED !== 'false') {
+      try {
+        const mensaContext = await buildOpenMensaContext({ prompt, timezoneOffset });
+        if (mensaContext && mensaContext.contextText) {
+          openMensaMetadata = mensaContext;
+          openMensaSection = `
+
+      **Aktuelle Mensa-Angebote (OpenMensa)**:
+      ${mensaContext.contextText}
+
+      Antworte bei Fragen zum Essen oder zur Mensa bevorzugt mit diesen aktuellen Daten. Sag klar, wenn keine Daten vorliegen oder die Mensa geschlossen ist.`;
+        }
+      } catch (err) {
+        console.warn('OpenMensa integration failed:', err.message);
+      }
+    }
+
     const historyText = messages.map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`).join('\n');
     const fullTextForTokenCheck = `**Inhalt des Hochschul ABC (2025)**:\n${hochschulContent}\n\n**Gesprächsverlauf**:\n${historyText}\n\nBenutzerfrage: ${prompt}`;
 
@@ -318,13 +338,12 @@ async function streamChat(req, res) {
 
       If an image is in the Image List, that helps to answer the user question, add the image link to the answer.
       Use the base URL "${imageInstructionBase}" and format the url in markdown as absolute path, for example: "\\n\\n ![](${imageInstructionBase}/<image_name>) \\n\\n"
-
-
+      ${openMensaSection}
 
       --
 
-      If you can not answer a question about the HTW Dresden from the Knowledgebase,
-      add the chars "<+>" at the end of the answer.
+      If you can not answer a question about the HTW Dresden from the Knowledgebase or the OpenMensa data,
+      add the chars "<+>" at the end of the answer. If you can explain that there are currently keine Daten or the Mensa is closed and offer guidance, do NOT append "<+>".
 
       --
     `;
@@ -355,6 +374,10 @@ async function streamChat(req, res) {
     } else {
       const response = await chatCompletion(messagesPayload, { apiKey: userApiKey, temperature: 0.2 });
       fullResponseText = response.content;
+    }
+
+    if (openMensaMetadata && /<\+>\s*$/.test(fullResponseText)) {
+      fullResponseText = fullResponseText.replace(/\s*<\+>\s*$/, '').trimEnd();
     }
 
     await Message.create({
@@ -408,6 +431,10 @@ async function streamChat(req, res) {
       images: imagesForPayload,
       imageBaseUrl: normalizedImageBaseUrl,
     };
+
+    if (openMensaMetadata) {
+      responsePayload.openMensa = openMensaMetadata;
+    }
 
     if (process.env.DISPLAY_TOKEN_USED_FOR_QUERY === 'true') {
       responsePayload.tokens = { sent: sentTokens, received: tokensUsed };
