@@ -17,10 +17,12 @@
 # Project Information
 
 - The project is hosted at aski.htw-dresden.de.
+- Deployment path renamed to `/var/www/htwd_ai_prod` (old `/var/www/htwd_test`). PM2 service `htw` must be restarted via `pm2 delete htw` and `pm2 start ecosystem.config.js` from the repo root whenever the directory name changes so log paths update.
 - Use curl for troubleshooting network issues or API calls.
 - Vector DB supports incremental sync: removes old/invalid data, adds new/updated for headlines, PDFs, images, and documents (DOCX, MD, ODT/ODS/ODP, XLSX). Init forces full sync; tracks with .vectordb_last_sync file. Documents are stored in public/documents/ and linked via documents table.
 - Environment exposes `http_proxy`/`https_proxy` pointing at `www-cache.htw-dresden.de:3128`; if DNS cannot resolve that host, clear or override the proxy when running networked commands (e.g., `npm install`, Docker builds) or builds will hit `EAI_AGAIN`.
 - Embedding uses free Xenova models; tests added for vector store functionality.
+- External API note: Academic Cloud outages have caused troubleshooting delays; plan to add optional uptime checks/alerts rather than hard failing `npm test`.
 - Testing: Uses Jest with isolated test DB via BACKUP_TEST_DB_URL in .env.test. Falls back to .env but errors if unsafe. Defaults to in-memory SQLite with restore test skips. Run with `npm test`.
 - Context7 MCP tool is available; it exposes local context7 knowledge services and should be used whenever tasks can benefit from that capability.
 - Investigated 'serialize' npm modules: serialize-error and dom-serializer were unused dependencies, removed from package.json. No serialization logic needed porting to Prisma.
