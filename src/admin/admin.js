@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Validate session before proceeding
   try {
-    const res = await fetch('/api/validate');
+    const res = await fetch('/api/admin/validate', { credentials: 'include' });
     if (!res.ok) {
       console.log('Session invalid, redirecting to login...');
       sessionStorage.removeItem('userRole');
@@ -455,7 +455,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    // --- Always-on Event Listeners & Initializations ---
    logoutBtn.addEventListener('click', async () => {
      try {
-       await fetchAndParse('/api/logout', { method: 'POST' });
+       await fetchAndParse('/api/admin/logout', { method: 'POST' });
        sessionStorage.removeItem('userRole');
         window.location.href = '/login/';
      } catch (err) {
@@ -464,7 +464,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    });
    if(mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', async () => {
      try {
-       await fetchAndParse('/api/logout', { method: 'POST' });
+     await fetchAndParse('/api/admin/logout', { method: 'POST' });
        sessionStorage.removeItem('userRole');
         window.location.href = '/login/';
      } catch (err) {

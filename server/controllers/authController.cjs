@@ -5,12 +5,39 @@ const crypto = require('crypto');
 const Joi = require('joi');
 const { User, AuthSession, UserProfiles } = require('./db.cjs');
 
+const USER_SESSION_COOKIE = 'session_token';
+const ADMIN_SESSION_COOKIE = 'admin_session_token';
+const ADMIN_TOKEN_PREFIX = 'admin:';
+const ADMIN_ALLOWED_ROLES = new Set(['admin', 'editor', 'entwickler']);
+
 // Session timeout configurations (in milliseconds)
 const SESSION_INACTIVITY_TIMEOUT_MS = (parseInt(process.env.SESSION_INACTIVITY_TIMEOUT_MINUTES) || 1440) * 60 * 1000;
 const SESSION_MAX_DURATION_MS = (parseInt(process.env.SESSION_MAX_DURATION_MINUTES) || 43200) * 60 * 1000;
 
-async function createSession(userId) {
-  const token = crypto.randomBytes(32).toString('hex');
+function buildSessionToken(scope = 'user') {
+  const raw = crypto.randomBytes(32).toString('hex');
+  return scope === 'admin' ? `${ADMIN_TOKEN_PREFIX}${raw}` : raw;
+}
+
+function setSessionCookie(res, name, token) {
+  const secureCookie = true;
+  const sameSite = 'strict';
+  res.cookie(name, token, {
+    httpOnly: true,
+    secure: secureCookie,
+    maxAge: SESSION_INACTIVITY_TIMEOUT_MS,
+    sameSite,
+    path: '/',
+  });
+}
+
+function clearSessionCookie(res, name) {
+  res.clearCookie(name, { httpOnly: true, secure: true, sameSite: 'strict', path: '/' });
+}
+
+async function createSession(userId, options = {}) {
+  const scope = options.scope || 'user';
+  const token = buildSessionToken(scope);
   const expiresAt = new Date(Date.now() + SESSION_MAX_DURATION_MS);
   try {
     await AuthSession.create({
@@ -166,7 +193,7 @@ const profileUpdateSchema = Joi.object({
 });
 
 function requireAuth(req, res, next) {
-  const token = req.cookies.session_token;
+  const token = req.cookies[USER_SESSION_COOKIE];
   if (!token) {
     return res.status(401).json({ error: 'Authentication required' });
   }
@@ -265,20 +292,39 @@ router.post('/login', async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    const token = await createSession(user.id);
-    const secureCookie = true; // Use HTTPS in production
-    const sameSite = 'strict';
-    res.cookie('session_token', token, {
-      httpOnly: true,
-      secure: secureCookie,
-      maxAge: SESSION_INACTIVITY_TIMEOUT_MS,
-      sameSite
-    });
+    const token = await createSession(user.id, { scope: 'user' });
+    setSessionCookie(res, USER_SESSION_COOKIE, token);
+    // Do not touch admin cookie here to allow parallel sessions
     const profile = await getUserProfile(user.id);
     res.json({ role: user.role, profile: serializeProfile(profile) });
   } catch (err) {
     console.error('Login failed:', err);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+router.post('/admin/login', async (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Missing credentials' });
+  }
+  try {
+    const user = await verifyUser(username, password);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    if (!ADMIN_ALLOWED_ROLES.has(user.role)) {
+      return res.status(403).json({ error: 'Insufficient permissions for admin login' });
+    }
+    const token = await createSession(user.id, { scope: 'admin' });
+    setSessionCookie(res, ADMIN_SESSION_COOKIE, token);
+    // Ensure bot/login session does not leak admin rights
+    clearSessionCookie(res, USER_SESSION_COOKIE);
+    const profile = await getUserProfile(user.id);
+    res.json({ role: user.role, profile: serializeProfile(profile) });
+  } catch (err) {
+    console.error('Admin login failed:', err);
+    res.status(500).json({ error: 'Admin login failed' });
   }
 });
 
@@ -311,15 +357,8 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const token = await createSession(user.id);
-    const secureCookie = true;
-    const sameSite = 'strict';
-    res.cookie('session_token', token, {
-      httpOnly: true,
-      secure: secureCookie,
-      maxAge: SESSION_INACTIVITY_TIMEOUT_MS,
-      sameSite
-    });
+    const token = await createSession(user.id, { scope: 'user' });
+    setSessionCookie(res, USER_SESSION_COOKIE, token);
 
     res.status(201).json({ role: user.role, profile: serializeProfile(profile) });
   } catch (err) {
@@ -352,9 +391,26 @@ router.post('/register', async (req, res) => {
  *         description: Ungültige oder abgelaufene Session
  */
 router.get('/validate', async (req, res) => {
-  const token = req.cookies.session_token;
+  const token = req.cookies[USER_SESSION_COOKIE];
   const session = token && await getSession(token);
   if (session) {
+    const profile = await getUserProfile(session.userId);
+    res.json({ valid: true, username: session.username, role: session.role, profile: serializeProfile(profile) });
+  } else {
+    res.status(401).json({ valid: false, error: 'Invalid or expired token' });
+  }
+});
+
+router.get('/admin/validate', async (req, res) => {
+  let token = req.cookies[ADMIN_SESSION_COOKIE];
+  if (!token) {
+    const legacy = req.cookies[USER_SESSION_COOKIE];
+    if (legacy && legacy.startsWith(ADMIN_TOKEN_PREFIX)) {
+      token = legacy;
+    }
+  }
+  const session = token && await getSession(token);
+  if (session && ADMIN_ALLOWED_ROLES.has(session.role)) {
     const profile = await getUserProfile(session.userId);
     res.json({ valid: true, username: session.username, role: session.role, profile: serializeProfile(profile) });
   } else {
@@ -408,11 +464,26 @@ router.put('/profile', requireAuth, async (req, res) => {
  *         description: Erfolgreiche Abmeldung
  */
 router.post('/logout', async (req, res) => {
-  const token = req.cookies.session_token;
+  const token = req.cookies[USER_SESSION_COOKIE];
   if (token) {
     await destroySession(token);
   }
-  res.clearCookie('session_token');
+  clearSessionCookie(res, USER_SESSION_COOKIE);
+  res.json({ success: true });
+});
+
+router.post('/admin/logout', async (req, res) => {
+  let token = req.cookies[ADMIN_SESSION_COOKIE];
+  if (!token) {
+    const legacy = req.cookies[USER_SESSION_COOKIE];
+    if (legacy && legacy.startsWith(ADMIN_TOKEN_PREFIX)) {
+      token = legacy;
+    }
+  }
+  if (token) {
+    await destroySession(token);
+  }
+  clearSessionCookie(res, ADMIN_SESSION_COOKIE);
   res.json({ success: true });
 });
 
@@ -442,5 +513,9 @@ module.exports = {
     cleanupExpiredSessions,
     getUserProfile,
     requireAuth,
-    ensureUserProfile
+    ensureUserProfile,
+    USER_SESSION_COOKIE,
+    ADMIN_SESSION_COOKIE,
+    ADMIN_ALLOWED_ROLES,
+    ADMIN_TOKEN_PREFIX
 };

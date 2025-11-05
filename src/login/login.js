@@ -36,9 +36,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function doLogin(u, p) {
     console.log('Attempting login with username:', u);
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username: u, password: p })
       });
       if (res.ok) {
@@ -67,7 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Prüfe, ob eine gültige Sitzung existiert
   try {
-    const res = await fetch('/api/validate');
+    const res = await fetch('/api/admin/validate', { credentials: 'include' });
     if (res.ok) {
       console.log('Session valid, redirecting...');
       // Check for redirect parameter even for existing sessions

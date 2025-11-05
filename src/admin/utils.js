@@ -45,8 +45,12 @@ export function overrideFetch() {
     }
 
     const res = await originalFetch(input, init);
-    
-    // Note: 401 handling removed for server-side auth only
+    if (res.status === 401 || res.status === 403) {
+      sessionStorage.removeItem('userRole');
+      const redirectTarget = encodeURIComponent(window.location.pathname + window.location.search || '/admin/');
+      window.location.href = `/login/?redirect=${redirectTarget}`;
+      return res;
+    }
     
     // For other errors, we need to be able to read the body again later.
     // So we clone the response. The original response can be read by the caller.

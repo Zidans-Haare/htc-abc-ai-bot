@@ -2,10 +2,22 @@ const express = require('express');
 const router = express.Router();
 
 // Admin auth middleware factory
-const adminAuth = (getSession, logAction) => async (req, res, next) => {
-  const token = req.cookies.session_token;
+const adminAuth = (getSession, logAction, options = {}) => async (req, res, next) => {
+  const {
+    adminCookieName = 'admin_session_token',
+    adminRoles = new Set(['admin', 'editor', 'entwickler']),
+    adminTokenPrefix = 'admin:',
+  } = options;
+
+  let token = req.cookies[adminCookieName];
+  if (!token && adminTokenPrefix) {
+    const legacy = req.cookies.session_token;
+    if (legacy && legacy.startsWith(adminTokenPrefix)) {
+      token = legacy;
+    }
+  }
   const session = token && await getSession(token);
-  if (session) {
+  if (session && adminRoles.has(session.role)) {
     req.user = session.username;
     req.role = session.role;
     logAction(session.username, `${req.method} ${req.originalUrl}`);
@@ -15,8 +27,8 @@ const adminAuth = (getSession, logAction) => async (req, res, next) => {
 };
 
 // Factory function to create router with dependencies
-module.exports = (getSession, logAction) => {
-  const authMiddleware = adminAuth(getSession, logAction);
+module.exports = (getSession, logAction, options = {}) => {
+  const authMiddleware = adminAuth(getSession, logAction, options);
 
   const adminRouter = express.Router();
 

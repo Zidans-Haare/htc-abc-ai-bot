@@ -650,7 +650,13 @@ button.send:hover { background-color: var(--accent-dark); }
 
 .form-group { margin-bottom: 1.25rem; display: flex; flex-direction: column; }
 .form-group label { font-size: 0.9rem; font-weight: 500; color: var(--primary-text); margin-bottom: 0.5rem; }
-.form-group select, .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="color"], .form-group textarea, .form-group button {
+.form-group select,
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="color"],
+.form-group textarea,
+.form-group button {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid var(--input-border);
@@ -1060,6 +1066,16 @@ input:checked + .slider:before { transform: translateX(22px); }
     opacity: 0;
 }
 
+.feature-disabled {
+    opacity: 0.6;
+}
+
+.feature-disabled .btn,
+.feature-disabled .btn-primary,
+.feature-disabled button {
+    cursor: not-allowed;
+}
+
 .api-key-status {
     font-size: 0.9rem;
     color: var(--secondary-text);
@@ -1077,9 +1093,22 @@ input:checked + .slider:before { transform: translateX(22px); }
     background-color: var(--accent-color);
     color: #fff;
     border: none;
+    cursor: pointer;
 }
 #configure-api-key-btn:hover {
     background-color: var(--accent-dark);
+}
+
+#configure-api-key-btn[disabled] {
+    background-color: #d1d5db;
+    color: var(--secondary-text);
+    border: none;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+#configure-api-key-btn[disabled]:hover {
+    background-color: #d1d5db;
 }
 
 .api-guide-container {

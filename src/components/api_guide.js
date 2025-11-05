@@ -4,7 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const openBtn = document.getElementById('configure-api-key-btn');
     const closeBtn = document.getElementById('close-api-key-modal');
-    
+
+    if (!openBtn || openBtn.hasAttribute('disabled')) {
+        return;
+    }
+
     const prevBtn = document.getElementById('api-guide-prev');
     const nextBtn = document.getElementById('api-guide-next');
     const saveBtn = document.getElementById('api-guide-save');

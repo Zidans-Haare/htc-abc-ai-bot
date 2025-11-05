@@ -81,6 +81,10 @@ const { streamChat, getSuggestions, testApiKey } = require('./controllers/aiCont
 const feedbackController = require('./controllers/feedbackController.cjs');
 const adminController = require('./controllers/adminController.cjs');
 const auth = require('./controllers/authController.cjs');
+const ADMIN_COOKIE_NAME = auth.ADMIN_SESSION_COOKIE || 'admin_session_token';
+const USER_COOKIE_NAME = auth.USER_SESSION_COOKIE || 'session_token';
+const ADMIN_ALLOWED_ROLES = auth.ADMIN_ALLOWED_ROLES || new Set(['admin', 'editor', 'entwickler']);
+const ADMIN_TOKEN_PREFIX = auth.ADMIN_TOKEN_PREFIX || 'admin:';
 const viewController = require('./controllers/viewController.cjs');
 const dashboardController = require('./controllers/dashboardController.cjs');
 const imageController = require('./controllers/imageController.cjs');
@@ -184,10 +188,12 @@ function logAction(user, action) {
 // --- Security & Rate Limiting ---
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100,
+    max: 600,
+    message: { error: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
     trustProxy: parseInt(process.env.TRUST_PROXY_COUNT) || 2,
+    skip: (req) => req.path === '/validate' || req.path === '/admin/validate',
 });
 
 const dashboardLimiter = rateLimit({
@@ -200,8 +206,8 @@ const dashboardLimiter = rateLimit({
 
 const loginLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 6,
-    message: "Too many login attempts from this IP, please try again after an hour",
+    max: 20,
+    message: { error: "Too many login attempts from this IP, please try again after an hour" },
     standardHeaders: true,
     legacyHeaders: false,
     trustProxy: parseInt(process.env.TRUST_PROXY_COUNT) || 2,
@@ -260,7 +266,7 @@ app.get('/', (req, res) => {
 // --- Protection Middleware ---
 const requireAuth = (loginPath) => async (req, res, next) => {
   try {
-    const token = req.cookies.session_token;
+    const token = req.cookies[USER_COOKIE_NAME];
     if (!token) {
       // Not logged in
       if (req.url.startsWith('/api/')) {
@@ -290,11 +296,17 @@ const requireAuth = (loginPath) => async (req, res, next) => {
 
 const requireRole = (role, insufficientPath) => async (req, res, next) => {
   try {
-    const token = req.cookies.session_token;
     const originalUrl = req.originalUrl || req.baseUrl || req.url;
     const isDocsRoute = originalUrl.startsWith('/api/docs');
     const isApiRoute = originalUrl.startsWith('/api/');
     const redirectToLogin = () => res.redirect(`/login/?redirect=${encodeURIComponent(originalUrl)}`);
+    let token = req.cookies[ADMIN_COOKIE_NAME];
+    if (!token && ADMIN_TOKEN_PREFIX) {
+      const legacy = req.cookies[USER_COOKIE_NAME];
+      if (legacy && legacy.startsWith(ADMIN_TOKEN_PREFIX)) {
+        token = legacy;
+      }
+    }
 
     if (!token) {
       // Not logged in
@@ -341,7 +353,13 @@ const protect = (req, res, next) => {
 
   // Dashboard routes require admin role
   if (req.url.startsWith('/dash') || req.url.startsWith('/api/dashboard')) {
-    const token = req.cookies.session_token;
+    let token = req.cookies[ADMIN_COOKIE_NAME];
+    if (!token && ADMIN_TOKEN_PREFIX) {
+      const legacy = req.cookies[USER_COOKIE_NAME];
+      if (legacy && legacy.startsWith(ADMIN_TOKEN_PREFIX)) {
+        token = legacy;
+      }
+    }
     if (!token) {
       return res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
     }
@@ -361,16 +379,22 @@ const protect = (req, res, next) => {
 
   // Admin routes require authentication
   if (req.url.startsWith('/admin')) {
-    const token = req.cookies.session_token;
+    let token = req.cookies[ADMIN_COOKIE_NAME];
+    if (!token && ADMIN_TOKEN_PREFIX) {
+      const legacy = req.cookies[USER_COOKIE_NAME];
+      if (legacy && legacy.startsWith(ADMIN_TOKEN_PREFIX)) {
+        token = legacy;
+      }
+    }
     if (!token) {
       return res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
     }
     auth.getSession(token).then(session => {
-      if (session) {
+      if (session && ADMIN_ALLOWED_ROLES.has(session.role)) {
         req.session = session;
         next();
       } else {
-        res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
+        res.redirect('/insufficient-permissions');
       }
     }).catch(err => {
       console.error('Auth error:', err);
@@ -399,6 +423,7 @@ app.use('/api/docs', requireRole('admin', '/insufficient-permissions'), swaggerU
 // --- API Routes ---
 app.use('/api/dashboard', dashboardLimiter); // Dashboard limiter FIRST
 app.use('/api/login', loginLimiter); // Login limiter
+app.use('/api/admin/login', loginLimiter); // Admin login limiter
 app.use('/api', apiLimiter); // General limiter LAST
 
 app.post('/api/chat', streamChat);
@@ -406,14 +431,24 @@ app.post('/api/test-api-key', testApiKey);
 app.get('/api/suggestions', getSuggestions);
 app.use('/api/feedback', feedbackController);
 app.use('/api', auth.router);
-app.use('/api', adminController(auth.getSession, logAction));
+app.use('/api', adminController(auth.getSession, logAction, {
+  adminCookieName: ADMIN_COOKIE_NAME,
+  adminRoles: ADMIN_ALLOWED_ROLES,
+  adminTokenPrefix: ADMIN_TOKEN_PREFIX,
+}));
 app.use('/api/dashboard', dashboardController);
 app.get("/api/view/articles", viewController.getPublishedArticles);
 
 // --- Dashboard Routes ---
 app.use('/dash', express.static(path.join(__dirname, '..', 'dist', 'src', 'dash'), staticAssetOptions));
 app.get('/dash', async (req, res) => {
-  const token = req.cookies.session_token;
+  let token = req.cookies[ADMIN_COOKIE_NAME];
+  if (!token && ADMIN_TOKEN_PREFIX) {
+    const legacy = req.cookies[USER_COOKIE_NAME];
+    if (legacy && legacy.startsWith(ADMIN_TOKEN_PREFIX)) {
+      token = legacy;
+    }
+  }
   const session = token && await auth.getSession(token);
   if (!session || session.role !== 'admin') {
     return res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
@@ -428,9 +463,15 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'dist', 'src', 'login', 'index.html'));
 });
 app.get('/admin', async (req, res) => {
-  const token = req.cookies.session_token;
+  let token = req.cookies[ADMIN_COOKIE_NAME];
+  if (!token && ADMIN_TOKEN_PREFIX) {
+    const legacy = req.cookies[USER_COOKIE_NAME];
+    if (legacy && legacy.startsWith(ADMIN_TOKEN_PREFIX)) {
+      token = legacy;
+    }
+  }
   const session = token && await auth.getSession(token);
-  if (!session || session.role !== 'admin') {
+  if (!session || !ADMIN_ALLOWED_ROLES.has(session.role)) {
     return res.redirect('/login/?redirect=' + encodeURIComponent(req.originalUrl));
   }
   setHtmlNoCache(res);
@@ -513,9 +554,15 @@ app.get('/metrics', async (req, res) => {
 
 // --- Protected Static Files ---
 app.use('/admin', async (req, res, next) => {
-  const token = req.cookies.session_token;
+  let token = req.cookies[ADMIN_COOKIE_NAME];
+  if (!token && ADMIN_TOKEN_PREFIX) {
+    const legacy = req.cookies[USER_COOKIE_NAME];
+    if (legacy && legacy.startsWith(ADMIN_TOKEN_PREFIX)) {
+      token = legacy;
+    }
+  }
   const session = token && await auth.getSession(token);
-  if (session) {
+  if (session && ADMIN_ALLOWED_ROLES.has(session.role)) {
     return next();
   }
   // Redirect to the login route so Express can serve the page (dist/src/login/index.html)
@@ -528,7 +575,13 @@ app.use('/uploads/images', express.static(path.join(__dirname, '..', 'uploads', 
 
 // --- Backup Static ---
 app.use('/backup', async (req, res, next) => {
-  const token = req.cookies.session_token;
+  let token = req.cookies[ADMIN_COOKIE_NAME];
+  if (!token && ADMIN_TOKEN_PREFIX) {
+    const legacy = req.cookies[USER_COOKIE_NAME];
+    if (legacy && legacy.startsWith(ADMIN_TOKEN_PREFIX)) {
+      token = legacy;
+    }
+  }
   const session = token && await auth.getSession(token);
   if (session && session.role === 'admin') {
     return next();
