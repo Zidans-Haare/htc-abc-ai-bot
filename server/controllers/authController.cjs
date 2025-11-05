@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { User, AuthSession } = require('./db.cjs');
+const Joi = require('joi');
+const { User, AuthSession, UserProfiles } = require('./db.cjs');
 
 // Session timeout configurations (in milliseconds)
 const SESSION_INACTIVITY_TIMEOUT_MS = (parseInt(process.env.SESSION_INACTIVITY_TIMEOUT_MINUTES) || 1440) * 60 * 1000;
@@ -38,7 +39,7 @@ async function getSession(token) {
   try {
     const session = await AuthSession.findFirst({
       where: { token },
-      include: { user: { select: { username: true, role: true } } }
+      include: { user: { select: { id: true, username: true, role: true } } }
     });
     if (!session) {
       return null;
@@ -73,7 +74,7 @@ async function getSession(token) {
       data: {}
     }); // updated_at auto-updates
 
-    return { username: session.user.username, role: session.user.role };
+    return { userId: session.user.id, username: session.user.username, role: session.user.role };
   } catch (err) {
     console.error('Get session error:', err);
     return null;
@@ -110,15 +111,75 @@ async function verifyUser(username, password) {
   }
 }
 
-async function createUser(username, password, role) {
+async function createUser(username, password, role = 'user') {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({ data: { username, password: hashedPassword, role } });
+    await ensureUserProfile(user.id);
     return { id: user.id, username: user.username, role: user.role };
   } catch (err) {
     console.error('Create user error:', err);
     throw err;
   }
+}
+
+async function ensureUserProfile(userId) {
+  let profile = await UserProfiles.findUnique({ where: { user_id: userId } });
+  if (!profile) {
+    profile = await UserProfiles.create({
+      data: {
+        user_id: userId,
+        mensa_preferences: {
+          vegetarian: false,
+          vegan: false,
+          glutenFree: false,
+          favoriteCanteens: []
+        },
+        favorite_prompts: [],
+        shortcuts: [],
+        ui_settings: {}
+      }
+    });
+  }
+  return profile;
+}
+
+async function getUserProfile(userId) {
+  return ensureUserProfile(userId);
+}
+
+const profileUpdateSchema = Joi.object({
+  display_name: Joi.string().max(120).allow(null, ''),
+  mensa_preferences: Joi.object({
+    vegetarian: Joi.boolean().default(false),
+    vegan: Joi.boolean().default(false),
+    glutenFree: Joi.boolean().default(false),
+    favoriteCanteens: Joi.array().items(Joi.number().integer()).max(10).default([])
+  }).default({}),
+  favorite_prompts: Joi.array().items(
+    Joi.object({
+      title: Joi.string().max(80).required(),
+      prompt: Joi.string().max(500).required()
+    })
+  ).max(12).default([]),
+  ui_settings: Joi.object().unknown(true).default({})
+});
+
+function requireAuth(req, res, next) {
+  const token = req.cookies.session_token;
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  getSession(token).then(session => {
+    if (!session) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    req.auth = session;
+    next();
+  }).catch(err => {
+    console.error('Session check failed:', err);
+    res.status(500).json({ error: 'Session validation failed' });
+  });
 }
 
 async function listUsers(offset = 0) {
@@ -213,10 +274,57 @@ router.post('/login', async (req, res) => {
       maxAge: SESSION_INACTIVITY_TIMEOUT_MS,
       sameSite
     });
-    res.json({ role: user.role });
+    const profile = await getUserProfile(user.id);
+    res.json({ role: user.role, profile: serializeProfile(profile) });
   } catch (err) {
     console.error('Login failed:', err);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+const registrationSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().min(8).max(100).required(),
+  displayName: Joi.string().max(120).allow('', null),
+});
+
+router.post('/register', async (req, res) => {
+  const { error: validationError, value } = registrationSchema.validate(req.body || {});
+  if (validationError) {
+    return res.status(400).json({ error: 'Invalid registration data', details: validationError.details.map(d => d.message) });
+  }
+
+  const username = value.email.toLowerCase();
+
+  try {
+    const existing = await User.findFirst({ where: { username } });
+    if (existing) {
+      return res.status(409).json({ error: 'Benutzer existiert bereits' });
+    }
+
+    const user = await createUser(username, value.password, 'user');
+    let profile = await getUserProfile(user.id);
+    if (value.displayName) {
+      profile = await UserProfiles.update({
+        where: { user_id: user.id },
+        data: { display_name: value.displayName }
+      });
+    }
+
+    const token = await createSession(user.id);
+    const secureCookie = true;
+    const sameSite = 'strict';
+    res.cookie('session_token', token, {
+      httpOnly: true,
+      secure: secureCookie,
+      maxAge: SESSION_INACTIVITY_TIMEOUT_MS,
+      sameSite
+    });
+
+    res.status(201).json({ role: user.role, profile: serializeProfile(profile) });
+  } catch (err) {
+    console.error('Registration failed:', err);
+    res.status(500).json({ error: 'Registration failed' });
   }
 });
 
@@ -247,9 +355,45 @@ router.get('/validate', async (req, res) => {
   const token = req.cookies.session_token;
   const session = token && await getSession(token);
   if (session) {
-    res.json({ valid: true, username: session.username, role: session.role });
+    const profile = await getUserProfile(session.userId);
+    res.json({ valid: true, username: session.username, role: session.role, profile: serializeProfile(profile) });
   } else {
     res.status(401).json({ valid: false, error: 'Invalid or expired token' });
+  }
+});
+
+router.get('/profile', requireAuth, async (req, res) => {
+  try {
+    const profile = await getUserProfile(req.auth.userId);
+    res.json({ profile: serializeProfile(profile) });
+  } catch (err) {
+    console.error('Fetch profile failed:', err);
+    res.status(500).json({ error: 'Profil konnte nicht geladen werden' });
+  }
+});
+
+router.put('/profile', requireAuth, async (req, res) => {
+  const { error: validationError, value } = profileUpdateSchema.validate(req.body || {}, { abortEarly: false });
+  if (validationError) {
+    return res.status(400).json({ error: 'Ungültige Profildaten', details: validationError.details.map(d => d.message) });
+  }
+
+  const updateData = {
+    display_name: value.display_name || null,
+    mensa_preferences: value.mensa_preferences,
+    favorite_prompts: value.favorite_prompts,
+    ui_settings: value.ui_settings,
+  };
+
+  try {
+    const profile = await UserProfiles.update({
+      where: { user_id: req.auth.userId },
+      data: updateData,
+    });
+    res.json({ profile: serializeProfile(profile) });
+  } catch (err) {
+    console.error('Update profile failed:', err);
+    res.status(500).json({ error: 'Profil konnte nicht gespeichert werden' });
   }
 });
 
@@ -272,6 +416,20 @@ router.post('/logout', async (req, res) => {
   res.json({ success: true });
 });
 
+function serializeProfile(profile) {
+  if (!profile) return null;
+  const mensaPreferences = profile.mensa_preferences || {};
+  const favoritePrompts = Array.isArray(profile.favorite_prompts) ? profile.favorite_prompts : [];
+  const uiSettings = profile.ui_settings || {};
+
+  return {
+    displayName: profile.display_name || null,
+    mensaPreferences,
+    favoritePrompts,
+    uiSettings,
+  };
+}
+
 module.exports = {
     router,
     getSession,
@@ -281,5 +439,8 @@ module.exports = {
     listUsers,
     updateUserPassword,
     deleteUser,
-    cleanupExpiredSessions
+    cleanupExpiredSessions,
+    getUserProfile,
+    requireAuth,
+    ensureUserProfile
 };

@@ -180,7 +180,7 @@ async function streamChat(req, res) {
   let sessionId = null;
 
   try {
-    const { prompt, conversationId, anonymousUserId, timezoneOffset } = req.body;
+    const { prompt, conversationId, anonymousUserId, timezoneOffset, profilePreferences = null, userDisplayName = null } = req.body;
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt ist erforderlich' });
     }
@@ -280,7 +280,7 @@ async function streamChat(req, res) {
 
       if (useOpenMensa) {
         try {
-          const mensaContext = await buildOpenMensaContext({ prompt, force: true });
+          const mensaContext = await buildOpenMensaContext({ prompt, force: true, preferences: profilePreferences });
           if (mensaContext && mensaContext.contextText) {
             openMensaMetadata = mensaContext;
             openMensaSection = `
@@ -342,6 +342,7 @@ async function streamChat(req, res) {
       Escalate complex issues to human agents when necessary to ensure customer satisfaction.
       Keep responses compact (ideally under 150 German words), use short paragraphs or bullet lists, and highlight the key next steps.
       Offer the user a follow-up option instead of overloading them with details (e.g. frage nach, ob mehr Infos gewünscht sind).
+      ${userDisplayName ? `Wenn bekannt, sprich den Nutzer mit dem Namen "${userDisplayName}" an.` : ''}
 
       ${dateAndTime}.
       ${timezoneInfo}

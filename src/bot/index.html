@@ -73,7 +73,17 @@
                     <img src="/assets/images/HTW.svg" alt="HTWD Logo" class="header-logo">
                 </div>
                 <div class="header-right">
-                    <img src="/assets/images/HTW.svg" alt="HTWD Logo" class="header-logo">
+                    <div class="user-actions">
+                        <button id="auth-trigger" class="auth-btn">
+                            <i class="fas fa-user-circle"></i>
+                            <span id="auth-label">Anmelden</span>
+                        </button>
+                        <div id="auth-menu" class="auth-menu hidden">
+                            <p id="auth-greeting">Hallo!</p>
+                            <button id="open-profile" class="auth-menu-btn"><i class="fas fa-id-badge"></i> Profil &amp; Präferenzen</button>
+                            <button id="logout-btn" class="auth-menu-btn"><i class="fas fa-sign-out-alt"></i> Abmelden</button>
+                        </div>
+                    </div>
                 </div>
             </header>
 
@@ -100,6 +110,51 @@
         </main>
     </div>
 
+    <template id="favorite-template">
+        <div class="favorite-item">
+            <input type="text" class="favorite-title" maxlength="80" placeholder="Titel">
+            <textarea class="favorite-prompt" maxlength="500" rows="2" placeholder="Frage oder Hinweis"></textarea>
+            <button class="remove-favorite" title="Entfernen"><i class="fas fa-trash"></i></button>
+        </div>
+    </template>
+
+    <div id="auth-modal" class="auth-modal hidden">
+        <div class="auth-dialog">
+            <button id="close-auth" class="close-btn">&times;</button>
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-auth-view="login">Anmelden</button>
+                <button class="auth-tab" data-auth-view="register">Registrieren</button>
+            </div>
+            <form id="login-form" class="auth-form" data-auth-view="login">
+                <div class="form-group">
+                    <label for="login-email">E-Mail</label>
+                    <input type="email" id="login-email" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Passwort</label>
+                    <input type="password" id="login-password" required autocomplete="current-password" minlength="8">
+                </div>
+                <button type="submit" class="primary-btn">Anmelden</button>
+            </form>
+            <form id="register-form" class="auth-form hidden" data-auth-view="register">
+                <div class="form-group">
+                    <label for="register-email">E-Mail</label>
+                    <input type="email" id="register-email" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="register-display-name">Anzeigename</label>
+                    <input type="text" id="register-display-name" maxlength="120" placeholder="Wie dürfen wir dich nennen?">
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Passwort</label>
+                    <input type="password" id="register-password" required autocomplete="new-password" minlength="8">
+                    <p class="hint">Mindestens 8 Zeichen, gerne mit Zahlen und Sonderzeichen.</p>
+                </div>
+                <button type="submit" class="primary-btn">Registrieren &amp; Starten</button>
+            </form>
+        </div>
+    </div>
+
     <div id="settings-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -107,6 +162,31 @@
                 <button id="close-settings" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="settings-section" id="profile-settings-section" hidden>
+                    <h4 class="section-title">Profil &amp; Präferenzen</h4>
+                    <div class="profile-summary">
+                        <p><strong>Angemeldet als:</strong> <span id="profile-email">-</span></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-display-name">Anzeigename</label>
+                        <input type="text" id="profile-display-name" maxlength="120" placeholder="Wie sollen wir dich ansprechen?">
+                    </div>
+                    <div class="form-group">
+                        <label>Mensa-Präferenzen</label>
+                        <div class="preference-grid">
+                            <label><input type="checkbox" id="pref-vegetarian"> Vegetarisch bevorzugen</label>
+                            <label><input type="checkbox" id="pref-vegan"> Vegan bevorzugen</label>
+                            <label><input type="checkbox" id="pref-gluten"> Glutenfrei bevorzugen</label>
+                        </div>
+                        <p class="hint">Wir nutzen diese Auswahl, um Speisepläne automatisch zu filtern.</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Lieblingsfragen</label>
+                        <div id="favorites-list"></div>
+                        <button id="add-favorite-btn" class="btn-secondary"><i class="fas fa-plus"></i> Lieblingsfrage hinzufügen</button>
+                        <p class="hint">Diese Vorschläge erscheinen in der Startansicht.</p>
+                    </div>
+                </div>
                 <!-- General Settings -->
                 <div class="settings-section">
                      <div class="form-group">

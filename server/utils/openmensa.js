@@ -155,12 +155,14 @@ const DIETARY_KEYWORDS = {
   vegan: ['vegan', 'pflanzlich'],
   vegetarian: ['vegetar', 'veggie', 'fleischlos', 'ohne fleisch'],
   meat: ['mit fleisch', 'fleisch', 'rind', 'schwein', 'hähnchen', 'haehnchen', 'pute', 'gulasch', 'steak', 'wurst'],
+  glutenFree: ['glutenfrei', 'gluten-frei', 'gluten free', 'zöliak', 'zoeliak'],
 };
 
 const DIETARY_LABELS = {
   vegan: 'vegan',
   vegetarian: 'vegetarisch',
   meat: 'mit Fleisch',
+  glutenFree: 'glutenfrei',
 };
 
 function normalizeInput(text) {
@@ -244,12 +246,14 @@ function extractIntent(prompt) {
   });
 
   const dietaryPreference = detectDietaryPreference(normalized);
+  const glutenFree = DIETARY_KEYWORDS.glutenFree.some(term => normalized.includes(term));
 
   return {
     keywords: detectedKeys,
     keywordTerms: Array.from(keywordTerms),
     hasKeywords: detectedKeys.length > 0,
     dietaryPreference,
+    glutenFree,
   };
 }
 
@@ -512,14 +516,16 @@ function mealMatchesIntent(meal, intent) {
     dietaryMatch = !haystack.includes('vegan') && !haystack.includes('vegetar');
   }
 
-  return keywordMatch && dietaryMatch;
+  const glutenMatch = intent.glutenFree ? (haystack.includes('glutenfrei') || haystack.includes('gluten-frei')) : true;
+
+  return keywordMatch && dietaryMatch && glutenMatch;
 }
 
 function filterMealsByIntent(meals, intent) {
   if (!Array.isArray(meals) || meals.length === 0) {
     return [];
   }
-  if (!intent || (!intent.hasKeywords && !intent.dietaryPreference)) {
+  if (!intent || (!intent.hasKeywords && !intent.dietaryPreference && !intent.glutenFree)) {
     return meals.slice(0, DEFAULT_MAX_RESULTS);
   }
 
@@ -549,6 +555,49 @@ function filterMealsByIntent(meals, intent) {
   return [];
 }
 
+function applyPreferencesToIntent(intent, preferences = {}) {
+  const merged = { ...intent };
+  const prefs = preferences || {};
+  if (!merged.dietaryPreference) {
+    if (prefs.vegan) {
+      merged.dietaryPreference = 'vegan';
+    } else if (prefs.vegetarian) {
+      merged.dietaryPreference = 'vegetarian';
+    }
+  }
+  merged.glutenFree = Boolean(merged.glutenFree || prefs.glutenFree);
+  return {
+    intent: merged,
+    favoriteCanteens: Array.isArray(prefs.favoriteCanteens) ? prefs.favoriteCanteens.filter(id => Number.isInteger(id)) : [],
+  };
+}
+
+function reorderCanteensByPreference(canteens, favoriteIds) {
+  if (!Array.isArray(favoriteIds) || favoriteIds.length === 0) {
+    return canteens;
+  }
+  const favSet = new Set(favoriteIds);
+  return [...canteens].sort((a, b) => {
+    const aFav = favSet.has(a.id);
+    const bFav = favSet.has(b.id);
+    if (aFav && !bFav) return -1;
+    if (!aFav && bFav) return 1;
+    return 0;
+  });
+}
+
+function getCanteenNamesByIds(ids, existingList = []) {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+  const lookup = new Map();
+  const combined = [...existingList, ...getConfiguredCanteens()];
+  combined.forEach(canteen => {
+    if (!lookup.has(canteen.id)) {
+      lookup.set(canteen.id, canteen.displayName);
+    }
+  });
+  return ids.filter(id => lookup.has(id)).map(id => lookup.get(id));
+}
+
 async function findNextMatchingMeals(canteenId, isoDate, intent) {
   const start = DateTime.fromISO(isoDate, { zone: DEFAULT_TIMEZONE });
   for (let offset = 1; offset <= MAX_LOOKAHEAD_DAYS; offset += 1) {
@@ -558,7 +607,7 @@ async function findNextMatchingMeals(canteenId, isoDate, intent) {
     const data = await fetchMeals(canteenId, nextIso);
     if (data.available && !data.closed && Array.isArray(data.meals) && data.meals.length > 0) {
       const matches = filterMealsByIntent(data.meals, intent);
-      if (matches.length > 0 || !intent || (!intent.hasKeywords && !intent.dietaryPreference)) {
+      if (matches.length > 0 || !intent || (!intent.hasKeywords && !intent.dietaryPreference && !intent.glutenFree)) {
         return {
           date: nextDate,
           isoDate: nextIso,
@@ -571,7 +620,7 @@ async function findNextMatchingMeals(canteenId, isoDate, intent) {
   return null;
 }
 
-function buildFilterSummary(formattedDate, intent) {
+function buildFilterSummary(formattedDate, intent, preferences = null, favoriteCanteenNames = []) {
   const filters = [];
   if (intent && intent.hasKeywords) {
     const labels = intent.keywords.map(key => KEYWORD_LABELS[key] || key);
@@ -581,6 +630,15 @@ function buildFilterSummary(formattedDate, intent) {
   }
   if (intent && intent.dietaryPreference) {
     filters.push(`Ernährungswunsch: ${DIETARY_LABELS[intent.dietaryPreference] || intent.dietaryPreference}`);
+  }
+  if (intent && intent.glutenFree) {
+    filters.push('Glutenfrei bevorzugt');
+  }
+  if (Array.isArray(favoriteCanteenNames) && favoriteCanteenNames.length > 0) {
+    filters.push(`Bevorzugte Mensen: ${favoriteCanteenNames.join(', ')}`);
+  }
+  if (!filters.length && preferences && (preferences.vegan || preferences.vegetarian || preferences.glutenFree)) {
+    filters.push('Profilfilter aktiv');
   }
   const filterText = filters.length > 0 ? filters.join(' · ') : 'Keine speziellen Filter erkannt.';
   return `Datum: ${formattedDate}\n${filterText}`;
@@ -633,7 +691,7 @@ function formatCanteenSection({ canteen, baseData, formattedDate, matchedMeals, 
     if (baseData.meals.length > matchedMeals.length) {
       lines.push('- Weitere Gerichte findest du im vollständigen Speiseplan.');
     }
-  } else if (intent && (intent.hasKeywords || intent.dietaryPreference)) {
+  } else if (intent && (intent.hasKeywords || intent.dietaryPreference || intent.glutenFree)) {
     lines.push(`Keine passenden Treffer am ${formattedDate}.`);
     if (fallback) {
       const fallbackDate = fallback.date.setLocale('de-DE').toFormat('cccc, dd. LLLL yyyy');
@@ -654,13 +712,15 @@ function formatCanteenSection({ canteen, baseData, formattedDate, matchedMeals, 
   return lines.join('\n');
 }
 
-async function buildOpenMensaContext({ prompt, force = false }) {
+async function buildOpenMensaContext({ prompt, force = false, preferences = null }) {
   if (!force && !shouldHandleOpenMensa(prompt)) {
     return null;
   }
 
-  const intent = extractIntent(prompt);
-  const canteens = resolveCanteensForPrompt(prompt);
+  const baseIntent = extractIntent(prompt);
+  const { intent, favoriteCanteens } = applyPreferencesToIntent(baseIntent, preferences || {});
+  const resolvedCanteens = resolveCanteensForPrompt(prompt);
+  const canteens = reorderCanteensByPreference(resolvedCanteens, favoriteCanteens);
   const dateInfo = resolveDateFromPrompt(prompt);
   const formattedDate = dateInfo.target.setLocale('de-DE').toFormat('cccc, dd. LLLL yyyy');
 
@@ -673,7 +733,7 @@ async function buildOpenMensaContext({ prompt, force = false }) {
     const matchedMeals = filterMealsByIntent(baseData.meals, intent);
     let fallback = null;
 
-    if ((matchedMeals.length === 0 || !baseData.available || baseData.closed) && (intent.hasKeywords || intent.dietaryPreference)) {
+    if ((matchedMeals.length === 0 || !baseData.available || baseData.closed) && (intent.hasKeywords || intent.dietaryPreference || intent.glutenFree)) {
       // eslint-disable-next-line no-await-in-loop
       fallback = await findNextMatchingMeals(canteen.id, dateInfo.date, intent);
     }
@@ -704,13 +764,15 @@ async function buildOpenMensaContext({ prompt, force = false }) {
     });
   }
 
-  const filterSummary = buildFilterSummary(formattedDate, intent);
+  const favoriteNames = getCanteenNamesByIds(favoriteCanteens, resolvedCanteens);
+  const filterSummary = buildFilterSummary(formattedDate, intent, preferences || {}, favoriteNames);
   const contextText = `${filterSummary}\n\n${sections.join('\n\n')}`.trim();
 
   return {
     contextText,
     date: dateInfo.date,
     intent,
+    preferences,
     canteens: meta,
   };
 }
@@ -725,4 +787,6 @@ module.exports = {
   extractIntent,
   mealMatchesIntent,
   filterMealsByIntent,
+  applyPreferencesToIntent,
+  reorderCanteensByPreference,
 };

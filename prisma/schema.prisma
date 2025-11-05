@@ -206,6 +206,7 @@ model users {
   feedback      feedback[]
   article_views article_views[]
   auth_sessions auth_sessions[]
+  user_profiles user_profiles?
 }
 
 model documents {
@@ -228,4 +229,18 @@ model documents {
 model app_versions {
   id      Int    @id @default(autoincrement())
   version String @unique
+}
+
+model user_profiles {
+  id                 String   @id @default(cuid())
+  user_id            String   @unique
+  display_name       String?
+  mensa_preferences  Json     @default("{}")
+  favorite_prompts   Json     @default("[]")
+  shortcuts          Json     @default("[]")
+  ui_settings        Json     @default("{}")
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  user               users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  @@map("user_profiles")
 }

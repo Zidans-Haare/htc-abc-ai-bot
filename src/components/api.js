@@ -62,15 +62,24 @@ export async function sendMsg(app, promptText) {
             headers['X-User-API-Key'] = userApiKey;
         }
 
+        const bodyPayload = {
+            prompt: txt,
+            conversationId: currentConversationId,
+            anonymousUserId: app.anonymousUserId,
+            timezoneOffset: new Date().getTimezoneOffset(),
+        };
+
+        if (app?.auth?.profile?.mensaPreferences) {
+            bodyPayload.profilePreferences = app.auth.profile.mensaPreferences;
+        }
+        if (app?.auth?.profile?.displayName) {
+            bodyPayload.userDisplayName = app.auth.profile.displayName;
+        }
+
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify({
-                prompt: txt,
-                conversationId: currentConversationId,
-                anonymousUserId: app.anonymousUserId,
-                timezoneOffset: new Date().getTimezoneOffset()
-            })
+            body: JSON.stringify(bodyPayload)
         });
 
         const responseData = await response.json();
