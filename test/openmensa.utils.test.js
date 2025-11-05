@@ -6,6 +6,8 @@ const {
   resolveCanteensForPrompt,
   DEFAULT_CANTEENS,
   normalizeInput,
+  extractIntent,
+  filterMealsByIntent,
 } = require('../server/utils/openmensa');
 
 describe('OpenMensa utilities', () => {
@@ -32,6 +34,33 @@ describe('OpenMensa utilities', () => {
 
   test('normalizes input for alias matching', () => {
     expect(normalizeInput('ZeltschlÖßchen')).toBe('zeltschlosschen');
+  });
+
+  test('extractIntent identifies keywords and dietary preference', () => {
+    const intent = extractIntent('Ich hätte gerne einen veganen Burger oder Wrap.');
+    expect(intent.keywords).toEqual(expect.arrayContaining(['burger', 'wrap', 'vegan']));
+    expect(intent.dietaryPreference).toBe('vegan');
+  });
+
+  test('filterMealsByIntent returns matching meals based on intent', () => {
+    const meals = [
+      {
+        name: 'Veganer BBQ-Burger',
+        notes: ['vegan'],
+        category: 'Grill',
+        prices: { students: 4.2 },
+      },
+      {
+        name: 'Pasta Bolognese',
+        notes: ['mit Rindfleisch'],
+        category: 'Pasta',
+        prices: { students: 3.5 },
+      },
+    ];
+    const intent = extractIntent('Ich möchte einen veganen Burger');
+    const matches = filterMealsByIntent(meals, intent);
+    expect(matches).toHaveLength(1);
+    expect(matches[0].name).toContain('Burger');
   });
 
   test('resolves relative phrases like morgen', () => {
